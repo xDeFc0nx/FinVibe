@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org/)[Taildwind.css](https://tailwindcss.com/) template 
+This is a [Next.js](https://nextjs.org/) [Taildwind.css](https://tailwindcss.com/) template 
 
 ## Getting Started
 
