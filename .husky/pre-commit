@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo 'Styling, testing and building project before commititing to github'
+
+# Check Prettier standards
+npm run check-format ||
+    (
+        echo '❌ Prettier  Check Failed, Run npm run format, add changes and try commit again.❌'
+
+        false
+    )
+
+#Check Eslint Standards
+npm run check-lint ||
+    (
+        echo "❌ ESLint Check Failed, Make the required listed above, add changes and try commit again❌"
+
+        false
+    )
+#if everything passes... try to run build
+echo '✅...Alright... Code Looks Clan.... Trayng to Build now.✅'
+
+npm run build ||
+    (
+        echo "❌Better call Bob.... Becouse your build failed❌
+        Next build failed: View the errors above to see why.
+"
+        false
+    )
+
+# if it builds we can commit
+echo "✅✅✅ You win this time... I am commiting  this now. ✅✅✅"
