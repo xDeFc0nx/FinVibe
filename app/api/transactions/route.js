@@ -1,7 +1,8 @@
-// url: 'http://localhost:3000/api/transactions
-
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "../../../prisma/client";
+
+export const revalidate = true;
 
 export const POST = async (request) => {
   try {
@@ -15,8 +16,15 @@ export const POST = async (request) => {
         description,
       },
     });
-    return NextResponse.json(newTransaction);
+    revalidatePath("/api/transactions");
+
+    // Display success toast
+    return NextResponse.json(newTransaction, {
+      revalidate: 3,
+    });
   } catch (err) {
+    // Display error toast
+    console.error(err);
     return NextResponse.json(
       { message: "Error creating transaction", err },
       { status: 500 }
@@ -24,7 +32,7 @@ export const POST = async (request) => {
   }
 };
 
-export const GET = async () => {
+export const PUT = async () => {
   try {
     const transactions = await prisma.transaction.findMany({
       select: {
@@ -32,12 +40,22 @@ export const GET = async () => {
         type: true,
         amount: true,
         description: true,
+        DateCreated: {
+          // Use raw SQL to format DateTime as date
+          select: { date: { $raw: "DATE(DateCreated)" } },
+        },
       },
     });
-    return NextResponse.json(transactions);
+
+    // Display success toast
+    return NextResponse.json(transactions, {
+      revalidate: 3, // Revalidate every 3 seconds
+    });
   } catch (err) {
+    // Display error toast
+    console.error(err);
     return NextResponse.json(
-      { message: "Error Feching transaction", err },
+      { message: "Error fetching transactions", err },
       { status: 500 }
     );
   }

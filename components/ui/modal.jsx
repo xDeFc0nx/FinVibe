@@ -40,7 +40,7 @@ const Modal = ({ children, modalOpen, text, handleClose }) => {
               variants={modalAnimation}
               className="flex justify-center items-center h-full rounded-lg"
             >
-              <motion.div className="items-end bg-gray-700 rounded-lg shadow w-1/2 h-1/2 p-5">
+              <motion.div className="items-end bg-[#24303F]/50  backdrop-filter backdrop-blur-3xl	   shadow-lg rounded-lg  w-1/2 h-1/2 p-5">
                 <motion.div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     {text}

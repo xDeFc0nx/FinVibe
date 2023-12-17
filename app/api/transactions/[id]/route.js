@@ -1,7 +1,8 @@
-// url: 'http://localhost:3000/api/transactions/12312
-
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import prisma from "../../../../prisma/client";
+
+export const revalidate = true;
 
 export const GET = async (request, { params }) => {
   try {
@@ -20,7 +21,7 @@ export const GET = async (request, { params }) => {
 
     return NextResponse.json(transaction);
   } catch (err) {
-    console.error("Error creating transaction:", err);
+    console.error("Error fetching transaction:", err);
     return NextResponse.json({ message: "GET error", err }, { status: 500 });
   }
 };
@@ -41,16 +42,21 @@ export const PATCH = async (request, { params }) => {
         description,
       },
     });
+
     if (!updateTransaction) {
       return NextResponse.json(
         { message: "Transaction not found" },
         { status: 404 }
       );
     }
+
+    revalidatePath(`/api/transactions/${id}`); // Revalidate cache for this specific path
+
     return NextResponse.json(updateTransaction);
   } catch (err) {
+    console.error("Error updating transaction:", err);
     return NextResponse.json(
-      { message: "Error Updating transaction", err },
+      { message: "Error updating transaction", err },
       { status: 500 }
     );
   }
@@ -64,6 +70,7 @@ export const DELETE = async (request, { params }) => {
         id,
       },
     });
+
     if (!transaction) {
       return NextResponse.json(
         { message: "Transaction not found" },
@@ -71,9 +78,14 @@ export const DELETE = async (request, { params }) => {
       );
     }
 
+    revalidatePath(`/api/transactions/${id}`); // Revalidate cache for this specific path
+
     return NextResponse.json(transaction);
   } catch (err) {
-    console.error("Error Deleting transaction:", err);
-    return NextResponse.json({ message: "GET error", err }, { status: 500 });
+    console.error("Error deleting transaction:", err);
+    return NextResponse.json(
+      { message: "Error deleting transaction", err },
+      { status: 500 }
+    );
   }
 };

@@ -6,11 +6,10 @@ import React, { useState } from "react";
 
 import { AnimatePresence } from "framer-motion";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import Modal from "./modal";
 
 const newTransaction = () => {
-  const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const close = () => setModalOpen(false);
   const open = () => setModalOpen(true);
@@ -26,7 +25,6 @@ const newTransaction = () => {
       .post("http://localhost:3000/api/transactions", transactionData)
       .then((res) => {
         console.log(res);
-        router.reload("/");
       })
       .catch((err) => {
         console.log(err);
@@ -34,6 +32,10 @@ const newTransaction = () => {
       .finally(() => {
         setInputs({});
         setModalOpen(false);
+        toast("Added Transaction!", {
+          type: "success",
+          position: "bottom-right",
+        });
       });
   };
   const handleChange = (e) => {
@@ -58,7 +60,7 @@ const newTransaction = () => {
             handleClose={close}
             text="New Transaction"
           >
-            <form className="p-4 md:p-5" onSubmit={handleSubmit}>
+            <form className="p-4 md:p-5 " onSubmit={handleSubmit}>
               <div className="col-span-2 sm:col-span-1">
                 <label
                   htmlFor="price"
@@ -71,8 +73,8 @@ const newTransaction = () => {
                   value={inputs.type || ""}
                   onChange={handleChange}
                   type="text"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                  required=""
+                  className=" border-[2px] border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 outline-none"
+                  required
                 />
               </div>
               <div className="col-span-2 sm:col-span-1">
@@ -87,9 +89,9 @@ const newTransaction = () => {
                   value={inputs.amount || ""}
                   onChange={handleChange}
                   type="number"
-                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  className="border-[2px] border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500 outline-none"
                   placeholder="$2999"
-                  required=""
+                  required
                 />
               </div>
               <div className="col-span-2">
@@ -105,8 +107,9 @@ const newTransaction = () => {
                   onChange={handleChange}
                   id="description"
                   rows="4"
-                  className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                  className="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 outline-none"
                   placeholder="Write description here"
+                  required
                 />
               </div>
               <button

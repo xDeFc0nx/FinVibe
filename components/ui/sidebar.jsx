@@ -28,7 +28,7 @@ export default function Sidebar() {
       <motion.nav
         initial={false}
         animate={hidden ? "open" : "closed"}
-        className="h-full flex flex-col bg-[#24303F]  shadow-sm"
+        className="h-full flex flex-col bg-[#24303F]/50  backdrop-filter backdrop-blur-3xl	   shadow-lg"
       >
         <motion.ul variants={variants} className="flex-1 px-3">
           <button

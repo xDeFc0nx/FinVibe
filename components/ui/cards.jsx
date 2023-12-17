@@ -27,15 +27,15 @@ export default async function Cards() {
 
   const sumForIncome =
     transactions.find((item) => item.type === "Income")?._sum.amount || 0;
-  const sumForExpenses =
+  const sumForExpense =
     transactions.find((item) => item.type === "Expense")?._sum.amount || 0;
   const sumForSavings =
     transactions.find((item) => item.type === "Savings")?._sum.amount || 0;
-  const sumForBalance = sumForIncome + sumForExpenses || 0;
+  const sumForBalance = sumForIncome + sumForExpense || 0;
 
   return (
     <div className="grid grid-cols-4 space-x-10 backdrop-blur-3xl    ">
-      <Card className="w-[18rem] bg-[#24303F] text-white ">
+      <Card className="w-[18rem]  text-white  bg-[#24303F]/50  backdrop-filter backdrop-blur-3xl	   shadow-lg">
         <CardHeader className="w-full justify-center">
           {/* Image on the left */}
           <Image
@@ -98,7 +98,7 @@ export default async function Cards() {
           </h1>
         </CardBody>
       </Card>
-      <Card className="w-[18rem] bg-[#24303F] text-white ">
+      <Card className="w-[18rem]  text-white bg-[#24303F]/50  backdrop-filter backdrop-blur-3xl	   shadow-lg ">
         <CardHeader className="w-full justify-center">
           {/* Image on the left */}
           <Image alt="wallet" height={30} width={30} radius="sm" src={Wallet} />
@@ -155,7 +155,7 @@ export default async function Cards() {
           </h1>
         </CardBody>
       </Card>
-      <Card className="w-[18rem] bg-[#24303F] text-white ">
+      <Card className="w-[18rem] ] text-white  bg-[#24303F]/50  backdrop-filter backdrop-blur-3xl	   shadow-lg">
         <CardHeader className="w-full justify-center">
           {/* Image on the left */}
           <Image alt="card" height={30} width={30} radius="sm" src={cardsvg} />
@@ -168,15 +168,15 @@ export default async function Cards() {
 
         <CardBody>
           <h1 className="text-[2.5rem] text-center text-red-600">
-            ${sumForExpenses}
+            ${sumForExpense}
             <span
               className={`${
-                sumForExpenses >= 0 ? "bg-green-600" : "bg-red-600"
+                sumForExpense >= 0 ? "bg-green-600" : "bg-red-600"
               } text-sm  text-white  rounded  w-10 flex text-center `}
             >
               <svg
                 className={`${
-                  sumForExpenses >= 0 ? "flex" : "rotate-180"
+                  sumForExpense >= 0 ? "flex" : "rotate-180"
                 } inline w-5 h-5 `}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 22 22"
@@ -208,7 +208,7 @@ export default async function Cards() {
           </h1>
         </CardBody>
       </Card>
-      <Card className="w-[18rem] bg-[#24303F] text-white ">
+      <Card className="w-[18rem]  text-white bg-[#24303F]/50  backdrop-filter backdrop-blur-3xl	   shadow-lg ">
         <CardHeader className="w-full justify-center">
           {/* Image on the left */}
           <Image alt="dollar" height={30} width={30} radius="sm" src={dollar} />

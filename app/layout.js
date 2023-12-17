@@ -4,7 +4,9 @@
 "use client";
 
 import { ClerkProvider } from "@clerk/nextjs";
+
 import Sidebar from "../components/ui/sidebar";
+
 import "../styles/globals.css";
 
 export default function RootLayout({ children }) {
@@ -12,7 +14,7 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html>
         <body>
-          <div className="flex h-screen bg-[#1A232E]">
+          <div className="flex h-screen bg-[#1B1B27]">
             {/* Sidebar (Navbar) */}
 
             <Sidebar />
