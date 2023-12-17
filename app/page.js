@@ -12,6 +12,7 @@ const page = () => (
     <div className="pt-10">
       <ToastContainer />
       <Cards />
+
       <Table />
     </div>
   </div>
