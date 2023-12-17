@@ -1,4 +1,4 @@
-name: ci
+name: Node.js Continuous Integration
 
 on:
   push:
@@ -37,8 +37,12 @@ jobs:
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Prisma Generate
+        run: npx prisma generate
 
       - name: Check Format
         run: npm run check-format
