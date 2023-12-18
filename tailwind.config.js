@@ -13,8 +13,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        "primary-black": "#1A232E",
-        "secondary-white": "#c7c7c7",
+        "primary-black": "#000000",
+        "secondary-gray": "#18181B",
+        "primary-ping": "#E32CF7",
+        "primary-blue": "#0070EF",
+        "secondary-blue": "2D89F2",
+        "primary-green": "#3ED976",
       },
       transitionTimingFunction: {
         "out-flex": "cubic-bezier(0.05, 0.6, 0.4, 0.9)",
