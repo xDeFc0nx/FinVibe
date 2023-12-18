@@ -5,23 +5,15 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 
-import Sidebar from "../components/ui/sidebar";
-
 import "../styles/globals.css";
 
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html>
+      <html className="bg-primary-black">
         <body>
-          <div className="flex h-screen bg-[#1B1B27]">
-            {/* Sidebar (Navbar) */}
-
-            <Sidebar />
-
-            {/* Main Content */}
-            <main className="flex-1 p-4 overflow-hidden">{children}</main>
-          </div>
+          {/* Main Content */}
+          <main className="flex-1 p-4 overflow-hidden">{children}</main>
         </body>
       </html>
     </ClerkProvider>
