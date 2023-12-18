@@ -7,7 +7,7 @@ import React, { useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { toast } from "react-toastify";
-import Modal from "./modal";
+import Modal from "./Modal";
 
 const newTransaction = () => {
   const [modalOpen, setModalOpen] = useState(false);
