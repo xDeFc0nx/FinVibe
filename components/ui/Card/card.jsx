@@ -8,11 +8,11 @@ import Image from "next/image";
 export default function card({ icon, header, value }) {
   return (
     <Card className="w-[20rem] h-[13rem]  text-white  bg-secondary-gray/20  backdrop-filter backdrop-blur-lg	   shadow-lg">
-      <CardHeader className="w-full justify-start">
+      <CardHeader className="w-full  justify-start">
         <Image height={30} width={30} radius="sm" src={icon} />
 
         <div className="flex flex-col justify-center">
-          <p className="text-lg  text-white ">{header}</p>
+          <p className="text-lg  text-white pl-1">{header}</p>
         </div>
       </CardHeader>
 
