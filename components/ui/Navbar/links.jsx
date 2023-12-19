@@ -16,7 +16,7 @@ export default function Links({ link, icon, text, hidden, variants }) {
             href={link}
             className="flex items-center transition-colors p-2 text-gray-500 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-primary-pink group"
           >
-            <Image src={icon} className="w-5 h-5" />
+            <Image src={icon} className="w-5 h-5 fill-white" />
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: hidden ? 1 : 0 }}

@@ -10,6 +10,7 @@ import Link from "next/link";
 import Logo from "../../Icon/Logo.svg";
 import Links from "./links";
 import dashboardSvg from "../../Icon/dashboardSvg.svg";
+import TransactionSvg from "../../Icon/TransactionSvg.svg";
 
 export default function Sidebar() {
   const variants = {
@@ -96,6 +97,13 @@ export default function Sidebar() {
               link="/dashboard"
               icon={dashboardSvg}
               text="Dashboard"
+              hidden={hidden}
+              variants={variants}
+            />
+            <Links
+              link="/dashboard/transactions"
+              icon={TransactionSvg}
+              text="Transactions"
               hidden={hidden}
               variants={variants}
             />
