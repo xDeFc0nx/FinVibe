@@ -5,8 +5,6 @@
 import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 
-import NewTransaction from "./newTransaction";
-
 export default function Tables() {
   const [transactions, setTransactions] = useState([]);
 
@@ -66,26 +64,23 @@ export default function Tables() {
   }
 
   return (
-    <div className="relative overflow-x-auto shadow-md sm:rounded-lg top-20">
-      <NewTransaction />
+    <div className=" overflow-x-auto shadow-md sm:rounded-lg top-20 ">
       <ToastContainer />
-      <table className="w-[95%] text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead className="text-xs text-700 uppercase dark:bg-[#24303F]/50 dark:text-gray-400">
+      <table className="w-full text-sm text-left rtl:text-right text-gray-500  bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	    shadow-lg dark:text-gray-400">
+        <thead className="text-xs text-700 uppercase bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	    shadow-lg dark:text-gray-400">
           <tr>
             <th scope="col" className="px-6 py-3">
-              Transaction
+              Date
+            </th>
+
+            <th scope="col" className="px-6 py-3">
+              Description
             </th>
             <th scope="col" className="px-6 py-3">
               Amount
             </th>
             <th scope="col" className="px-6 py-3">
-              Description
-            </th>
-            <th scope="col" className="px-6 py-3">
-              Date
-            </th>
-            <th scope="col" className="px-6 py-3">
-              Actions
+              Category
             </th>
           </tr>
         </thead>
@@ -94,16 +89,18 @@ export default function Tables() {
             transactions.map((transaction) => (
               <tr
                 key={transaction.id}
-                className="bg-white border-b dark:bg-[#24303F]/50 dark:border-gray-700"
+                className="border-b border-black bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	    shadow-lg"
               >
+                <td className="px-6 py-4">
+                  {transaction.DateCreated.split("T")[0]}
+                </td>
+                <td className="px-6 py-4">{transaction.description}</td>
+                <td className="px-6 py-4">${transaction.amount}</td>
                 <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                   {transaction.type}
                 </td>
-                <td className="px-6 py-4">${transaction.amount}</td>
-                <td className="px-6 py-4">{transaction.description}</td>
-                <td className="px-6 py-4">{transaction.DateCreated}</td>
 
-                <td className="px-6 py-4 text-right ">
+                <td>
                   <button
                     href={transaction.id}
                     type="submit"
@@ -111,7 +108,8 @@ export default function Tables() {
                   >
                     Edit
                   </button>
-
+                </td>
+                <td>
                   <button
                     onClick={() => deleteData(transaction.id)}
                     type="submit"
