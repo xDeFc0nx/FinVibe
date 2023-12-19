@@ -10,10 +10,10 @@ const hero = () => (
   <div className="flex ">
     <div className="hero pt-32 pl-32">
       <p className="text-5xl text-white font-bold">
-        FinVibe <span className="text-primary-pink"> Elevate </span>
-        Your Financial
-        <br /> Journey with Empowering Tools
-        <br /> and Insightful Guidance
+        FinVibe <span className="text-primary-pink"> elevate </span>
+        your financial
+        <br /> journey with empowering tools
+        <br /> and insightful guidance
       </p>
 
       <p className="text-lg text-[#95959D]  pt-4 pb-4">
