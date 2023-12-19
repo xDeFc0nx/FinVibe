@@ -40,10 +40,7 @@ export const PUT = async () => {
         type: true,
         amount: true,
         description: true,
-        DateCreated: {
-          // Use raw SQL to format DateTime as date
-          select: { date: { $raw: "DATE(DateCreated)" } },
-        },
+        DateCreated: true,
       },
     });
 
