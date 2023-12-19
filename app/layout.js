@@ -13,7 +13,7 @@ export default function RootLayout({ children }) {
       <html className="bg-primary-black">
         <body>
           {/* Main Content */}
-          <main className="flex-1 p-4 overflow-hidden">{children}</main>
+          <main className="flex-1  overflow-hidden">{children}</main>
         </body>
       </html>
     </ClerkProvider>
