@@ -25,7 +25,7 @@ export default function card({ icon, header, value }) {
 
 export function CardDashboard({ icon, header, value, color }) {
   return (
-    <div className=" col-span-1 p-10 text-white  bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	rounded-lg  shadow-lg">
+    <div className=" col-span-1 p-10 text-white  bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	rounded-lg  shadow-inner">
       <div className="w-full flex justify-start">
         <Image height={20} width={20} radius="sm" src={icon} />
 
