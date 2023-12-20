@@ -3,10 +3,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { CardDashboard } from "./card";
 import BalanceSvg from "../../Icon/BalanceSvg.svg";
 import IncomeSvg from "../../Icon/IncomeSvg.svg";
 import ExpensesSvg from "../../Icon/ExpensesSvg.svg";
+import { Calculations } from "../../../actions/calculations";
 
 function DashboardCards() {
   const [dashboardData, setDashboardData] = useState({});
@@ -15,21 +17,12 @@ function DashboardCards() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/calculations", {
-          method: "PUT",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch data");
-        }
-
-        const data = await res.json();
+        const data = await Calculations();
         setDashboardData(data);
+        setIsLoading(false);
       } catch (error) {
         console.error(error);
-      } finally {
-        // Set loading state to false regardless of success or failure
-        setIsLoading(false);
+        toast.error(error.message);
       }
     };
 
@@ -37,7 +30,6 @@ function DashboardCards() {
   }, []);
 
   if (isLoading) {
-    // Display a loading spinner or message
     return <p>Loading...</p>;
   }
 
@@ -47,7 +39,7 @@ function DashboardCards() {
         <CardDashboard
           icon={BalanceSvg}
           header="Balance"
-          value={`${dashboardData.sumForBalance.toFixed(2)}$`}
+          value={`+${dashboardData.sumForBalance.toFixed(2)}$`}
           color="text-white"
         />
         <CardDashboard
