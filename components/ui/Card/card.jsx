@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export default function card({ icon, header, value }) {
   return (
-    <Card className="w-[20rem] h-[13rem]  text-white px-2 py-2  bg-white/10  backdrop-filter backdrop-blur-lg	   shadow-lg">
+    <Card className="w-[20rem] h-[13rem]  text-white px-2 py-2  bg-white/10  backdrop-filter backdrop-blur-lg	 shadow-lg">
       <CardHeader className="w-full  justify-start">
         <Image height={30} width={30} radius="sm" src={icon} />
 
@@ -25,9 +25,7 @@ export default function card({ icon, header, value }) {
 
 export function CardDashboard({ icon, header, value, color }) {
   return (
-    <div
-      className={` w-[30rem]  h-[13rem] p-5 text-white  bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	  rounded-lg  shadow-lg`}
-    >
+    <div className=" col-span-1 p-10 text-white  bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	rounded-lg  shadow-lg">
       <div className="w-full flex justify-start">
         <Image height={20} width={20} radius="sm" src={icon} />
 

@@ -34,27 +34,25 @@ function DashboardCards() {
   }
 
   return (
-    <div>
-      <div className="flex space-x-4 mb-4">
-        <CardDashboard
-          icon={BalanceSvg}
-          header="Balance"
-          value={`+${dashboardData.sumForBalance.toFixed(2)}$`}
-          color="text-white"
-        />
-        <CardDashboard
-          icon={IncomeSvg}
-          header="Income"
-          value={`+${dashboardData.sumForIncome.toFixed(2)}$`}
-          color="text-green-500"
-        />
-        <CardDashboard
-          icon={ExpensesSvg}
-          header="Expenses"
-          value={`-${dashboardData.sumForExpense.toFixed(2)}$`}
-          color="text-red-500"
-        />
-      </div>
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <CardDashboard
+        icon={BalanceSvg}
+        header="Balance"
+        value={`+${dashboardData.sumForBalance.toFixed(2)}$`}
+        color="text-white"
+      />
+      <CardDashboard
+        icon={IncomeSvg}
+        header="Income"
+        value={`+${dashboardData.sumForIncome.toFixed(2)}$`}
+        color="text-green-500"
+      />
+      <CardDashboard
+        icon={ExpensesSvg}
+        header="Expenses"
+        value={`-${dashboardData.sumForExpense.toFixed(2)}$`}
+        color="text-red-500"
+      />
     </div>
   );
 }
