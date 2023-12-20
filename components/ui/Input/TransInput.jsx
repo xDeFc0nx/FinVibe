@@ -7,8 +7,11 @@ import "react-toastify/dist/ReactToastify.min.css";
 import { newTrans } from "../../../actions/addnew";
 import Button from "../Button/Button";
 
+import { ALL_CATEGORIES } from "../../../lib/categories";
+
 export default function TransInput() {
   const [inputs, setInputs] = useState({});
+  const categories = ALL_CATEGORIES;
 
   const handleChange = (e) => {
     const { name } = e.target;
@@ -35,7 +38,7 @@ export default function TransInput() {
           >
             Type
           </label>
-          <motion.input
+          <motion.select
             whileFocus={{ scale: 1.1 }}
             required
             value={inputs.type || ""}
@@ -43,7 +46,20 @@ export default function TransInput() {
             placeholder="type"
             name="type"
             className=" border-[2px]  border-secondary-gray text-white bg-secondary-gray/50  backdrop-filter backdrop-blur-lg shadow-lg text-sm rounded-lg block w-full p-2.5 focus:ring-primary-pink focus:border-primary-pink outline-none"
-          />
+          >
+            <option
+              selected
+              className=" text-white bg-secondary-gray/50  backdrop-filter backdrop-blur-lg shadow-lg text-sm rounded-lg block w-full p-2.5 focus:ring-primary-pink focus:border-primary-pink outline-none"
+            >
+              Type
+            </option>
+            {categories &&
+              categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+          </motion.select>
         </div>
         <div className="col-span-2 sm:col-span-1">
           <label
