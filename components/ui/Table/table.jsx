@@ -4,57 +4,39 @@
 
 import React, { useEffect, useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
+import { FetchData } from "../../../actions/fetch";
+import { DeleteData } from "../../../actions/Delete";
 
-export default function Tables() {
+const Tables = () => {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:3000/api/transactions", {
-          method: "PUT",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to fetch data");
-        }
-
-        const data = await res.json();
+        const data = await FetchData();
         setTransactions(data);
       } catch (error) {
         console.error(error);
-        toast.error("Failed to fetch data", {
-          position: "bottom-right",
-        });
+        toast.error(error.message);
       }
     };
 
     fetchData();
   }, []);
-
   async function deleteData(id) {
     try {
-      const pos = await fetch(`http://localhost:3000/api/transactions/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id,
-        }),
-      });
+      const Delete = await DeleteData({ params: { id } });
 
-      if (!pos.ok) {
-        throw new Error();
-      } else {
+      if (Delete) {
         toast.success("Deleted Data", {
           position: "bottom-right",
         });
-      }
 
-      // Handle response if needed
-      const result = await pos.json();
-      console.log(result);
+        // Handle response if needed
+        console.log(Delete);
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete data", {
@@ -92,7 +74,7 @@ export default function Tables() {
                 className="border-b border-black bg-secondary-gray/50  backdrop-filter backdrop-blur-lg	    shadow-lg"
               >
                 <td className="px-6 py-4">
-                  {transaction.DateCreated.split("T")[0]}
+                  {new Date(transaction.DateCreated).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4">{transaction.description}</td>
                 <td className="px-6 py-4">${transaction.amount}</td>
@@ -124,4 +106,5 @@ export default function Tables() {
       </table>
     </div>
   );
-}
+};
+export default Tables;
