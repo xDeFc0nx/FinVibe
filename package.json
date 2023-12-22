@@ -14,8 +14,6 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^4.28.1",
-    "@nextui-org/card": "^2.0.24",
-    "@nextui-org/react": "^2.2.9",
     "@prisma/client": "^5.7.0",
     "airbnb": "^0.0.2",
     "axios": "^1.6.2",
