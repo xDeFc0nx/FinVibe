@@ -16,6 +16,6 @@ export const FetchData = async () => {
     return transactions;
   } catch (err) {
     console.error(err);
-    throw err; // Rethrow the error so that it can be caught by the component
+    throw err;
   }
 };
