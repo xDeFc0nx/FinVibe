@@ -6,7 +6,7 @@ import React from "react";
 
 import { motion } from "framer-motion";
 
-export default function newTransaction({ color, Text, type }) {
+export default function Button({ color, Text, type }) {
   return (
     <div>
       <motion.button
