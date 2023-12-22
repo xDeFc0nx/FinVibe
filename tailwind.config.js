@@ -1,5 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-const { nextui } = require("@nextui-org/react");
 
 module.exports = {
   content: [
@@ -7,7 +6,6 @@ module.exports = {
     "./components/**/*.{html,js,jsx}",
     "./sections/**/*.{html,js,jsx}",
     "./styles/**/*.{js,jsx}",
-    "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}",
   ],
   mode: "jit",
   theme: {
@@ -26,5 +24,5 @@ module.exports = {
     },
   },
 
-  plugins: [nextui()],
+  plugins: [],
 };
