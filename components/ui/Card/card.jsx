@@ -39,3 +39,17 @@ export function CardDashboard({ icon, header, value, color }) {
     </div>
   );
 }
+export function CardChart({ header, styles, children }) {
+  return (
+    <div
+      className={`"${styles}col-span-1 p-10 text-white bg-secondary-gray/50 backdrop-filter backdrop-blur-lg rounded-lg shadow-inner"`}
+    >
+      <div className="flex justify-start">
+        <div className="flex flex-col justify-center">
+          <p className="text-lg text-[#92929B] pl-1">{header}</p>
+          <div className="pt-4">{children}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
