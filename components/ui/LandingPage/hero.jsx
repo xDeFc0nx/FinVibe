@@ -7,16 +7,16 @@ import Illustration from "./illustration";
 import Github from "../../Icon/github.svg";
 
 const hero = () => (
-  <div className="flex ">
-    <div className="hero pt-32 pl-32">
-      <p className="text-5xl text-white font-bold">
+  <div className="lg:flex md:grid-cols-1  ">
+    <div className=" pt-32 pl-32  ">
+      <p className=" lg:text-5xl md:text-lg sm:text-xs text-white font-bold">
         FinVibe <span className="text-primary-pink"> elevate </span>
         your financial
         <br /> journey with empowering tools
         <br /> and insightful guidance
       </p>
 
-      <p className="text-lg text-[#95959D]  pt-4 pb-4">
+      <p className=" lg:text-lg md:text-sm sm:text-xs text-[#95959D]  pt-4 pb-4">
         Empower your finances with FinVibe's smart tools and expert guidance
       </p>
       <div className="space-x-5 flex">
