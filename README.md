@@ -4,7 +4,6 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-
   <h3 align="center">FinVibe</h3>
 
   <p align="center">
@@ -52,12 +51,7 @@ FinVibe is a financial software designed to empower your financial journey...
 
 This project is built using the following technologies and frameworks:
 
-- [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript):
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [Framer Motion](https://www.framer.com/motion/)
-- [Prisma](https://www.prisma.io/)
-  Feel free to explore each of these technologies for more information.
+Feel free to explore each of these technologies for more information.
 
 ## Getting Started
 
