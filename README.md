@@ -107,4 +107,4 @@ Distributed under the MIT License. See [LICENSE](https://github.com/xDeFx0nz/Fin
 
 ## Authors
 
-- **Nehar Tale** - _Genius_ - [Nehar Tale](https://github.com/xDeFc0nx/) - _Built FinVibe to empower financial management._
+- [Nehar Tale](https://github.com/xDeFc0nx/) - _Built FinVibe to empower financial management._
