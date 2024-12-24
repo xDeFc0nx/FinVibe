@@ -6,11 +6,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
 	"github.com/xDeFc0nx/logger-go-pkg"
+	"golang.org/x/crypto/bcrypt"
 
+	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
@@ -21,13 +24,12 @@ func Create_JWT_Token(user types.User) (string, int64, error) {
 		os.Exit(1)
 	}
 
-	SECRET_KEY := os.Getenv("SECRET_KEY")
 	exp := time.Now().Add(time.Minute * 30).Unix()
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["user_id"] = user.ID
 	claims["exp"] = exp
-	t, err := token.SignedString([]byte(SECRET_KEY))
+	t, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		return "", 0, err
 	}
@@ -35,6 +37,11 @@ func Create_JWT_Token(user types.User) (string, int64, error) {
 }
 func DecodeJWTToken(token string) (string, error) {
 	// Remove the "Bearer " prefix if it's there
+	err := godotenv.Load(".env")
+	if err != nil {
+		logger.Error("Error loading.env file")
+		os.Exit(1)
+	}
 	token = strings.TrimPrefix(token, "Bearer ")
 
 	// Parse the token
@@ -43,7 +50,7 @@ func DecodeJWTToken(token string) (string, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method")
 		}
-		return []byte("your-secret-key"), nil // Replace with your actual secret key
+		return []byte(os.Getenv("SECRET_KEY")), nil // Replace with your actual secret key
 	})
 	if err != nil {
 		return "", fmt.Errorf("Failed to parse token: %v", err)
@@ -72,4 +79,70 @@ func CheckAuth(c *fiber.Ctx) error {
 	}
 
 	return c.Status(200).JSON("Authorized")
+}
+
+func LoginHandler(c *fiber.Ctx) error {
+
+	user := new(types.User)
+
+	if err := c.BodyParser(user); err != nil {
+		return c.Status(400).JSON(err.Error())
+	}
+
+	var foundUser types.User
+	err := db.DB.Where("Email = ?", user.Email).First(&foundUser).Error
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid Email"})
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password))
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Wrong password"})
+	}
+	token, exp, err := Create_JWT_Token(foundUser)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to create JWT token"})
+	}
+
+	cookie := fiber.Cookie{
+		Name:     "jwt-token",
+		Value:    token,
+		Expires:  time.Unix(exp, 0),
+		HTTPOnly: true,
+	}
+	socket := new(types.WebSocketConnection)
+	err = db.DB.Where("user_id = ?", foundUser.ID).First(socket).Error
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "WebSocket connection not found"})
+	}
+
+	socket.IsActive = true
+
+	if err := db.DB.Save(socket).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+	}
+	c.Cookie(&cookie)
+	return c.JSON(fiber.Map{"message": "Success"})
+
+}
+func LogoutHandler(conn *websocket.Conn, userID string) {
+
+	// Query the WebSocket connection using the userID
+	socket := new(types.WebSocketConnection)
+	err := db.DB.Where("user_id = ?", userID).First(socket).Error
+	if err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`))
+	}
+
+	// Set the WebSocket connection as inactive
+	socket.IsActive = false
+	if err := db.DB.Save(socket).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`))
+	}
+
+	logoutMessage := `{"message": "Successfully logged out, please clear the cookie on client side"}`
+	conn.WriteMessage(websocket.TextMessage, []byte(logoutMessage))
+
+	conn.Close()
+	conn.WriteMessage(websocket.TextMessage, []byte(`{"message": "Connection closed"}`))
 }
