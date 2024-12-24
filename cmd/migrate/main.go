@@ -11,6 +11,9 @@ func Migrate() {
 	if err := db.DB.AutoMigrate(
 
 		&types.WebSocketConnection{},
+		&types.User{},
+		&types.Transaction{},
+		&types.Recurring{},
 	); err != nil {
 		return
 	}
