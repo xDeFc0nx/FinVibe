@@ -23,6 +23,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	if connectionID == "" {
 		fmt.Printf("Connection ID is required")
 		return c.Status(400).JSON(fiber.Map{"error": "ConnectionID is required"})
+
 	}
 
 	if err := db.DB.Where("id = ?", connectionID).First(socket).Error; err != nil {
@@ -31,6 +32,9 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 
 	}
+
+	userID := socket.UserID
+
 	token := c.Cookies("jwt-token")
 	if token == "" {
 		fmt.Printf("Token is required")
@@ -42,7 +46,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		fmt.Printf("WebSocket is not active")
 		return c.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
 	}
-
 	return websocket.New(func(c *websocket.Conn) {
 
 		var (
@@ -59,20 +62,20 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			// Parse the JSON message
 			var message struct {
 				Action string          `json:"action"`
-				Data   json.RawMessage `json:"data"` // Use RawMessage to handle varied structures
+				Data   json.RawMessage `json:"data"`
 			}
 			if err := json.Unmarshal(msg, &message); err != nil {
 				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid message format"}`))
 				continue
 			}
 
-			userID := socket.UserID
-
 			switch message.Action {
 			case "createTransaction":
 				handlers.CreateTransaction(c, message.Data, userID)
 			case "getTransactions":
 				handlers.GetTransactions(c, userID)
+			case "getTransactionsById":
+				handlers.GetTransactionById(c, message.Data, userID)
 			case "logout":
 				handlers.LogoutHandler(c, userID)
 
@@ -104,7 +107,7 @@ func main() {
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)
-
+	app.Post("/checkAuth", handlers.CheckAuth)
 	app.Use("/ws", HandleWebSocketConnection)
 
 	app.Listen(":3000")
