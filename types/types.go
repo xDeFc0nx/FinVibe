@@ -18,7 +18,6 @@ type WebSocketConnection struct {
 	ID           string    `gorm:"primaryKey"`
 	ConnectionID string    `gorm:"connectionID"`
 	UserID       string    `gorm:"not null"`
-	User         User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,;"`
 	IsActive     bool      `json:"isActive"`
 	LastPing     time.Time `json:"lastPing"`
 	CreatedAt    time.Time `json:"createdAt"`
@@ -27,7 +26,6 @@ type WebSocketConnection struct {
 type Transaction struct {
 	ID          string    `gorm:"primaryKey"`
 	UserID      string    `gorm:"not null"`
-	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	Amount      float64   `json:"amount"`
 	Description string    `json:"description"`
 	IsRecurring bool      `gorm:"default:false"`
