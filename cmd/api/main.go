@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -30,35 +31,63 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 
 	}
-
-	if socket.IsActive == false {
-		fmt.Printf("WebSocket is not active: ")
+	token := c.Cookies("jwt-token")
+	if token == "" {
+		fmt.Printf("Token is required")
+		handlers.DecodeJWTToken(token)
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	return websocket.New(func(ws *websocket.Conn) {
+	if socket.IsActive == false {
+		fmt.Printf("WebSocket is not active")
+		return c.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
+	}
+
+	return websocket.New(func(c *websocket.Conn) {
+
+		var (
+			msg []byte
+			err error
+		)
 		for {
-			mt, msg, err := ws.ReadMessage()
-			if err != nil {
+			if _, msg, err = c.ReadMessage(); err != nil {
 				log.Println("read:", err)
 				break
 			}
 			log.Printf("recv: %s", msg)
 
-			err = ws.WriteMessage(mt, msg)
-			if err != nil {
-				log.Println("write:", err)
-				break
+			// Parse the JSON message
+			var message struct {
+				Action string          `json:"action"`
+				Data   json.RawMessage `json:"data"` // Use RawMessage to handle varied structures
 			}
-			handlers.CreateTransaction()
+			if err := json.Unmarshal(msg, &message); err != nil {
+				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid message format"}`))
+				continue
+			}
+
+			userID := socket.UserID
+
+			switch message.Action {
+			case "createTransaction":
+				handlers.CreateTransaction(c, message.Data, userID)
+			case "getTransactions":
+				handlers.GetTransactions(c, userID)
+			case "logout":
+				handlers.LogoutHandler(c, userID)
+
+			default:
+				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`))
+			}
 		}
 
 		defer func() {
 			socket.IsActive = false
 			socket.LastPing = time.Now()
 			db.DB.Save(socket)
-			ws.Close()
+			c.Close()
 		}()
+
 	})(c)
 }
 
@@ -74,9 +103,9 @@ func main() {
 	flag.Flag()
 
 	app.Post("/Register", handlers.CreateUser)
-	app.Post("/Login", handlers.Login_func)
-	app.Post("/logout", handlers.Logout_func)
-	app.Get("/ws", HandleWebSocketConnection)
+	app.Post("/Login", handlers.LoginHandler)
+
+	app.Use("/ws", HandleWebSocketConnection)
 
 	app.Listen(":3000")
 
