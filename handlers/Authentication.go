@@ -36,15 +36,12 @@ func Create_JWT_Token(user types.User) (string, int64, error) {
 	return t, exp, nil
 }
 func DecodeJWTToken(token string) (string, error) {
-	// Remove the "Bearer " prefix if it's there
 	err := godotenv.Load(".env")
 	if err != nil {
 		logger.Error("Error loading.env file")
 		os.Exit(1)
 	}
 	token = strings.TrimPrefix(token, "Bearer ")
-
-	// Parse the token
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		// Ensure the signing method matches the expected method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -67,7 +64,6 @@ func DecodeJWTToken(token string) (string, error) {
 
 	return "", fmt.Errorf("Invalid token or claims")
 }
-
 func CheckAuth(c *fiber.Ctx) error {
 	cookie := c.Cookies("jwt-token")
 
@@ -78,7 +74,14 @@ func CheckAuth(c *fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	return c.Status(200).JSON("Authorized")
+	claims, ok := token.Claims.(*jwt.MapClaims)
+	if !ok {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid token format"})
+	}
+
+	userID := (*claims)["userID"].(string)
+
+	return c.Status(200).JSON(fiber.Map{"message": "Authorized", "userID": userID})
 }
 
 func LoginHandler(c *fiber.Ctx) error {
@@ -121,23 +124,22 @@ func LoginHandler(c *fiber.Ctx) error {
 	if err := db.DB.Save(socket).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 	}
+	ConnectionID := socket.ConnectionID
 	c.Cookie(&cookie)
-	return c.JSON(fiber.Map{"message": "Success"})
+	return c.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID})
 
 }
 func LogoutHandler(conn *websocket.Conn, userID string) {
 
-	// Query the WebSocket connection using the userID
 	socket := new(types.WebSocketConnection)
 	err := db.DB.Where("user_id = ?", userID).First(socket).Error
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`))
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`+err.Error()))
 	}
 
-	// Set the WebSocket connection as inactive
 	socket.IsActive = false
 	if err := db.DB.Save(socket).Error; err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`))
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`+err.Error()))
 	}
 
 	conn.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`))
