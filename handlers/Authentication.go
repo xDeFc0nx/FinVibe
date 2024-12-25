@@ -140,9 +140,7 @@ func LogoutHandler(conn *websocket.Conn, userID string) {
 		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`))
 	}
 
-	logoutMessage := `{"message": "Successfully logged out, please clear the cookie on client side"}`
-	conn.WriteMessage(websocket.TextMessage, []byte(logoutMessage))
+	conn.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`))
 
 	conn.Close()
-	conn.WriteMessage(websocket.TextMessage, []byte(`{"message": "Connection closed"}`))
 }
