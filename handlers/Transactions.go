@@ -91,3 +91,30 @@ func UpdateTransction(conn *websocket.Conn, data json.RawMessage, userID string)
 	}
 	conn.WriteMessage(websocket.TextMessage, []byte(`{"Success":"Transaction Updated"}`))
 }
+func DeleteTransaction(conn *websocket.Conn, data json.RawMessage, userID string) {
+	transaction := new(types.Transaction)
+
+	transaction.UserID = userID
+
+	if err := json.Unmarshal(data, &transaction); err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`))
+		return
+	}
+	if transaction.UserID != userID {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`))
+		return
+	}
+
+	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`))
+		return
+	}
+
+	if err := db.DB.Delete(transaction).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"failed to Delete"}`))
+		return
+	}
+
+	conn.WriteMessage(websocket.TextMessage, []byte(`{"Success":"Transaction Deleted"}`))
+
+}
