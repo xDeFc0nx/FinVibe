@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"regexp"
 	"time"
 
+	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -61,4 +63,72 @@ func CreateUser(c *fiber.Ctx) error {
 		"token":    token,
 		"exp":      exp,
 	})
+}
+
+func GetUser(conn *websocket.Conn, userID string) {
+
+	user := new(types.User)
+
+	user.ID = userID
+
+	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`))
+		return
+	}
+	response, _ := json.Marshal(user)
+	conn.WriteMessage(websocket.TextMessage, response)
+}
+
+func UpdateUser(conn *websocket.Conn, data json.RawMessage, userID string) {
+
+	user := new(types.User)
+
+	user.ID = userID
+
+	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`))
+		return
+	}
+
+	if err := json.Unmarshal(data, &user); err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid data"}`))
+		return
+	}
+
+	if err := db.DB.Save(user).Error; err != nil {
+
+	}
+
+	response, _ := json.Marshal(user)
+	conn.WriteMessage(websocket.TextMessage, response)
+}
+func DeleteUser(conn *websocket.Conn, userID string, socketID string) {
+
+	user := new(types.User)
+
+	socket := new(types.WebSocketConnection)
+
+	user.ID = userID
+
+	socket.ID = socketID
+
+	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`))
+		return
+	}
+	if err := db.DB.Where("id = ?", socketID).First(&socket).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"User Socket not found"}`))
+		return
+	}
+	if err := db.DB.Delete(socket).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete Socket"}`))
+		return
+	}
+	if err := db.DB.Delete(user).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete User"}`))
+		return
+	}
+
+	conn.WriteMessage(websocket.TextMessage, []byte(`{"Success": "User Deleted"}`))
+
 }

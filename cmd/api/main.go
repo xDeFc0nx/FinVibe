@@ -37,7 +37,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 	token := c.Cookies("jwt-token")
 	if token == "" {
-		fmt.Printf("Token is required")
 		handlers.DecodeJWTToken(token)
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
@@ -72,12 +71,17 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			switch message.Action {
 			case "createTransaction":
 				handlers.CreateTransaction(c, message.Data, userID)
+			case "getUser":
+				handlers.GetUser(c, userID)
+			case "updateUser":
+				handlers.UpdateUser(c, message.Data, userID)
+
+			case "logout":
+				handlers.LogoutHandler(c, userID)
 			case "getTransactions":
 				handlers.GetTransactions(c, userID)
 			case "getTransactionsById":
 				handlers.GetTransactionById(c, message.Data, userID)
-			case "logout":
-				handlers.LogoutHandler(c, userID)
 
 			default:
 				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`))
@@ -92,6 +96,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		}()
 
 	})(c)
+
 }
 
 func main() {
