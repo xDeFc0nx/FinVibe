@@ -102,28 +102,17 @@ func UpdateUser(conn *websocket.Conn, data json.RawMessage, userID string) {
 	response, _ := json.Marshal(user)
 	conn.WriteMessage(websocket.TextMessage, response)
 }
-func DeleteUser(conn *websocket.Conn, userID string, socketID string) {
+func DeleteUser(conn *websocket.Conn, userID string) {
 
 	user := new(types.User)
 
-	socket := new(types.WebSocketConnection)
-
 	user.ID = userID
-
-	socket.ID = socketID
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`))
 		return
 	}
-	if err := db.DB.Where("id = ?", socketID).First(&socket).Error; err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"User Socket not found"}`))
-		return
-	}
-	if err := db.DB.Delete(socket).Error; err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete Socket"}`))
-		return
-	}
+
 	if err := db.DB.Delete(user).Error; err != nil {
 		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete User"}`))
 		return

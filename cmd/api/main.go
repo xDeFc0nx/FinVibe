@@ -35,8 +35,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 	userID := socket.UserID
 
-	socketID := socket.ID
-
 	token := c.Cookies("jwt-token")
 	if token == "" {
 		handlers.DecodeJWTToken(token)
@@ -78,7 +76,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			case "updateUser":
 				handlers.UpdateUser(c, message.Data, userID)
 			case "deleteUser":
-				handlers.DeleteUser(c, userID, socketID)
+				handlers.DeleteUser(c, userID)
 			case "logout":
 				handlers.LogoutHandler(c, userID)
 			case "getTransactions":
