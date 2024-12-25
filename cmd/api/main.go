@@ -34,19 +34,41 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	}
 
 	userID := socket.UserID
-
-	token := c.Cookies("jwt-token")
-	if token == "" {
-		handlers.DecodeJWTToken(token)
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
-	}
+	handlers.HandleCheckAuth(c, userID)
 
 	if socket.IsActive == false {
 		fmt.Printf("WebSocket is not active")
 		return c.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
 	}
-	return websocket.New(func(c *websocket.Conn) {
 
+	return websocket.New(func(c *websocket.Conn) {
+		go func() {
+			ticker := time.NewTicker(15 * time.Second)
+			defer ticker.Stop()
+
+			for {
+				select {
+				case <-ticker.C:
+
+					if time.Since(socket.LastPing) > 15*time.Second {
+						if err := c.WriteMessage(websocket.TextMessage, []byte(`ping`)); err != nil {
+							log.Printf("Error sending ping: %v", err)
+							return
+						}
+
+					}
+
+				case <-time.After(15 * time.Second):
+					if time.Since(socket.LastPing) > 15*time.Second {
+						log.Println("No response from client, closing connection")
+						c.WriteMessage(websocket.TextMessage, []byte(`{"error": "Connection timeout"}`))
+						c.Close()
+						return
+					}
+				}
+			}
+
+		}()
 		var (
 			msg []byte
 			err error
@@ -58,7 +80,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			}
 			log.Printf("recv: %s", msg)
 
-			// Parse the JSON message
 			var message struct {
 				Action string          `json:"action"`
 				Data   json.RawMessage `json:"data"`
@@ -69,6 +90,8 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			}
 
 			switch message.Action {
+			case "pong":
+				handlers.HeartBeat(c, userID)
 			case "createTransaction":
 				handlers.CreateTransaction(c, message.Data, userID)
 			case "getUser":
@@ -87,13 +110,14 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			default:
 				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`))
 			}
+
 		}
 
 		defer func() {
 			socket.IsActive = false
-			socket.LastPing = time.Now()
 			db.DB.Save(socket)
 			c.Close()
+
 		}()
 
 	})(c)
