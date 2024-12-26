@@ -119,6 +119,8 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.CreateAccount(c, message.Data, userID)
 			case "getAccounts":
 				handlers.GetAccounts(c, userID)
+			case "updateTransaction":
+				handlers.UpdateAccount(c, message.Data, userID)
 
 			default:
 				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
