@@ -117,3 +117,39 @@ func UpdateAccount(c *websocket.Conn, data json.RawMessage, userID string) {
 		logger.Error("%s", err.Error())
 	}
 }
+
+func DeleteAccount(c *websocket.Conn, data json.RawMessage, userID string) {
+	account := new(types.Accounts)
+	if err := json.Unmarshal(data, &account); err != nil {
+		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
+			logger.Error("%s", err.Error())
+		}
+		return
+	}
+
+	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
+		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
+			logger.Error("%s", err.Error())
+		}
+		return
+	}
+	if err := db.DB.Delete(account).Error; err != nil {
+		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Delete"}`+err.Error())); err != nil {
+			logger.Error("%s", err.Error())
+		}
+	}
+
+	accountData := map[string]interface{}{
+		"ID":   account.ID,
+		"Type": account.Type,
+	}
+
+	response := map[string]interface{}{
+		"Success": accountData,
+	}
+
+	responseData, _ := json.Marshal(response)
+	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+		logger.Error("%s", err.Error())
+	}
+}
