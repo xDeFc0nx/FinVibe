@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/xDeFc0nx/logger-go-pkg"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -30,18 +31,22 @@ func CreateWebSocketConnection(userID string) (string, error) {
 	return socket.ID, nil
 }
 
-func HeartBeat(conn *websocket.Conn, userID string) {
+func HeartBeat(c *websocket.Conn, userID string) {
 	socket := new(types.WebSocketConnection)
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
 
-		conn.WriteMessage(websocket.TextMessage, []byte(`{""}`))
+		if err := c.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
+			logger.Error("%s", err.Error())
+		}
 		return
 	}
 	socket.LastPing = time.Now()
 
 	if err := db.DB.Save(socket).Error; err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(err.Error()))
+		if err := c.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
+			logger.Error("%s", err.Error())
+		}
 	}
 
 }

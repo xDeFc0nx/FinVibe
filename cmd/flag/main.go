@@ -9,14 +9,12 @@ import (
 func Flag() {
 	defer func() {
 		if r := recover(); r != nil {
-			// If there's an out of range error, just ignore it and continue
+			return
 		}
 	}()
 	arg := os.Args[1]
 
 	if arg == "-m" {
 		migrate.Migrate()
-	} else {
-
 	}
 }

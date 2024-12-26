@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/xDeFc0nx/logger-go-pkg"
 
 	"github.com/xDeFc0nx/FinVibe/cmd/flag"
 	"github.com/xDeFc0nx/FinVibe/db"
@@ -34,14 +36,17 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	}
 
 	userID := socket.UserID
-	handlers.HandleCheckAuth(c, userID)
+	if err := handlers.HandleCheckAuth(c, userID); err != nil {
+		logger.Error("%s", err.Error())
+	}
 
-	if socket.IsActive == false {
+	if !socket.IsActive {
 		fmt.Printf("WebSocket is not active")
 		return c.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
 	}
 
 	return websocket.New(func(c *websocket.Conn) {
+
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -61,7 +66,9 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				case <-time.After(15 * time.Second):
 					if time.Since(socket.LastPing) > 15*time.Second {
 						log.Println("No response from client, closing connection")
-						c.WriteMessage(websocket.TextMessage, []byte(`{"error": "Connection timeout"}`))
+						if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error": "Connection timeout"}`)); err != nil {
+							logger.Error("%s", err.Error())
+						}
 						c.Close()
 						return
 					}
@@ -85,7 +92,16 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				Data   json.RawMessage `json:"data"`
 			}
 			if err := json.Unmarshal(msg, &message); err != nil {
-				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid message format"}`))
+				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid message format"}`)); err != nil {
+					logger.Error("%s", err.Error())
+				}
+				continue
+			}
+
+			if message.Action == "" {
+				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Action is required"}`)); err != nil {
+					logger.Error("%s", err.Error())
+				}
 				continue
 			}
 
@@ -108,7 +124,10 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.GetTransactionById(c, message.Data, userID)
 
 			default:
-				c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`))
+				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
+					logger.Error("%s", err.Error())
+				}
+
 			}
 
 		}
@@ -140,6 +159,8 @@ func main() {
 	app.Post("/checkAuth", handlers.CheckAuth)
 	app.Use("/ws", HandleWebSocketConnection)
 
-	app.Listen(":3000")
+	if err := app.Listen(os.Getenv("PORT")); err != nil {
+		logger.Error("%s", err.Error())
+	}
 
 }

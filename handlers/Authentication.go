@@ -129,20 +129,26 @@ func LoginHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID})
 
 }
-func LogoutHandler(conn *websocket.Conn, userID string) {
+func LogoutHandler(c *websocket.Conn, userID string) {
 
 	socket := new(types.WebSocketConnection)
 	err := db.DB.Where("user_id = ?", userID).First(socket).Error
 	if err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`+err.Error()))
+		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`+err.Error())); err != nil {
+			logger.Error("%s", err.Error())
+		}
 	}
 
 	socket.IsActive = false
 	if err := db.DB.Save(socket).Error; err != nil {
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`+err.Error()))
+		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`+err.Error())); err != nil {
+			logger.Error("%s", err.Error())
+		}
 	}
 
-	conn.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`))
+	if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`)); err != nil {
+		logger.Error("%s", err.Error())
+	}
 
-	conn.Close()
+	c.Close()
 }
