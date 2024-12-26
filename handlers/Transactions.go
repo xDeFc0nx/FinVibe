@@ -36,12 +36,16 @@ func CreateTransaction(conn *websocket.Conn, data json.RawMessage, userID string
 	conn.WriteMessage(websocket.TextMessage, response)
 }
 
-func GetTransactions(conn *websocket.Conn, userID string) {
+func GetTransactions(conn *websocket.Conn, data json.RawMessage, userID string) {
 	transactions := []types.Transaction{}
+	account := new(types.Accounts)
 
-	if err := db.DB.Where("user_id = ?", userID).Find(&transactions).Error; err != nil {
-
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to get transactions"}`))
+	if err := json.Unmarshal(data, &transactions); err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`))
+		return
+	}
+	if err := db.DB.Where("user_id =? AND account_id =?", userID, account.ID).First(&account).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`))
 		return
 	}
 
