@@ -10,8 +10,9 @@ import (
 func Migrate() {
 	if err := db.DB.AutoMigrate(
 
-		&types.WebSocketConnection{},
 		&types.User{},
+		&types.WebSocketConnection{},
+		&types.Accounts{},
 		&types.Transaction{},
 		&types.Recurring{},
 	); err != nil {

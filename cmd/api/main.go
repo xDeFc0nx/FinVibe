@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -23,14 +21,12 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	socket := new(types.WebSocketConnection)
 
 	if connectionID == "" {
-		fmt.Printf("Connection ID is required")
 		return c.Status(400).JSON(fiber.Map{"error": "ConnectionID is required"})
 
 	}
 
 	if err := db.DB.Where("id = ?", connectionID).First(socket).Error; err != nil {
 
-		fmt.Printf("WebSocket not found: %v", err)
 		return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 
 	}
@@ -41,7 +37,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	}
 
 	if !socket.IsActive {
-		fmt.Printf("WebSocket is not active")
 		return c.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
 	}
 
@@ -57,7 +52,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 					if time.Since(socket.LastPing) > 15*time.Second {
 						if err := c.WriteMessage(websocket.TextMessage, []byte(`ping`)); err != nil {
-							log.Printf("Error sending ping: %v", err)
 							return
 						}
 
@@ -65,7 +59,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 				case <-time.After(15 * time.Second):
 					if time.Since(socket.LastPing) > 15*time.Second {
-						log.Println("No response from client, closing connection")
 						if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error": "Connection timeout"}`)); err != nil {
 							logger.Error("%s", err.Error())
 						}
@@ -82,17 +75,17 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		)
 		for {
 			if _, msg, err = c.ReadMessage(); err != nil {
-				log.Println("read:", err)
+				logger.Debug("read: %s", err)
 				break
 			}
-			log.Printf("recv: %s", msg)
+			logger.Debug("recv: %s", msg)
 
 			var message struct {
 				Action string          `json:"action"`
 				Data   json.RawMessage `json:"data"`
 			}
 			if err := json.Unmarshal(msg, &message); err != nil {
-				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid message format"}`)); err != nil {
+				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid message format"}`+err.Error())); err != nil {
 					logger.Error("%s", err.Error())
 				}
 				continue
@@ -122,6 +115,10 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.GetTransactions(c, message.Data, userID)
 			case "getTransactionsById":
 				handlers.GetTransactionById(c, message.Data, userID)
+			case "createAccount":
+				handlers.CreateAccount(c, message.Data, userID)
+			case "getAccounts":
+				handlers.GetAccounts(c, userID)
 
 			default:
 				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
