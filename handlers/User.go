@@ -91,8 +91,20 @@ func GetUser(c *websocket.Conn, userID string) {
 		}
 		return
 	}
-	response, _ := json.Marshal(user)
-	if err := c.WriteMessage(websocket.TextMessage, response); err != nil {
+
+	userData := map[string]interface{}{
+		"ID":        user.ID,
+		"FirstName": user.FirstName,
+		"LastName":  user.LastName,
+		"Email":     user.Email,
+	}
+
+	response := map[string]interface{}{
+		"Success": userData,
+	}
+
+	responseData, _ := json.Marshal(response)
+	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
@@ -119,8 +131,19 @@ func UpdateUser(c *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	response, _ := json.Marshal(user)
-	if err := c.WriteMessage(websocket.TextMessage, response); err != nil {
+	userData := map[string]interface{}{
+		"ID":        user.ID,
+		"FirstName": user.FirstName,
+		"LastName":  user.LastName,
+		"Email":     user.Email,
+	}
+
+	response := map[string]interface{}{
+		"Success": userData,
+	}
+
+	responseData, _ := json.Marshal(response)
+	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }

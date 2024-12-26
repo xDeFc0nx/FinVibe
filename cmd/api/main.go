@@ -113,7 +113,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.LogoutHandler(c, userID)
 			case "getTransactions":
 				handlers.GetTransactions(c, message.Data, userID)
-			case "getTransactionsById":
+			case "getTransactionById":
 				handlers.GetTransactionById(c, message.Data, userID)
 			case "createAccount":
 				handlers.CreateAccount(c, message.Data, userID)

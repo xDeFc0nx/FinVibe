@@ -48,8 +48,7 @@ func CreateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	response := map[string]interface{}{
-		"Success": "Created Transaction",
-		"Transaction": map[string]string{
+		"Success": map[string]string{
 			"ID":        transaction.ID,
 			"UserID":    transaction.UserID,
 			"AccountID": transaction.AccountID,
@@ -106,8 +105,7 @@ func GetTransactions(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	// Package the response
 	response := map[string]interface{}{
-		"Success":      "Fetched Transactions",
-		"Transactions": transactionData,
+		"Success": transactionData,
 	}
 
 	// Marshal the response and send it
@@ -117,7 +115,6 @@ func GetTransactions(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 }
-
 func GetTransactionById(c *websocket.Conn, data json.RawMessage, userID string) {
 	transaction := new(types.Transaction)
 
@@ -129,6 +126,7 @@ func GetTransactionById(c *websocket.Conn, data json.RawMessage, userID string) 
 		}
 		return
 	}
+
 	if transaction.UserID != userID {
 		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
 			logger.Error("%s", err.Error())
@@ -143,8 +141,19 @@ func GetTransactionById(c *websocket.Conn, data json.RawMessage, userID string) 
 		return
 	}
 
-	response, _ := json.Marshal(transaction)
-	if err := c.WriteMessage(websocket.TextMessage, response); err != nil {
+	transactionData := map[string]interface{}{
+		"ID":        transaction.ID,
+		"UserID":    transaction.UserID,
+		"AccountID": transaction.AccountID,
+		"Amount":    transaction.Amount,
+	}
+
+	response := map[string]interface{}{
+		"Success": transactionData,
+	}
+
+	responseData, _ := json.Marshal(response)
+	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
@@ -178,7 +187,20 @@ func UpdateTransction(c *websocket.Conn, data json.RawMessage, userID string) {
 			logger.Error("%s", err.Error())
 		}
 	}
-	if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Success":"Transaction Updated"}`)); err != nil {
+
+	transactionData := map[string]interface{}{
+		"ID":        transaction.ID,
+		"UserID":    transaction.UserID,
+		"AccountID": transaction.AccountID,
+		"Amount":    transaction.Amount,
+	}
+
+	response := map[string]interface{}{
+		"Success": transactionData,
+	}
+
+	responseData, _ := json.Marshal(response)
+	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
