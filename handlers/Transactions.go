@@ -13,7 +13,7 @@ import (
 func CreateTransaction(conn *websocket.Conn, data json.RawMessage, userID string) {
 
 	transaction := new(types.Transaction)
-
+	account := new(types.Accounts)
 	transaction.ID = uuid.NewString()
 
 	transaction.UserID = userID
@@ -23,6 +23,10 @@ func CreateTransaction(conn *websocket.Conn, data json.RawMessage, userID string
 		return
 	}
 
+	if err := db.DB.Where("user_id =? AND account_id =?", userID, account.ID).First(&account).Error; err != nil {
+		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`))
+		return
+	}
 	if err := db.DB.Create(&transaction).Error; err != nil {
 		conn.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create transaction"}`))
 		return
