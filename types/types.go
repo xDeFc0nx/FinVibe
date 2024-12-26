@@ -18,29 +18,28 @@ type User struct {
 	FirstName            string                `json:"FirstName"`
 	LastName             string                `json:"lastName"`
 	Email                string                `gorm:"type:varchar(100);unique_index"`
-	Password             string                `json:"-"`
+	Password             string                `json:"Password"`
 	CreatedAt            time.Time             `json:"createdAt"`
 	UpdatedAt            time.Time             `json:"-"`
 	Accounts             []Accounts            `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	WebSocketConnections []WebSocketConnection `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
-
 type Accounts struct {
-	ID           string        `gorm:"primaryKey"`
-	UserID       string        `gorm:"not null"`
+	ID           string        `gorm:"primaryKey;column:id"` // Explicitly specify column name
+	UserID       string        `gorm:"not null;column:user_id"`
 	User         User          `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Type         string        `json:"type"`
 	Balance      float64       `json:"balance"`
-	Transactions []Transaction `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	CreatedAt    string        `json:"created"`
-	UpdatedAt    string        `json:"-"`
+	Transactions []Transaction `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	CreatedAt    time.Time     `json:"createdAt"`
+	UpdatedAt    time.Time     `json:"-"`
 }
 
 type Transaction struct {
-	ID          string    `gorm:"primaryKey"`
-	UserID      string    `gorm:"not null"`
+	ID          string    `gorm:"primaryKey;column:id"`
+	UserID      string    `gorm:"not null;column:user_id"`
 	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	AccountID   string    `gorm:"not null"`
+	AccountID   string    `gorm:"not null;column:account_id"`
 	Account     Accounts  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Amount      float64   `json:"amount"`
 	Description string    `json:"description"`

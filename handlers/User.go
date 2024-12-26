@@ -38,14 +38,20 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	if user.LastName == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "last Name is Required"})
+		return c.Status(400).JSON(fiber.Map{"error": "Last Name is Required"})
 	}
 	if user.Email == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Email is Required"})
 	}
+
+	if user.Password == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Password is required"})
+	}
+
 	if len(user.Password) < 8 {
 		return c.Status(500).JSON(fiber.Map{"error": "Password requires at least 8 characters"})
 	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to Hash", "details": err.Error()})
