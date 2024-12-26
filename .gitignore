@@ -13,6 +13,7 @@
 # production
 /bin
 /build
+/tmp
 
 # testing
 /coverage
