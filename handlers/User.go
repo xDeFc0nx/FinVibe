@@ -18,7 +18,7 @@ import (
 func CreateUser(c *fiber.Ctx) error {
 	user := new(types.User)
 	if err := c.BodyParser(user); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Unable to parse request body"})
+		return c.Status(400).JSON(fiber.Map{"error": "Unable to parse request body", "details": err.Error()})
 	}
 	user.ID = uuid.New().String()
 	user.CreatedAt = time.Now()
@@ -33,16 +33,28 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(409).JSON(fiber.Map{"error": "Email already exists"})
 	}
 
+	if user.FirstName == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "First Name is Required"})
+	}
+
+	if user.LastName == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "last Name is Required"})
+	}
+	if user.Email == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Email is Required"})
+	}
+	if len(user.Password) < 8 {
+		return c.Status(500).JSON(fiber.Map{"error": "Password requires at least 8 characters"})
+	}
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to hash password"})
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to Hash", "details": err.Error()})
 	}
 	user.Password = string(hashedPassword)
 
 	token, exp, err := Create_JWT_Token(*user)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create JWT token"})
-
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
 
 	if err := db.DB.Create(user).Error; err != nil {
@@ -51,10 +63,7 @@ func CreateUser(c *fiber.Ctx) error {
 
 	socketID, err := CreateWebSocketConnection(user.ID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error":   "Failed to create WebSocket",
-			"details": err.Error(),
-		})
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to create WebSocket", "details": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
@@ -69,8 +78,6 @@ func CreateUser(c *fiber.Ctx) error {
 func GetUser(c *websocket.Conn, userID string) {
 
 	user := new(types.User)
-
-	user.ID = userID
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
@@ -87,8 +94,6 @@ func GetUser(c *websocket.Conn, userID string) {
 func UpdateUser(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	user := new(types.User)
-
-	user.ID = userID
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
@@ -116,8 +121,6 @@ func UpdateUser(c *websocket.Conn, data json.RawMessage, userID string) {
 func DeleteUser(c *websocket.Conn, userID string) {
 
 	user := new(types.User)
-
-	user.ID = userID
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
 		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
