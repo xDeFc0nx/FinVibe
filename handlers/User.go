@@ -47,6 +47,9 @@ func CreateUser(c *fiber.Ctx) error {
 	if user.Password == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Password is required"})
 	}
+	if user.Country == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Country is required"})
+	}
 
 	if len(user.Password) < 8 {
 		return c.Status(500).JSON(fiber.Map{"error": "Password requires at least 8 characters"})

@@ -19,6 +19,7 @@ type User struct {
 	LastName             string                `json:"lastName"`
 	Email                string                `gorm:"type:varchar(100);unique_index"`
 	Password             string                `json:"Password"`
+	Country              string                `json:"country"`
 	CreatedAt            time.Time             `json:"createdAt"`
 	UpdatedAt            time.Time             `json:"-"`
 	Accounts             []Accounts            `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`

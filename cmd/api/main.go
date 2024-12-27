@@ -101,8 +101,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			switch message.Action {
 			case "pong":
 				handlers.HeartBeat(c, userID)
-			case "createTransaction":
-				handlers.CreateTransaction(c, message.Data, userID)
 			case "getUser":
 				handlers.GetUser(c, userID)
 			case "updateUser":
@@ -111,6 +109,8 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.DeleteUser(c, userID)
 			case "logout":
 				handlers.LogoutHandler(c, userID)
+			case "createTransaction":
+				handlers.CreateTransaction(c, message.Data, userID)
 			case "getTransactions":
 				handlers.GetTransactions(c, message.Data, userID)
 			case "getTransactionById":
