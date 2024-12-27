@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"sync"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
@@ -55,11 +56,23 @@ func GetAccounts(c *websocket.Conn, userID string) {
 		return
 	}
 
-	for _, a := range accounts {
-		if err := GetAccountBalance(c, a.ID); err != nil {
+	var wg sync.WaitGroup
+	for i := range accounts {
+		wg.Add(1)
+		go func(a *types.Accounts) {
+			defer wg.Done()
+			if err := GetAccountBalance(c, a.ID); err != nil {
+				logger.Error("%s", err.Error())
+			}
+		}(&accounts[i])
+	}
+	wg.Wait()
+	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
+		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
+
 	accountData := make([]map[string]interface{}, len(accounts))
 
 	for i, a := range accounts {
