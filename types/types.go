@@ -50,12 +50,13 @@ type Transaction struct {
 }
 
 type Recurring struct {
-	ID            string `gorm:"primaryKey"`
-	TransactionID string `gorm:"not null"`
-
-	Frequency string    `gorm:"not null"`
-	StartDate time.Time `gorm:"not null"`
-	EndDate   *time.Time
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID            string     `gorm:"primaryKey"`
+	TransactionID string     `gorm:"not null"`
+	Amount        float64    `json:"amount"`
+	Frequency     string     `json:"frequency"`
+	StartDate     time.Time  `json:"startDate"`
+	NextDate      time.Time  `json:"nextDate"`
+	EndDate       *time.Time `json:"endDate"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
 }
