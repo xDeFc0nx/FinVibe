@@ -26,7 +26,7 @@ type User struct {
 	WebSocketConnections []WebSocketConnection `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 type Accounts struct {
-	ID           string        `gorm:"primaryKey;column:id"` // Explicitly specify column name
+	ID           string        `gorm:"primaryKey;column:id"`
 	UserID       string        `gorm:"not null;column:user_id"`
 	User         User          `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Type         string        `json:"type"`
@@ -60,4 +60,28 @@ type Recurring struct {
 	EndDate       *time.Time `json:"endDate"`
 	CreatedAt     time.Time  `json:"createdAt"`
 	UpdatedAt     time.Time  `json:"updatedAt"`
+}
+
+type Budget struct {
+	ID          string    `gorm:"primaryKey;column:id"`
+	UserID      string    `gorm:"not null;column:user_id"`
+	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	AccountID   string    `gorm:"not null;column:account_id"`
+	Account     Accounts  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Amount      float64   `gorm:"amount"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"-"`
+}
+
+type Goal struct {
+	ID          string    `gorm:"primaryKey;column:id"`
+	UserID      string    `gorm:"not null;column:user_id"`
+	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	AccountID   string    `gorm:"not null;column:account_id"`
+	Account     Accounts  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Amount      float64   `gorm:"amount"`
+	Description string    `json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"-"`
 }

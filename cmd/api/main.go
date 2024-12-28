@@ -32,6 +32,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	}
 
 	userID := socket.UserID
+
 	if err := handlers.HandleCheckAuth(c, userID); err != nil {
 		logger.Error("%s", err.Error())
 	}
@@ -109,20 +110,31 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.DeleteUser(c, userID)
 			case "logout":
 				handlers.LogoutHandler(c, userID)
+			case "createAccount":
+				handlers.CreateAccount(c, message.Data, userID)
+			case "getAccounts":
+				handlers.GetAccounts(c, userID)
+			case "updateAccount":
+				handlers.UpdateAccount(c, message.Data, userID)
+			case "deleteAccount":
+				handlers.DeleteAccount(c, message.Data, userID)
 			case "createTransaction":
 				handlers.CreateTransaction(c, message.Data, userID)
 			case "getTransactions":
 				handlers.GetTransactions(c, message.Data, userID)
 			case "getTransactionById":
 				handlers.GetTransactionById(c, message.Data, userID)
-			case "createAccount":
-				handlers.CreateAccount(c, message.Data, userID)
-			case "getAccounts":
-				handlers.GetAccounts(c, userID)
 			case "updateTransaction":
-				handlers.UpdateAccount(c, message.Data, userID)
-			case "deleteAccount":
-				handlers.DeleteAccount(c, message.Data, userID)
+				handlers.UpdateTransction(c, message.Data, userID)
+			case "deleteTransaction":
+				handlers.DeleteTransaction(c, message.Data, userID)
+			case "createBudget":
+				handlers.CreateBudget(c, message.Data, userID)
+			case "getBudgets":
+				handlers.GetBudgets(c, userID)
+			case "updateBudget":
+				handlers.UpdateBudget(c, message.Data, userID)
+			case "deleteBudget":
 
 			default:
 				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
