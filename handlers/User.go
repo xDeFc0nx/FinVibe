@@ -84,7 +84,7 @@ func CreateUser(c *fiber.Ctx) error {
 	})
 }
 
-func GetUser(c *websocket.Conn, userID string) {
+func GetUser(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	user := new(types.User)
 
@@ -150,7 +150,7 @@ func UpdateUser(c *websocket.Conn, data json.RawMessage, userID string) {
 		logger.Error("%s", err.Error())
 	}
 }
-func DeleteUser(c *websocket.Conn, userID string) {
+func DeleteUser(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	user := new(types.User)
 

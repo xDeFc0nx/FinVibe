@@ -65,7 +65,7 @@ func CreateBudget(c *websocket.Conn, data json.RawMessage, userID string) {
 
 }
 
-func GetBudgets(c *websocket.Conn, userID string) {
+func GetBudgets(c *websocket.Conn, data json.RawMessage, userID string) {
 	budgets := []types.Budget{}
 
 	var requestData struct {

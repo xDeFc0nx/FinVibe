@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -31,7 +32,7 @@ func CreateWebSocketConnection(userID string) (string, error) {
 	return socket.ID, nil
 }
 
-func HeartBeat(c *websocket.Conn, userID string) {
+func HeartBeat(c *websocket.Conn, data json.RawMessage, userID string) {
 	socket := new(types.WebSocketConnection)
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {

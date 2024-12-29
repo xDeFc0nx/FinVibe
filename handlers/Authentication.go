@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -129,7 +130,7 @@ func LoginHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID})
 
 }
-func LogoutHandler(c *websocket.Conn, userID string) {
+func LogoutHandler(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	socket := new(types.WebSocketConnection)
 	err := db.DB.Where("user_id = ?", userID).First(socket).Error

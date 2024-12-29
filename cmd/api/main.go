@@ -99,61 +99,39 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				}
 				continue
 			}
-
-			switch message.Action {
-			case "pong":
-				handlers.HeartBeat(c, userID)
-			case "getUser":
-				handlers.GetUser(c, userID)
-			case "updateUser":
-				handlers.UpdateUser(c, message.Data, userID)
-			case "deleteUser":
-				handlers.DeleteUser(c, userID)
-			case "logout":
-				handlers.LogoutHandler(c, userID)
-			case "createAccount":
-				handlers.CreateAccount(c, message.Data, userID)
-			case "getAccounts":
-				handlers.GetAccounts(c, userID)
-			case "updateAccount":
-				handlers.UpdateAccount(c, message.Data, userID)
-			case "deleteAccount":
-				handlers.DeleteAccount(c, message.Data, userID)
-			case "createTransaction":
-				handlers.CreateTransaction(c, message.Data, userID)
-			case "getTransactions":
-				handlers.GetTransactions(c, message.Data, userID)
-			case "getTransactionById":
-				handlers.GetTransactionById(c, message.Data, userID)
-			case "updateTransaction":
-				handlers.UpdateTransaction(c, message.Data, userID)
-			case "deleteTransaction":
-				handlers.DeleteTransaction(c, message.Data, userID)
-			case "createBudget":
-				handlers.CreateBudget(c, message.Data, userID)
-			case "getBudgets":
-				handlers.GetBudgets(c, userID)
-			case "updateBudget":
-				handlers.UpdateBudget(c, message.Data, userID)
-			case "deleteBudget":
-				handlers.DeleteBudget(c, message.Data, userID)
-			case "createGoal":
-				handlers.CreateGoal(c, message.Data, userID)
-			case "getGoals":
-				handlers.GetGoals(c, userID)
-			case "updateGoals":
-				handlers.UpdateGoal(c, message.Data, userID)
-			case "deleteGoal":
-				handlers.DeleteGoal(c, message.Data, userID)
-
-			default:
+			handlersMap := map[string]func(c *websocket.Conn, data json.RawMessage, userID string){
+				"createAccount":      handlers.CreateAccount,
+				"createBudget":       handlers.CreateBudget,
+				"createGoal":         handlers.CreateGoal,
+				"deleteAccount":      handlers.DeleteAccount,
+				"deleteBudget":       handlers.DeleteBudget,
+				"deleteGoal":         handlers.DeleteGoal,
+				"deleteTransaction":  handlers.DeleteTransaction,
+				"deleteUser":         handlers.DeleteUser,
+				"getAccounts":        handlers.GetAccounts,
+				"getBudgets":         handlers.GetBudgets,
+				"getGoals":           handlers.GetGoals,
+				"getTransactionById": handlers.GetTransactionById,
+				"getTransactions":    handlers.GetTransactions,
+				"getUser":            handlers.GetUser,
+				"logout":             handlers.LogoutHandler,
+				"pong":               handlers.HeartBeat,
+				"updateAccount":      handlers.UpdateAccount,
+				"updateBudget":       handlers.UpdateBudget,
+				"updateGoals":        handlers.UpdateGoal,
+				"updateTransaction":  handlers.UpdateTransaction,
+				"updateUser":         handlers.UpdateUser,
+			}
+			handler, exists := handlersMap[message.Action]
+			if exists {
+				handler(c, message.Data, userID)
+			} else {
 				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
 					logger.Error("%s", err.Error())
 				}
 			}
 
 		}
-
 		defer func() {
 			socket.IsActive = false
 			db.DB.Save(socket)

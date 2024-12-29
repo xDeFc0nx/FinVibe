@@ -46,7 +46,7 @@ func CreateAccount(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 }
-func GetAccounts(c *websocket.Conn, userID string) {
+func GetAccounts(c *websocket.Conn, data json.RawMessage, userID string) {
 	accounts := []types.Accounts{}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
