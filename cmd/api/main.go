@@ -136,6 +136,15 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			case "updateBudget":
 				handlers.UpdateBudget(c, message.Data, userID)
 			case "deleteBudget":
+				handlers.DeleteBudget(c, message.Data, userID)
+			case "creteGoal":
+				handlers.CreateGoal(c, message.Data, userID)
+			case "getGoals":
+				handlers.Getgoals(c, userID)
+			case "updateGoals":
+				handlers.Updategoal(c, message.Data, userID)
+			case "deleteGoal":
+				handlers.DeleteGoal(c, message.Data, userID)
 
 			default:
 				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
