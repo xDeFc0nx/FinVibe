@@ -126,7 +126,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			case "getTransactionById":
 				handlers.GetTransactionById(c, message.Data, userID)
 			case "updateTransaction":
-				handlers.UpdateTransction(c, message.Data, userID)
+				handlers.UpdateTransaction(c, message.Data, userID)
 			case "deleteTransaction":
 				handlers.DeleteTransaction(c, message.Data, userID)
 			case "createBudget":
@@ -137,12 +137,12 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				handlers.UpdateBudget(c, message.Data, userID)
 			case "deleteBudget":
 				handlers.DeleteBudget(c, message.Data, userID)
-			case "creteGoal":
+			case "createGoal":
 				handlers.CreateGoal(c, message.Data, userID)
 			case "getGoals":
-				handlers.Getgoals(c, userID)
+				handlers.GetGoals(c, userID)
 			case "updateGoals":
-				handlers.Updategoal(c, message.Data, userID)
+				handlers.UpdateGoal(c, message.Data, userID)
 			case "deleteGoal":
 				handlers.DeleteGoal(c, message.Data, userID)
 
@@ -150,7 +150,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Unknown action"}`)); err != nil {
 					logger.Error("%s", err.Error())
 				}
-
 			}
 
 		}

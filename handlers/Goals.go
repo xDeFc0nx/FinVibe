@@ -60,7 +60,7 @@ func CreateGoal(c *websocket.Conn, data json.RawMessage, userID string) {
 
 }
 
-func Getgoals(c *websocket.Conn, userID string) {
+func GetGoals(c *websocket.Conn, userID string) {
 	goals := []types.Goal{}
 
 	var requestData struct {
@@ -115,7 +115,7 @@ func Getgoals(c *websocket.Conn, userID string) {
 
 }
 
-func Updategoal(c *websocket.Conn, data json.RawMessage, userID string) {
+func UpdateGoal(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	goal := new(types.Goal)
 

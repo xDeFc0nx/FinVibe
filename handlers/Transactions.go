@@ -288,7 +288,7 @@ func GetTransactionById(c *websocket.Conn, data json.RawMessage, userID string) 
 	}
 }
 
-func UpdateTransction(c *websocket.Conn, data json.RawMessage, userID string) {
+func UpdateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 	transaction := new(types.Transaction)
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
