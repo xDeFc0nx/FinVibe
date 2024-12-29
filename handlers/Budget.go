@@ -83,7 +83,7 @@ func GetBudgets(c *websocket.Conn, userID string) {
 		wg.Add(1)
 		go func(a *types.Budget) {
 			defer wg.Done()
-			if err := GetAccountBalance(c, a.ID); err != nil {
+			if err := GetBudgetCal(c, a.ID); err != nil {
 				logger.Error("%s", err.Error())
 			}
 		}(&budgets[i])
