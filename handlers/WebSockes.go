@@ -41,7 +41,7 @@ func HeartBeat(c *websocket.Conn, userID string) {
 		}
 		return
 	}
-	socket.LastPing = time.Now()
+	socket.LastPing = time.Now().UTC()
 
 	if err := db.DB.Save(socket).Error; err != nil {
 		if err := c.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {

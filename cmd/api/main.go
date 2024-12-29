@@ -42,7 +42,6 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	}
 
 	return websocket.New(func(c *websocket.Conn) {
-
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -53,6 +52,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 					if time.Since(socket.LastPing) > 15*time.Second {
 						if err := c.WriteMessage(websocket.TextMessage, []byte(`ping`)); err != nil {
+							logger.Debug("Error sending ping: %v", err)
 							return
 						}
 
@@ -60,8 +60,9 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 				case <-time.After(15 * time.Second):
 					if time.Since(socket.LastPing) > 15*time.Second {
-						if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error": "Connection timeout"}`)); err != nil {
-							logger.Error("%s", err.Error())
+						if err := c.WriteMessage(websocket.TextMessage, []byte(`"error": "Connection timeout"`)); err != nil {
+							logger.Debug("Error sending ping: %v", err)
+							return
 						}
 						c.Close()
 						return
