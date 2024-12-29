@@ -81,6 +81,7 @@ type Goal struct {
 	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	AccountID   string    `gorm:"not null;column:account_id"`
 	Account     Accounts  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	GoalAmount  float64   `gorm:"goal_amount"`
 	Amount      float64   `gorm:"amount"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"createdAt"`
