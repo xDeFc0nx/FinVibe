@@ -68,7 +68,8 @@ type Budget struct {
 	User        User      `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	AccountID   string    `gorm:"not null;column:account_id"`
 	Account     Accounts  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Amount      float64   `gorm:"amount"`
+	TotalSpent  float64   `gorm:"column:total_spent" json:"totalSpent"`
+	Limit       float64   `gorm:"column:limit" json:"limit"`
 	Description string    `json:"description"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"-"`
