@@ -12,7 +12,7 @@ import (
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
-func CreateAccount(c *websocket.Conn, data json.RawMessage, userID string) {
+func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	account := new(types.Accounts)
 
@@ -22,35 +22,35 @@ func CreateAccount(c *websocket.Conn, data json.RawMessage, userID string) {
 	account.UserID = userID
 
 	if err := json.Unmarshal(data, &account); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account data"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account data"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"User ID Invalid"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"User ID Invalid"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
 
 	if err := db.DB.Create(account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Create Account"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Create Account"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 	response, _ := json.Marshal(account)
-	if err := c.WriteMessage(websocket.TextMessage, response); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, response); err != nil {
 		logger.Error("%s", err.Error())
 	}
 
 }
-func GetAccounts(c *websocket.Conn, data json.RawMessage, userID string) {
+func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	accounts := []types.Accounts{}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -61,14 +61,14 @@ func GetAccounts(c *websocket.Conn, data json.RawMessage, userID string) {
 		wg.Add(1)
 		go func(a *types.Accounts) {
 			defer wg.Done()
-			if err := GetAccountBalance(c, a.ID); err != nil {
+			if err := GetAccountBalance(ws, a.ID); err != nil {
 				logger.Error("%s", err.Error())
 			}
 		}(&accounts[i])
 	}
 	wg.Wait()
 	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
@@ -91,28 +91,28 @@ func GetAccounts(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
 
-func UpdateAccount(c *websocket.Conn, data json.RawMessage, userID string) {
+func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 	if err := db.DB.Save(account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Update"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Update"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
@@ -126,28 +126,28 @@ func UpdateAccount(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
 
-func DeleteAccount(c *websocket.Conn, data json.RawMessage, userID string) {
+func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 	if err := db.DB.Delete(account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Delete"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Delete"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
@@ -162,7 +162,7 @@ func DeleteAccount(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }

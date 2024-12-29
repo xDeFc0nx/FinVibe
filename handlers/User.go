@@ -84,12 +84,12 @@ func CreateUser(c *fiber.Ctx) error {
 	})
 }
 
-func GetUser(c *websocket.Conn, data json.RawMessage, userID string) {
+func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -107,24 +107,24 @@ func GetUser(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
 
-func UpdateUser(c *websocket.Conn, data json.RawMessage, userID string) {
+func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := json.Unmarshal(data, &user); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid data"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -146,29 +146,29 @@ func UpdateUser(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
-func DeleteUser(c *websocket.Conn, data json.RawMessage, userID string) {
+func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Delete(user).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete User"} `+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete User"} `+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
-	if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Success": "User Deleted"}`)); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Success": "User Deleted"}`)); err != nil {
 		logger.Error("%s", err.Error())
 	}
 

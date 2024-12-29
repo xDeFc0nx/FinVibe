@@ -19,6 +19,7 @@ import (
 )
 
 func Create_JWT_Token(user types.User) (string, int64, error) {
+	socket := new(types.WebSocketConnection)
 	err := godotenv.Load(".env")
 	if err != nil {
 		logger.Error("Error loading.env file")
@@ -29,6 +30,7 @@ func Create_JWT_Token(user types.User) (string, int64, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["user_id"] = user.ID
+	claims["ConnectionID"] = socket.ConnectionID
 	claims["exp"] = exp
 	t, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
@@ -65,47 +67,47 @@ func DecodeJWTToken(token string) (string, error) {
 
 	return "", fmt.Errorf("Invalid token or claims")
 }
-func CheckAuth(c *fiber.Ctx) error {
-	cookie := c.Cookies("jwt-token")
+func CheckAuth(ws *fiber.Ctx) error {
+	cookie := ws.Cookies("jwt-token")
 
 	token, err := jwt.ParseWithClaims(cookie, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 	if err != nil || !token.Valid {
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	claims, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid token format"})
+		return ws.Status(401).JSON(fiber.Map{"error": "Invalid token format"})
 	}
 
 	userID := (*claims)["userID"].(string)
 
-	return c.Status(200).JSON(fiber.Map{"message": "Authorized", "userID": userID})
+	return ws.Status(200).JSON(fiber.Map{"message": "Authorized", "userID": userID})
 }
 
-func LoginHandler(c *fiber.Ctx) error {
+func LoginHandler(ws *fiber.Ctx) error {
 
 	user := new(types.User)
 
-	if err := c.BodyParser(user); err != nil {
-		return c.Status(400).JSON(err.Error())
+	if err := ws.BodyParser(user); err != nil {
+		return ws.Status(400).JSON(err.Error())
 	}
 
 	var foundUser types.User
 	err := db.DB.Where("Email = ?", user.Email).First(&foundUser).Error
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid Email"})
+		return ws.Status(401).JSON(fiber.Map{"error": "Invalid Email"})
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password))
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Wrong password"})
+		return ws.Status(401).JSON(fiber.Map{"error": "Wrong password"})
 	}
 	token, exp, err := Create_JWT_Token(foundUser)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create JWT token"})
+		return ws.Status(500).JSON(fiber.Map{"error": "Failed to create JWT token"})
 	}
 
 	cookie := fiber.Cookie{
@@ -117,39 +119,39 @@ func LoginHandler(c *fiber.Ctx) error {
 	socket := new(types.WebSocketConnection)
 	err = db.DB.Where("user_id = ?", foundUser.ID).First(socket).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "WebSocket connection not found"})
+		return ws.Status(500).JSON(fiber.Map{"error": "WebSocket connection not found"})
 	}
 
 	socket.IsActive = true
 
 	if err := db.DB.Save(socket).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+		return ws.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 	}
 	ConnectionID := socket.ConnectionID
-	c.Cookie(&cookie)
-	return c.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID})
+	ws.Cookie(&cookie)
+	return ws.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID})
 
 }
-func LogoutHandler(c *websocket.Conn, data json.RawMessage, userID string) {
+func LogoutHandler(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	socket := new(types.WebSocketConnection)
 	err := db.DB.Where("user_id = ?", userID).First(socket).Error
 	if err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
 
 	socket.IsActive = false
 	if err := db.DB.Save(socket).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
 
-	if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`)); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`)); err != nil {
 		logger.Error("%s", err.Error())
 	}
 
-	c.Close()
+	ws.Close()
 }

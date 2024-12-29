@@ -12,7 +12,7 @@ import (
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
-func CreateRecurring(c *websocket.Conn, data json.RawMessage, transactionID string, accountID string, userID string, amount float64) error {
+func CreateRecurring(ws *websocket.Conn, data json.RawMessage, transactionID string, accountID string, userID string, amount float64) error {
 	recurring := new(types.Recurring)
 	recurring.ID = uuid.NewString()
 	recurring.TransactionID = transactionID
@@ -20,10 +20,10 @@ func CreateRecurring(c *websocket.Conn, data json.RawMessage, transactionID stri
 	logger.Info("Raw data received: %s", string(data))
 
 	if recurring.Frequency == "" {
-		return c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Frequency is required"}`))
+		return ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Frequency is required"}`))
 	}
 	if err := json.Unmarshal(data, &recurring); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid recurring data"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid recurring data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return err
@@ -49,17 +49,17 @@ func CreateRecurring(c *websocket.Conn, data json.RawMessage, transactionID stri
 		recurring.NextDate = time.Date(recurring.StartDate.Year(), recurring.StartDate.Month()+1, 1, 0, 0, 0, 0, recurring.StartDate.Location())
 
 	default:
-		return c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid frequency"}`))
+		return ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid frequency"}`))
 	}
 
 	if err := db.DB.Save(&recurring).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to save recurring transaction"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to save recurring transaction"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return err
 	}
 	go func() {
-		err := handleRecurringTransaction(c, recurring, userID, accountID)
+		err := handleRecurringTransaction(ws, recurring, userID, accountID)
 		if err != nil {
 			logger.Error("Failed to handle recurring transaction: %s", err.Error())
 		}
@@ -67,7 +67,7 @@ func CreateRecurring(c *websocket.Conn, data json.RawMessage, transactionID stri
 
 	return nil
 }
-func CreateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
+func CreateTransaction(ws *websocket.Conn, data json.RawMessage, userID string) {
 	transaction := new(types.Transaction)
 	account := new(types.Accounts)
 	recurring := new(types.Recurring)
@@ -76,27 +76,27 @@ func CreateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if transaction.AccountID == "" {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account ID is required"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account ID is required"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, transaction.AccountID).First(&account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 	if err := db.DB.Create(&transaction).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create transaction"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create transaction"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -107,7 +107,7 @@ func CreateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 		recurring.TransactionID = transaction.ID
 		var inputData map[string]interface{}
 		if err := json.Unmarshal(data, &inputData); err != nil {
-			if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to parse recurring frequency"}`+err.Error())); err != nil {
+			if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to parse recurring frequency"}`+err.Error())); err != nil {
 				logger.Error("%s", err.Error())
 			}
 
@@ -118,19 +118,19 @@ func CreateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 			recurring.Frequency = freq
 		} else {
 
-			if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Recurring Frequency is required for recurring transactions"}`)); err != nil {
+			if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Recurring Frequency is required for recurring transactions"}`)); err != nil {
 				logger.Error("%s", err.Error())
 			}
 			return
 		}
 
 		if err := db.DB.Create(recurring).Error; err != nil {
-			if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create recurring transaction"}`+err.Error())); err != nil {
+			if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create recurring transaction"}`+err.Error())); err != nil {
 				logger.Error("%s", err.Error())
 			}
 			return
 		}
-		if err := CreateRecurring(c, data, transaction.ID, account.ID, userID, transaction.Amount); err != nil {
+		if err := CreateRecurring(ws, data, transaction.ID, account.ID, userID, transaction.Amount); err != nil {
 			return
 		}
 	}
@@ -148,12 +148,12 @@ func CreateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	responseData, _ := json.Marshal(response)
 
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 
 }
-func handleRecurringTransaction(c *websocket.Conn, recurring *types.Recurring, userID string, accountID string) error {
+func handleRecurringTransaction(ws *websocket.Conn, recurring *types.Recurring, userID string, accountID string) error {
 	for {
 		time.Sleep(time.Until(recurring.NextDate))
 
@@ -167,7 +167,7 @@ func handleRecurringTransaction(c *websocket.Conn, recurring *types.Recurring, u
 		}
 
 		if err := db.DB.Create(&newTransaction).Error; err != nil {
-			if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create new recurring transaction"}`+err.Error())); err != nil {
+			if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create new recurring transaction"}`+err.Error())); err != nil {
 				logger.Error("%s", err.Error())
 			}
 			return nil
@@ -183,14 +183,14 @@ func handleRecurringTransaction(c *websocket.Conn, recurring *types.Recurring, u
 		}
 
 		if err := db.DB.Save(&recurring).Error; err != nil {
-			if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to update recurring next date"}`+err.Error())); err != nil {
+			if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to update recurring next date"}`+err.Error())); err != nil {
 				logger.Error("%s", err.Error())
 			}
 			return nil
 		}
 	}
 }
-func GetTransactions(c *websocket.Conn, data json.RawMessage, userID string) {
+func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 
 	// Assuming the data contains a single object (AccountID)
@@ -199,14 +199,14 @@ func GetTransactions(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid request data"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid request data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -214,7 +214,7 @@ func GetTransactions(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	transactions := []types.Transaction{}
 	if err := db.DB.Where("account_id = ?", requestData.AccountID).Find(&transactions).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Could not fetch transactions"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Could not fetch transactions"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -239,32 +239,32 @@ func GetTransactions(c *websocket.Conn, data json.RawMessage, userID string) {
 
 	// Marshal the response and send it
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 
 }
-func GetTransactionById(c *websocket.Conn, data json.RawMessage, userID string) {
+func GetTransactionById(ws *websocket.Conn, data json.RawMessage, userID string) {
 	transaction := new(types.Transaction)
 
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if transaction.UserID != userID {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -283,29 +283,29 @@ func GetTransactionById(c *websocket.Conn, data json.RawMessage, userID string) 
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
 
-func UpdateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
+func UpdateTransaction(ws *websocket.Conn, data json.RawMessage, userID string) {
 	transaction := new(types.Transaction)
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error": "Invalid Data"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error": "Invalid Data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
 
 	if transaction.UserID != userID {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
@@ -313,7 +313,7 @@ func UpdateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := db.DB.Save(transaction).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Update"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Update"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 	}
@@ -330,64 +330,64 @@ func UpdateTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := c.WriteMessage(websocket.TextMessage, responseData); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
 }
-func DeleteTransaction(c *websocket.Conn, data json.RawMessage, userID string) {
+func DeleteTransaction(ws *websocket.Conn, data json.RawMessage, userID string) {
 	transaction := new(types.Transaction)
 
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid transaction data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 
 		return
 	}
 	if transaction.UserID != userID {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction does not belong to the user"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Transaction not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
 	if err := db.DB.Delete(transaction).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"failed to Delete"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"failed to Delete"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return
 	}
 
-	if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Success":"Transaction Deleted"}`)); err != nil {
+	if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Success":"Transaction Deleted"}`)); err != nil {
 		logger.Error("%s", err.Error())
 	}
 
 }
 
-func GetAccountBalance(c *websocket.Conn, accountID string) error {
+func GetAccountBalance(ws *websocket.Conn, accountID string) error {
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
 	account.ID = accountID
 
 	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return err
 	}
 
 	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Could not fetch transactions"}`)); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Could not fetch transactions"}`)); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return err
@@ -403,7 +403,7 @@ func GetAccountBalance(c *websocket.Conn, accountID string) error {
 	account.Balance = totalBalance
 
 	if err := db.DB.Save(account).Error; err != nil {
-		if err := c.WriteMessage(websocket.TextMessage, []byte(`{"Error":"failed to Save"}`+err.Error())); err != nil {
+		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"failed to Save"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
 		return err
