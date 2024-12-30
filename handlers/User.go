@@ -61,18 +61,16 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 	user.Password = string(hashedPassword)
 
-	token, exp, err := Create_JWT_Token(*user)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
-	}
-
 	if err := db.DB.Create(user).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
-
 	socketID, err := CreateWebSocketConnection(user.ID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to create WebSocket", "details": err.Error()})
+	}
+	token, exp, err := Create_JWT_Token(*user, socketID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{

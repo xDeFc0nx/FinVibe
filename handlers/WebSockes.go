@@ -74,36 +74,42 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 }
 
 func HandleWebSocketConnection(ws *fiber.Ctx) error {
+	log.Println("Incoming WebSocket connection request")
 
 	socket := new(types.WebSocketConnection)
-	token := ws.Query("token")
+	token := ws.Cookies("jwt-token") // Get the token from cookies
 
 	if token == "" {
+		log.Println("Token is missing")
 		return ws.Status(400).JSON(fiber.Map{"error": "Token is missing"})
 	}
 
 	// Decode and validate the JWT token
-	userID, err := DecodeJWTToken(token)
+	userID, connectionID, err := DecodeJWTToken(token)
 	if err != nil {
+		log.Printf("Failed to decode JWT token: %v\n", err)
 		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	// Fetch WebSocket connection by ID
-	if socket.ConnectionID == "" {
-		return ws.Status(400).JSON(fiber.Map{"error": "ConnectionID is required"})
-	}
+	log.Printf("Decoded user ID from token: %s\n", userID)
+	log.Printf("Decoded connectionID from token: %s\n", connectionID)
 
-	if err := db.DB.Where("id = ?", socket.ConnectionID).First(socket).Error; err != nil {
+	if err := db.DB.Where("connection_id = ?", connectionID).First(socket).Error; err != nil {
+		log.Printf("WebSocket not found for ID: %s\n", socket.ConnectionID)
 		return ws.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 	}
 
 	if !socket.IsActive {
+		log.Printf("WebSocket with ID %s is not active\n", socket.ConnectionID)
+
 		return ws.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
 	}
 
 	// Accept WebSocket connection
 	return websocket.New(func(ws *websocket.Conn) {
-		// Connection ping/pong handling
+
+		socket.IsActive = true
+
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -118,6 +124,7 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 							log.Printf("Error sending ping: %v", err)
 							return
 						}
+
 					}
 
 				case <-timeout:
@@ -203,7 +210,7 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 
 		// Deactivate WebSocket when done
 		defer func() {
-			socket.IsActive = false
+
 			db.DB.Save(socket)
 			ws.Close()
 		}()
