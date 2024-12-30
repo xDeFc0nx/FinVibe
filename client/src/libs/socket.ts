@@ -1,0 +1,34 @@
+export class WebSocketClient {
+  public socket: WebSocket;
+  public messageHandlers: ((msg: string) => void)[] = [];
+
+  constructor(url: string) {
+    this.socket = new WebSocket(url);
+
+    this.socket.onmessage = (event) => {
+      this.messageHandlers.forEach((handler) => handler(event.data));
+      if (event.data === "ping") {
+        this.socket.send(JSON.stringify({ Action: "pong" }));
+      }
+    };
+
+    this.socket.onopen = () => console.log("WebSocket connected");
+    this.socket.onclose = () => console.log("WebSocket disconnected");
+  }
+
+  onMessage(handler: (msg: string) => void) {
+    this.messageHandlers.push(handler);
+  }
+
+  send(message: string) {
+    if (this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(message);
+    } else {
+      console.error("WebSocket is not open.");
+    }
+  }
+
+  close() {
+    this.socket.close();
+  }
+}
