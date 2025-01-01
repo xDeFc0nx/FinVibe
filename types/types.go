@@ -7,14 +7,14 @@ import (
 type WebSocketConnection struct {
 	ID           string    `gorm:"primaryKey"`
 	ConnectionID string    `gorm:"connectionID"`
-	UserID       string    `gorm:"not null"`
+	UserID       string    `gorm:"not null;index"`
 	IsActive     bool      `json:"isActive"`
 	LastPing     time.Time `json:"lastPing"`
 	CreatedAt    time.Time `json:"createdAt"`
 }
 
 type User struct {
-	ID                   string                `gorm:"primaryKey"`
+	ID                   string                `gorm:"primaryKey;index"`
 	FirstName            string                `json:"FirstName"`
 	LastName             string                `json:"lastName"`
 	Email                string                `gorm:"type:varchar(100);unique_index"`
