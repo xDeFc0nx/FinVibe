@@ -17,10 +17,10 @@ const App = (props) => (
 render(
   () => (
     <Router root={App}>
+      <Route path="/" component={index} />
       <Route path="/login" component={Login} />
       <Route path="/app" component={Layout}>
         <Route path="/dashboard" component={dashboard} />
-        <Route path="/" component={index} />
       </Route>
     </Router>
   ),
