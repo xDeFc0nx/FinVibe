@@ -26,7 +26,7 @@ func main() {
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)
-	app.Post("/checkAuth", handlers.CheckAuth)
+	app.Get("/checkAuth", handlers.CheckAuth)
 	app.Use("/ws", handlers.HandleWebSocketConnection)
 
 	if err := app.Listen(os.Getenv("PORT")); err != nil {
