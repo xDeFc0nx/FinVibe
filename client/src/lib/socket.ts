@@ -11,9 +11,6 @@ export class WebSocketClient {
         this.socket.send(JSON.stringify({ Action: "pong" }));
       }
     };
-
-    this.socket.onopen = () => console.log("WebSocket connected");
-    this.socket.onclose = () => console.log("WebSocket disconnected");
   }
 
   onMessage(handler: (msg: string) => void) {

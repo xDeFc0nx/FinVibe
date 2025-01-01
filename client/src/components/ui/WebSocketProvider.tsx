@@ -1,5 +1,12 @@
-import { WebSocketClient } from "@/libs/socket";
-import { createContext, createSignal, useContext, type JSX } from "solid-js";
+import { WebSocketClient } from "@/lib/socket";
+import {
+  createContext,
+  createSignal,
+  useContext,
+  onCleanup,
+  createEffect,
+  JSX,
+} from "solid-js";
 
 interface WebSocketContextType {
   socket: WebSocketClient | null;
@@ -9,17 +16,25 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
   undefined
 );
 
-export const WebSocketProvider = (props: { children: JSX.Element }) => {
+export const WebSocketProvider = (props: { children?: JSX.Element }) => {
   const [socket, setSocket] = createSignal<WebSocketClient | null>(null);
 
-  if (!socket()) {
-    const newSocket = new WebSocketClient("ws://your-websocket-url");
-    setSocket(newSocket); // Initialize WebSocket connection
-  }
+  createEffect(() => {
+    if (socket() === null) {
+      const newSocket = new WebSocketClient("ws://localhost:3001/ws");
+      setSocket(newSocket);
+    }
+  });
+
+  onCleanup(() => {
+    if (socket()) {
+      socket()?.close();
+    }
+  });
 
   return (
     <WebSocketContext.Provider value={{ socket: socket() }}>
-      {props.children}
+      {<></>}
     </WebSocketContext.Provider>
   );
 };
