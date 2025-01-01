@@ -85,17 +85,17 @@ func CheckAuth(ws *fiber.Ctx) error {
 		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 	if err != nil || !token.Valid {
+
 		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
-	claims, ok := token.Claims.(*jwt.MapClaims)
+	_, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
+
 		return ws.Status(401).JSON(fiber.Map{"error": "Invalid token format"})
 	}
 
-	userID := (*claims)["userID"].(string)
-
-	return ws.Status(200).JSON(fiber.Map{"message": "Authorized", "userID": userID})
+	return ws.Status(200).JSON(fiber.Map{"message": "Authorized"})
 }
 
 func LoginHandler(c *fiber.Ctx) error {
