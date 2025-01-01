@@ -60,7 +60,7 @@ Contributions are what make the open-source community such an amazing place to l
 
 ## License
 
-Distributed under the MIT License. See [LICENSE](https://github.com/xDeFx0nz/FinVibe/blob/main/LICENSE.md) for more information.
+Distributed under the MIT License. See [LICENSE](https://github.com/xDeFc0nx/FinVibe/blob/main/LICENSE.md) for more information.
 
 ## Authors
 
