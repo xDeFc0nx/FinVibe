@@ -32,10 +32,6 @@
 
 - [About the Project](#about-the-project)
 - [Built With](#built-with)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Usage](#usage)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -53,46 +49,6 @@ FinVibe is a financial software designed to empower your financial journey...
 This project is built using the following technologies and frameworks:
 
 Feel free to explore each of these technologies for more information.
-
-## Getting Started
-
-Follow these steps to get the project up and running on your local machine.
-
-### Prerequisites
-
-Make sure you have the following installed on your machine:
-
-- [Node.js](https://nodejs.org/): Make sure to install the LTS version.
-- [npm](https://www.npmjs.com/): The Node.js package manager.
-
-### Installation
-
-1. Clone the repository to your local machine:
-
-```bash
-   git clone https://github.com/xDeFc0nx/FinVibe
-```
-
-2. Clone the repository to your local machine:
-
-```bash
-    cd FinVibe
-```
-
-3. Install the project dependencies:
-
-```bash
-Npm Install
-```
-
-4. Running the Application
-   Once the installation is complete, you can start the Next.js development server:
-
-```bash
-    npm run dev
-```
-
-This will start the development server, and you can view the application by navigating to http://localhost:3000 in your web browser.
 
 ## Roadmap
 
