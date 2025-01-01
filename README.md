@@ -26,7 +26,7 @@
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=xDeFc0nx_FinVibe&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=xDeFc0nx_FinVibe)
 [![Go Report Card](https://goreportcard.com/badge/github.com/xDeFc0nx/FinVibe)](https://goreportcard.com/report/github.com/xDeFc0nx/FinVibe)
 ![Issues](https://img.shields.io/github/issues/xDeFc0nx/FinVibe)
-![License](https://github.com/xDeFc0nx/FinVibe/blob/main/LICENSE.md)
+![License](https://img.shields.io/github/license/xDeFc0nx/FinVibe)
 
 ## Table Of Contents
 
