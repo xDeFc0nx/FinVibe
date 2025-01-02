@@ -16,7 +16,7 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
   undefined
 );
 
-export const WebSocketProvider = (props: { children?: JSX.Element }) => {
+export const WebSocketProvider = () => {
   const [socket, setSocket] = createSignal<WebSocketClient | null>(null);
 
   createEffect(() => {
