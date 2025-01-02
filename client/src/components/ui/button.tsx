@@ -41,7 +41,7 @@ const buttonVariants = cva(
 type ButtonProps<T extends ValidComponent = "button"> =
   ButtonPrimitive.ButtonRootProps<T> &
     VariantProps<typeof buttonVariants> & {
-      class?: string | undefined;
+      class?: string;
       children?: JSX.Element;
     };
 
