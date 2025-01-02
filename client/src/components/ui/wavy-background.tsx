@@ -95,7 +95,7 @@ export const WavyBackground = (props) => {
     setIsSafari(
       typeof window !== "undefined" &&
         navigator.userAgent.includes("Safari") &&
-        !navigator.userAgent.includes("Chrome")
+        !navigator.userAgent.includes("Chrome"),
     );
   });
 
@@ -103,7 +103,7 @@ export const WavyBackground = (props) => {
     <div
       class={cn(
         "h-screen flex flex-col items-center justify-center",
-        containerClassName
+        containerClassName,
       )}
     >
       <canvas
@@ -111,7 +111,7 @@ export const WavyBackground = (props) => {
         ref={(el) => (canvasRef = el)}
         id="canvas"
         style={isSafari() ? { filter: `blur(${blur}px)` } : {}}
-      ></canvas>
+      />
       <div class={cn("relative z-10", className)} {...rest}>
         {children}
       </div>

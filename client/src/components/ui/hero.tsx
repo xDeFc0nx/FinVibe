@@ -6,7 +6,7 @@ import { A } from "@solidjs/router";
 
 const hero: Component = () => {
   return (
-    <WavyBackground className="max-w-6xl mx-auto pb-40">
+    <WavyBackground class="max-w-6xl mx-auto pb-40">
       <div class="container py-24 lg:py-32">
         <div class="grid md:grid-cols-2 gap-4 md:gap-8 xl:gap-20 md:items-center">
           <div>
@@ -27,7 +27,7 @@ const hero: Component = () => {
               </Button>
             </div>
 
-            <div class="mt-6 lg:mt-10 grid grid-cols-2 gap-x-5"></div>
+            <div class="mt-6 lg:mt-10 grid grid-cols-2 gap-x-5" />
           </div>
 
           <div class="relative ms-4">

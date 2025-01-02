@@ -1,7 +1,8 @@
-import { createSignal, onMount, createEffect } from "solid-js";
+import { createSignal, createEffect } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import toast from "solid-toast";
 
-export function CheckAuth(props) {
+export function CheckAuth() {
   const [isAuthenticated, setIsAuthenticated] = createSignal(null);
   const navigate = useNavigate();
 
@@ -19,6 +20,7 @@ export function CheckAuth(props) {
       }
     } catch (error) {
       setIsAuthenticated(false);
+      toast.error(error);
     }
   };
 

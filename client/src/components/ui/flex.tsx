@@ -26,7 +26,7 @@ const Flex: Component<FlexProps> = (rawProps) => {
       justifyContent: "between",
       alignItems: "center",
     } satisfies FlexProps,
-    rawProps
+    rawProps,
   );
   const [local, others] = splitProps(props, [
     "flexDirection",
@@ -42,7 +42,7 @@ const Flex: Component<FlexProps> = (rawProps) => {
         flexDirectionClassNames[local.flexDirection],
         justifyContentClassNames[local.justifyContent],
         alignItemsClassNames[local.alignItems],
-        local.class
+        local.class,
       )}
       {...others}
     />

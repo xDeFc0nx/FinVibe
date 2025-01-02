@@ -48,7 +48,7 @@ export default function Index() {
           href="/register"
           class={cn(
             buttonVariants({ variant: "ghost" }),
-            "absolute right-4 top-4 md:right-8 md:top-8"
+            "absolute right-4 top-4 md:right-8 md:top-8",
           )}
         >
           Register
@@ -78,7 +78,7 @@ export default function Index() {
               </p>
             </div>
 
-            <form action="submit" onsubmit={handleSubmit}>
+            <form action="submit" onSubmit={handleSubmit}>
               <TextField class="grid w-full max-w-sm items-center gap-1.5">
                 <TextFieldLabel for="email">Email</TextFieldLabel>
                 <TextFieldInput
