@@ -5,6 +5,7 @@ import index from "@/pages/index";
 import dashboard from "@/pages/dashboard/index";
 import Login from "@/pages/login";
 import { Toaster } from "solid-toast";
+import Register from "@/pages/register";
 
 const App = (props) => (
   <>
@@ -19,12 +20,13 @@ render(
     <Router root={App}>
       <Route path="/" component={index} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/app" component={Layout}>
         <Route path="/dashboard" component={dashboard} />
       </Route>
     </Router>
   ),
-  document.getElementById("root"),
+  document.getElementById("root")
 );
 
 export default App;

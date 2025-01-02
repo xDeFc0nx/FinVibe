@@ -13,8 +13,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground bg-blue-500 hover:bg-primary/90",
+        default: "hover:bg-accent hover:text-accent-foreground",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
@@ -35,7 +34,7 @@ const buttonVariants = cva(
       variant: "default",
       size: "default",
     },
-  },
+  }
 );
 
 type ButtonProps<T extends ValidComponent = "button"> =
@@ -46,7 +45,7 @@ type ButtonProps<T extends ValidComponent = "button"> =
     };
 
 const Button = <T extends ValidComponent = "button">(
-  props: PolymorphicProps<T, ButtonProps<T>>,
+  props: PolymorphicProps<T, ButtonProps<T>>
 ) => {
   const [local, others] = splitProps(props as ButtonProps, [
     "variant",
@@ -57,7 +56,7 @@ const Button = <T extends ValidComponent = "button">(
     <ButtonPrimitive.Root
       class={cn(
         buttonVariants({ variant: local.variant, size: local.size }),
-        local.class,
+        local.class
       )}
       {...others}
     />
