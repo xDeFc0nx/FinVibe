@@ -1,117 +1,95 @@
-import { createSignal } from "solid-js";
+"use client";
+import { Button } from "@/components/ui/button";
 import {
-  TextField,
-  TextFieldInput,
-  TextFieldLabel,
-} from "@/components/ui/text-field";
-import { A, useNavigate } from "@solidjs/router";
-import { Button, buttonVariants } from "@/components/ui/button";
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-export default function Login() {
-  const [data, setData] = createSignal({});
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import * as z from "zod";
 
-  const [email, setEmail] = createSignal({});
-  const [password, setPassword] = createSignal({});
+const formSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(6, "Password must be at least 8 characters long"),
+});
 
+export default function MyForm() {
   const navigate = useNavigate();
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    console.log("Email:", email());
-    console.log("Password:", password());
-    const response = await fetch("http://localhost:3001/Login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email(),
-        password: password(),
-      }),
-      credentials: "include",
-    });
-    const responseData = await response.json();
-    console.log(responseData);
-    setData(responseData);
-    if (response.ok) {
-      document.cookie = `jwt=${responseData.token}; path=/; secure; httpOnly`;
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+  });
 
-      navigate("/app/dashboard");
-    } else {
-      console.error("Login failed:", responseData.error);
+  const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+    try {
+      const response = await fetch("http://localhost:3001/Login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const responseData = await response.json();
+      console.log(responseData);
+
+      if (response.ok) {
+        document.cookie = `jwt=${responseData.token}; path=/; secure; httpOnly`;
+        navigate("/app/dashboard");
+      } else {
+        toast({ title: "Login failed", description: "Please try again." });
+      }
+    } catch (error) {
+      toast({ title: "Login failed", description: "Please try again." });
     }
   };
 
   return (
-    <>
-      <div class="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-1 lg:px-0">
-        <Button
-          as={A}
-          href="/register"
-          class={cn(
-            buttonVariants({ variant: "ghost" }),
-            "absolute right-4 top-4 md:right-8 md:top-8"
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(handleSubmit)}
+        className="space-y-8 max-w-3xl mx-auto py-10"
+      >
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input placeholder="Email" type="email" {...field} />
+              </FormControl>
+              <FormDescription>Enter your email</FormDescription>
+              <FormMessage />
+            </FormItem>
           )}
-        >
-          Register
-        </Button>
+        />
 
-        <div class="lg:p-8">
-          <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-            <div class="flex flex-col space-y-2 text-center">
-              <h1 class="text-2xl font-semibold tracking-tight">
-                {" "}
-                Welcome Back!
-              </h1>
-              <p class="text-sm text-muted-foreground">
-                Your data has been carefully wrapped in a secure layer of
-                encryption and stored in a digital vault,
-              </p>
-            </div>
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input placeholder="Password" type="password" {...field} />
+              </FormControl>
+              <FormDescription>Enter your password</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <form action="submit" onSubmit={handleSubmit}>
-              <TextField class="grid w-full max-w-sm items-center gap-1.5">
-                <TextFieldLabel for="email">Email</TextFieldLabel>
-                <TextFieldInput
-                  required
-                  type="email"
-                  name="Email"
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </TextField>
-
-              <TextField class="grid w-full max-w-sm items-center gap-1.5 pt-5">
-                <TextFieldLabel for="Password">Password</TextFieldLabel>
-                <TextFieldInput
-                  required
-                  type="password"
-                  name="Password"
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-                <Button type="submit" variant="secondary">
-                  Login
-                </Button>
-              </TextField>
-            </form>
-          </div>
-
-          <p class="px-8 text-center text-sm text-muted-foreground pt-5">
-            By clicking continue, you agree to our{" "}
-            <a
-              href="/terms"
-              class="underline underline-offset-4 hover:text-primary"
-            >
-              Terms of Service
-            </a>{" "}
-            and{" "}
-            <a
-              href="/privacy"
-              class="underline underline-offset-4 hover:text-primary"
-            >
-              Privacy Policy
-            </a>
-            .
-          </p>
-        </div>
-      </div>
-    </>
+        <Button type="submit">Submit</Button>
+      </form>
+    </Form>
   );
 }

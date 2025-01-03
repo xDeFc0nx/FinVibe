@@ -1,44 +1,47 @@
-import { createSignal, createEffect } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import toast from "solid-toast";
+import { Toast } from "@/components/ui/toast";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function CheckAuth() {
-  const [isAuthenticated, setIsAuthenticated] = createSignal(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
   const navigate = useNavigate();
 
-  const checkAuth = async () => {
-    try {
-      const response = await fetch("http://localhost:3001/checkAuth", {
-        method: "GET",
-        credentials: "include",
-      });
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("http://localhost:3001/checkAuth", {
+          method: "GET",
+          credentials: "include",
+        });
 
-      if (response.ok) {
-        setIsAuthenticated(true);
-      } else {
+        if (response.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
         setIsAuthenticated(false);
+        Toast({
+          title: "Error",
+          variant: "destructive",
+        });
       }
-    } catch (error) {
-      setIsAuthenticated(false);
-      toast.error(error);
-    }
-  };
+    };
 
-  checkAuth();
+    checkAuth();
+  }, []);
 
-  createEffect(() => {
-    if (isAuthenticated() === false) {
+  useEffect(() => {
+    if (isAuthenticated === false) {
       navigate("/login");
     }
-  });
+  }, [isAuthenticated, navigate]);
 
-  createEffect(() => {
-    if (isAuthenticated() === null) {
-      return <div>Loading...</div>;
-    }
-  });
+  if (isAuthenticated === null) {
+    return <div>Loading...</div>;
+  }
 
-  return <></>;
+  return null;
 }
 
 export default CheckAuth;
