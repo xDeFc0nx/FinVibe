@@ -29,6 +29,12 @@ func main() {
 	app.Get("/checkAuth", handlers.CheckAuth)
 	app.Use("/ws", handlers.HandleWebSocketConnection)
 
+	app.Static("/static", "./client/dist/static", fiber.Static{
+		Compress: true,
+	})
+	app.Get("/*", func(c *fiber.Ctx) error {
+		return c.SendFile("./client/dist/index.html")
+	})
 	if err := app.Listen(os.Getenv("PORT")); err != nil {
 		logger.Error("%s", err.Error())
 	}
