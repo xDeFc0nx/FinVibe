@@ -52,10 +52,10 @@ export default function MyForm() {
         document.cookie = `jwt=${responseData.token}; path=/; secure; httpOnly`;
         navigate("/app/dashboard");
       } else {
-        toast("Login Failed Try again");
+        toast.error("wrong credentials");
       }
     } catch (error) {
-      toast("Login Failed Try again");
+      toast.error("Login Failed Try again");
     }
   };
 
