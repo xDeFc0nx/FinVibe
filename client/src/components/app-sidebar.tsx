@@ -31,8 +31,6 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import { useWebSocket } from "./WebSocketProvidor";
-import { Button } from "./ui/button";
 const items = [
   {
     title: "Home",
@@ -75,11 +73,10 @@ export function AppSidebar() {
       if (response.ok) {
         navigate("/login");
       } else {
-        console.log(response);
-        toast("failed");
+        toast.error("Wrong credentials");
       }
     } catch (error) {
-      toast("Login Failed Try again");
+      toast.error("Login Failed ");
     }
   };
 
