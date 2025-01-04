@@ -10,7 +10,13 @@ const WebSocketContext = createContext<WebSocketContextType | undefined>(
   undefined
 );
 
-export const WebSocketProvider: React.FC = () => {
+interface WebSocketProviderProps {
+  children: React.ReactNode;
+}
+
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
+  children,
+}) => {
   const [socket, setSocket] = useState<WebSocketClient | null>(null);
 
   useEffect(() => {
@@ -24,7 +30,7 @@ export const WebSocketProvider: React.FC = () => {
 
   return (
     <WebSocketContext.Provider value={{ socket }}>
-      {/* No need to render children */}
+      {children} {/* Render children here */}
     </WebSocketContext.Provider>
   );
 };

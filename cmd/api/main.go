@@ -26,6 +26,7 @@ func main() {
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)
+	app.Post("/logout", handlers.LogoutHandler)
 	app.Get("/checkAuth", handlers.CheckAuth)
 	app.Use("/ws", handlers.HandleWebSocketConnection)
 

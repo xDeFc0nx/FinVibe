@@ -1,6 +1,6 @@
-import { Toast } from "@/components/ui/toast";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 export function CheckAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
@@ -21,10 +21,7 @@ export function CheckAuth() {
         }
       } catch (error) {
         setIsAuthenticated(false);
-        Toast({
-          title: "Error",
-          variant: "destructive",
-        });
+        toast("error try again");
       }
     };
 

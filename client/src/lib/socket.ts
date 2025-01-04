@@ -1,6 +1,7 @@
 export class WebSocketClient {
   public socket: WebSocket;
   public messageHandlers: ((msg: string) => void)[] = [];
+  static send: any;
 
   constructor(url: string) {
     this.socket = new WebSocket(url);

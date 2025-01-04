@@ -1,15 +1,11 @@
-import { Button } from "@/components/ui/button";
-
-import { ToastContainer } from "react-toastify";
+"use client";
 
 import { Moon, Sun } from "lucide-react";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Button } from "./button";
 
-import Hero from "@/components/ui/hero";
-import { ThemeChanger } from "./components/ui/theme";
-
-export default function App() {
-  const [darkMode, setDarkMode] = React.useState(() =>
+export function ThemeChanger() {
+  const [darkMode, setDarkMode] = useState(() =>
     document.documentElement.classList.contains("dark")
   );
 
@@ -19,7 +15,7 @@ export default function App() {
     localStorage.setItem("theme", !darkMode ? "dark" : "light");
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     const isDark =
       localStorage.getItem("theme") === "dark" ||
       (!localStorage.getItem("theme") &&
@@ -30,9 +26,15 @@ export default function App() {
   }, []);
 
   return (
-    <>
-      <Hero />
-      <ThemeChanger />
-    </>
+    <div className="absolute top-4 right-4">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleTheme}
+        className="rounded-full"
+      >
+        {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
+      </Button>
+    </div>
   );
 }

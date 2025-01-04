@@ -1,13 +1,12 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/joho/godotenv"
@@ -143,26 +142,40 @@ func LoginHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID, "token": cookie.Value})
 
 }
-func LogoutHandler(ws *websocket.Conn, data json.RawMessage, userID string) {
 
+func LogoutHandler(c *fiber.Ctx) error {
 	socket := new(types.WebSocketConnection)
-	err := db.DB.Where("user_id = ?", userID).First(socket).Error
+
+	token := c.Cookies("jwt-token")
+
+	if token == "" {
+		log.Println("Token is missing")
+		return c.Status(400).JSON(fiber.Map{"error": "Token is missing"})
+	}
+	userID, _, err := DecodeJWTToken(token)
 	if err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to get websocket connection"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		log.Printf("Failed to decode JWT token: %v\n", err)
+
+	}
+
+	if err := db.DB.Where("user_id = ?", userID).First(socket).Error; err != nil {
+		log.Println("Failed to find WebSocket connection: ", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to find WebSocket connection"})
 	}
 
 	socket.IsActive = false
 	if err := db.DB.Save(socket).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Update Socket Connection"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		log.Println("Failed to update WebSocket connection: ", err)
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 	}
 
-	if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Success": "Logedout"}`)); err != nil {
-		logger.Error("%s", err.Error())
+	cookie := fiber.Cookie{
+		Name:     "jwt-token",
+		Value:    "",
+		Expires:  time.Unix(0, 0),
+		HTTPOnly: true,
 	}
+	c.Cookie(&cookie)
 
-	ws.Close()
+	return c.JSON(fiber.Map{"message": "Logged out successfully"})
 }

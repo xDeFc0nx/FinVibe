@@ -6,7 +6,7 @@ import { WavyBackground } from "./wavy-background";
 const hero = () => {
   return (
     <>
-      <WavyBackground classNameName="max-w-6xl mx-auto pt-64">
+      <WavyBackground>
         <div className="container py-24 lg:py-32">
           <div className="grid md:grid-cols-2 gap-4  md:gap-8 xl:gap-20 md:items-center">
             <div>

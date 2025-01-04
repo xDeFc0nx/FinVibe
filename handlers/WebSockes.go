@@ -181,7 +181,6 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 				"getTransactionById": GetTransactionById,
 				"getTransactions":    GetTransactions,
 				"getUser":            GetUser,
-				"logout":             LogoutHandler,
 				"pong":               HeartBeat,
 				"updateAccount":      UpdateAccount,
 				"updateBudget":       UpdateBudget,
