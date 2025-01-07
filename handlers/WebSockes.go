@@ -135,7 +135,7 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 		}()
 
 		for {
-			msgType, msg, err := ws.ReadMessage()
+			_, msg, err := ws.ReadMessage()
 			if err != nil {
 				logger.Debug("read: %s", err)
 				break
