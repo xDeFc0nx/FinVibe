@@ -17,8 +17,12 @@ import (
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
-func Create_JWT_Token(user types.User, connectionID string) (string, int64, error) {
+var tokenName = "jwt=token"
 
+func Create_JWT_Token(
+	user types.User,
+	connectionID string,
+) (string, int64, error) {
 	err := godotenv.Load(".env")
 	if err != nil {
 		logger.Error("Error loading.env file")
@@ -37,6 +41,7 @@ func Create_JWT_Token(user types.User, connectionID string) (string, int64, erro
 	}
 	return t, exp, nil
 }
+
 func DecodeJWTToken(token string) (string, string, error) {
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -44,23 +49,31 @@ func DecodeJWTToken(token string) (string, string, error) {
 		os.Exit(1)
 	}
 
-	token = strings.TrimPrefix(token, "Bearer ") // Remove "Bearer " prefix if it exists
+	token = strings.TrimPrefix(
+		token,
+		"Bearer ",
+	) // Remove "Bearer " prefix if it exists
 
 	// Parse the token
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		// Ensure the signing method matches the expected method
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-		return []byte(os.Getenv("SECRET_KEY")), nil // Use your actual secret key
-	})
-
+	parsedToken, err := jwt.Parse(
+		token,
+		func(token *jwt.Token) (interface{}, error) {
+			// Ensure the signing method matches the expected method
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method")
+			}
+			return []byte(
+				os.Getenv("SECRET_KEY"),
+			), nil // Use your actual secret key
+		},
+	)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to parse token: %v", err)
 	}
 
 	// Check if the token is valid and extract claims
-	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok &&
+		parsedToken.Valid {
 		// Extract the userID and connectionID from claims
 		userID, ok := claims["user_id"].(string)
 		if !ok {
@@ -77,20 +90,23 @@ func DecodeJWTToken(token string) (string, string, error) {
 
 	return "", "", fmt.Errorf("invalid token or claims")
 }
+
 func CheckAuth(ws *fiber.Ctx) error {
-	cookie := ws.Cookies("jwt-token")
+	cookie := ws.Cookies(tokenName)
 
-	token, err := jwt.ParseWithClaims(cookie, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SECRET_KEY")), nil
-	})
+	token, err := jwt.ParseWithClaims(
+		cookie,
+		&jwt.MapClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("SECRET_KEY")), nil
+		},
+	)
 	if err != nil || !token.Valid {
-
 		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	_, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
-
 		return ws.Status(401).JSON(fiber.Map{"error": "Invalid token format"})
 	}
 
@@ -98,7 +114,6 @@ func CheckAuth(ws *fiber.Ctx) error {
 }
 
 func LoginHandler(c *fiber.Ctx) error {
-
 	user := new(types.User)
 
 	if err := c.BodyParser(user); err != nil {
@@ -111,7 +126,10 @@ func LoginHandler(c *fiber.Ctx) error {
 		return c.Status(401).JSON(fiber.Map{"error": "Invalid Email"})
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(user.Password))
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(foundUser.Password),
+		[]byte(user.Password),
+	)
 	if err != nil {
 		return c.Status(401).JSON(fiber.Map{"error": "Wrong password"})
 	}
@@ -119,14 +137,16 @@ func LoginHandler(c *fiber.Ctx) error {
 	socket := new(types.WebSocketConnection)
 	err = db.DB.Where("user_id = ?", foundUser.ID).First(socket).Error
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "WebSocket connection not found"})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "WebSocket connection not found"})
 	}
 	token, exp, err := Create_JWT_Token(foundUser, socket.ConnectionID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create JWT token"})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to create JWT token"})
 	}
 	cookie := fiber.Cookie{
-		Name:     "jwt-token",
+		Name:     tokenName,
 		Value:    token,
 		Expires:  time.Unix(exp, 0),
 		HTTPOnly: true,
@@ -135,18 +155,24 @@ func LoginHandler(c *fiber.Ctx) error {
 	socket.IsActive = true
 
 	if err := db.DB.Save(socket).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 	}
 	ConnectionID := socket.ConnectionID
 	c.Cookie(&cookie)
-	return c.JSON(fiber.Map{"message": "Success", "Conection ID": ConnectionID, "token": cookie.Value})
-
+	return c.JSON(
+		fiber.Map{
+			"message":      "Success",
+			"Conection ID": ConnectionID,
+			"token":        cookie.Value,
+		},
+	)
 }
 
 func LogoutHandler(c *fiber.Ctx) error {
 	socket := new(types.WebSocketConnection)
 
-	token := c.Cookies("jwt-token")
+	token := c.Cookies(tokenName)
 
 	if token == "" {
 		log.Println("Token is missing")
@@ -155,22 +181,23 @@ func LogoutHandler(c *fiber.Ctx) error {
 	userID, _, err := DecodeJWTToken(token)
 	if err != nil {
 		log.Printf("Failed to decode JWT token: %v\n", err)
-
 	}
 
 	if err := db.DB.Where("user_id = ?", userID).First(socket).Error; err != nil {
 		log.Println("Failed to find WebSocket connection: ", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to find WebSocket connection"})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to find WebSocket connection"})
 	}
 
 	socket.IsActive = false
 	if err := db.DB.Save(socket).Error; err != nil {
 		log.Println("Failed to update WebSocket connection: ", err)
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 	}
 
 	cookie := fiber.Cookie{
-		Name:     "jwt-token",
+		Name:     tokenName,
 		Value:    "",
 		Expires:  time.Unix(0, 0),
 		HTTPOnly: true,
