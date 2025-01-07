@@ -13,7 +13,6 @@ import (
 )
 
 func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
-
 	account := new(types.Accounts)
 
 	user := new(types.User)
@@ -22,37 +21,27 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account.UserID = userID
 
 	if err := json.Unmarshal(data, &account); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account data"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
-		return
+		Message(ws, "Error: Invalid  form data")
 	}
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"User ID Invalid"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: User ID Invalid")
 	}
 
 	if err := db.DB.Create(account).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Create Account"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
-		return
+		Message(ws, "Error: Failed to Create Account")
 	}
 	response, _ := json.Marshal(account)
 	if err := ws.WriteMessage(websocket.TextMessage, response); err != nil {
 		logger.Error("%s", err.Error())
 	}
-
 }
+
 func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	accounts := []types.Accounts{}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Accounts not found")
 		return
 	}
 
@@ -68,9 +57,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 	wg.Wait()
 	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Accounts not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Accounts not found")
 	}
 
 	accountData := make([]map[string]interface{}, len(accounts))
@@ -99,22 +86,16 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Invalid form data")
 		return
 	}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Account not found")
 		return
 	}
 	if err := db.DB.Save(account).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to Update"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Failed to update")
 	}
 	accountData := map[string]interface{}{
 		"ID":   account.ID,
@@ -134,16 +115,17 @@ func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid account ID"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Invalid form data")
+
 		return
+
 	}
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
 		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"account not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
+		Message(ws, "")
 		return
 	}
 	if err := db.DB.Delete(account).Error; err != nil {
