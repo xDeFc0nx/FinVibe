@@ -37,19 +37,15 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
 
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Could not find user")
 		return
 	}
 
 	if err := db.DB.Model(&socket).Update("LastPing", time.Now().UTC()).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Failed to update")
 	}
-
 }
+
 func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 	if CheckAuth(c) == nil {
 
@@ -65,9 +61,11 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 		socket.IsActive = true
 		if err := db.DB.Save(socket).Error; err != nil {
 			log.Printf("Failed to update WebSocket connection: %v", err)
-			return c.Status(500).JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+			return c.Status(500).
+				JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 		}
-		return c.Status(101).JSON(fiber.Map{"message": "WebSocket connection updated successfully"})
+		return c.Status(101).
+			JSON(fiber.Map{"message": "WebSocket connection updated successfully"})
 	}
 	return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 }
@@ -101,11 +99,11 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 	if !socket.IsActive {
 		log.Printf("WebSocket with ID %s is not active\n", socket.ConnectionID)
 
-		return ws.Status(403).JSON(fiber.Map{"error": "WebSocket is not active"})
+		return ws.Status(403).
+			JSON(fiber.Map{"error": "WebSocket is not active"})
 	}
 
 	return websocket.New(func(ws *websocket.Conn) {
-
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -116,12 +114,10 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 				select {
 				case <-ticker.C:
 					if time.Since(socket.LastPing) > 15*time.Second {
-
 						if err := ws.WriteMessage(websocket.TextMessage, []byte(`ping`)); err != nil {
 							log.Printf("Error sending ping: %v", err)
 							return
 						}
-
 					}
 
 				case <-timeout:
@@ -153,16 +149,12 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 			}
 
 			if err := json.Unmarshal(msg, &message); err != nil {
-				if err := ws.WriteMessage(msgType, []byte(`{"error":"Invalid message format"}`+err.Error())); err != nil {
-					logger.Error("%s", err.Error())
-				}
+				Message(ws, "Error: Invalid form data")
 				continue
 			}
 
 			if message.Action == "" {
-				if err := ws.WriteMessage(msgType, []byte(`{"error":"Action is required"}`)); err != nil {
-					logger.Error("%s", err.Error())
-				}
+				Message(ws, "Error: Action required")
 				continue
 			}
 
@@ -193,14 +185,11 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 			if exists {
 				handler(ws, message.Data, userID)
 			} else {
-				if err := ws.WriteMessage(msgType, []byte(`{"error":"Unknown action"}`)); err != nil {
-					logger.Error("%s", err.Error())
-				}
+				Message(ws, "Error: Unknown Action")
 			}
 		}
 
 		defer func() {
-
 			ws.Close()
 		}()
 	})(ws)
