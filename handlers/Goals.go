@@ -164,7 +164,7 @@ func DeleteGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 }
 
-func GetGoalCal(ws *websocket.Conn, accountID string) {
+func GetGoalCal(ws *websocket.Conn, accountID string) error {
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 	goal := new(types.Goal)
@@ -191,4 +191,5 @@ func GetGoalCal(ws *websocket.Conn, accountID string) {
 	if err := db.DB.Save(goal).Error; err != nil {
 		Message(ws, "Error: Failed to save")
 	}
+	return nil
 }
