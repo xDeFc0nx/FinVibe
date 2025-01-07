@@ -18,15 +18,19 @@ import (
 func CreateUser(c *fiber.Ctx) error {
 	user := new(types.User)
 	if err := c.BodyParser(user); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Unable to parse request body", "details": err.Error()})
+		return c.Status(400).
+			JSON(fiber.Map{"error": "Unable to parse request body", "details": err.Error()})
 	}
 	user.ID = uuid.New().String()
 	user.CreatedAt = time.Now()
 
-	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	emailRegex := regexp.MustCompile(
+		`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
+	)
 
 	if !emailRegex.MatchString(user.Email) {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid email address", "email": user.Email})
+		return c.Status(400).
+			JSON(fiber.Map{"error": "Invalid email address", "email": user.Email})
 	}
 
 	if err := db.DB.Where(user.Email).Error; err != nil {
@@ -52,25 +56,33 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	if len(user.Password) < 8 {
-		return c.Status(500).JSON(fiber.Map{"error": "Password requires at least 8 characters"})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Password requires at least 8 characters"})
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword(
+		[]byte(user.Password),
+		bcrypt.DefaultCost,
+	)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to Hash", "details": err.Error()})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to Hash", "details": err.Error()})
 	}
 	user.Password = string(hashedPassword)
 
 	if err := db.DB.Create(user).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
 	socketID, err := CreateWebSocketConnection(user.ID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to create WebSocket", "details": err.Error()})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to create WebSocket", "details": err.Error()})
 	}
 	token, exp, err := Create_JWT_Token(*user, socketID)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
+		return c.Status(500).
+			JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
 
 	return c.JSON(fiber.Map{
@@ -83,13 +95,10 @@ func CreateUser(c *fiber.Ctx) error {
 }
 
 func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
-
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: User not found")
 		return
 	}
 
@@ -111,24 +120,21 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 }
 
 func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
-
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: User not found")
 		return
 	}
 
 	if err := json.Unmarshal(data, &user); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Invalid data"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Invalid form data")
 		return
 	}
 
 	if err := db.DB.Save(user).Error; err != nil {
+
+		Message(ws, "Error: Failed to save")
 		return
 	}
 
@@ -148,26 +154,19 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		logger.Error("%s", err.Error())
 	}
 }
-func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
+func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"User not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: User not found")
 		return
 	}
 
 	if err := db.DB.Delete(user).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"error":"Failed to Delete User"} `+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: Failed to update user")
 		return
 	}
 
-	if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Success": "User Deleted"}`)); err != nil {
-		logger.Error("%s", err.Error())
-	}
-
+	Message(ws, "Success: Updated user")
 }
