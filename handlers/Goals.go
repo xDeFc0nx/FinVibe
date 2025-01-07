@@ -20,29 +20,18 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 		AccountID string `json:"AccountID"`
 	}
 	if err := json.Unmarshal(data, goal); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid goal data"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Invalid Goal Data")
 	}
 	if goal.ID == "" {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"ID is required"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: ID is Required")
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&goal.Account).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Account not found")
 	}
 
 	if err := db.DB.Create(&goal).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to create goal"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Failed To Create Goal")
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
@@ -57,7 +46,6 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
-
 }
 
 func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
@@ -68,10 +56,7 @@ func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := db.DB.Where("user_id =? AND account_id = ?", userID, requestData.AccountID).Find(&goals).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"goals not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Goals Not Found")
 	}
 	var wg sync.WaitGroup
 	for i := range goals {
@@ -88,6 +73,7 @@ func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"goals not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
+		Message(ws, "Error: Goals not found")
 	}
 
 	goalsData := make([]map[string]interface{}, len(goals))
@@ -112,37 +98,27 @@ func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
-
 }
 
 func UpdateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
-
 	goal := new(types.Goal)
 
 	if err := json.Unmarshal(data, goal); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid goal data"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Invalid goal data")
 	}
 	if goal.ID == "" {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"ID is required"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: ID is required")
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, goal.ID).First(&goal).Error; err != nil {
 		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"goal not found"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
 		}
-
+		Message(ws, "Error: Goal not found")
 	}
 
 	if err := db.DB.Save(goal).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"goal not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Goal not found")
 	}
 
 	response := map[string]interface{}{
@@ -158,30 +134,21 @@ func UpdateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
-
 }
 
 func DeleteGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	goal := new(types.Goal)
 
 	if err := json.Unmarshal(data, goal); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Invalid goal data"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Invalid goal data")
 	}
 
 	if goal.ID == "" {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"ID is required"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Error: ID is required")
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, goal.ID).Delete(&goal).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Failed to delete goal"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-
+		Message(ws, "Error: Failed to delete goal")
 	}
 
 	response := map[string]interface{}{
@@ -195,9 +162,9 @@ func DeleteGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
 		logger.Error("%s", err.Error())
 	}
-
 }
-func GetGoalCal(ws *websocket.Conn, accountID string) error {
+
+func GetGoalCal(ws *websocket.Conn, accountID string) {
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 	goal := new(types.Goal)
@@ -205,17 +172,11 @@ func GetGoalCal(ws *websocket.Conn, accountID string) error {
 	account.ID = accountID
 
 	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Account not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-		return err
+		Message(ws, "Error: Account Not found")
 	}
 
 	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"Could not fetch transactions"}`)); err != nil {
-			logger.Error("%s", err.Error())
-		}
-		return err
+		Message(ws, "Error: Could not fetch transactions")
 	}
 
 	totalBalance := float64(0)
@@ -228,11 +189,6 @@ func GetGoalCal(ws *websocket.Conn, accountID string) error {
 	goal.Amount = totalBalance
 
 	if err := db.DB.Save(goal).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"failed to Save"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
-		return err
+		Message(ws, "Error: Failed to save")
 	}
-
-	return nil
 }
