@@ -17,7 +17,7 @@ import (
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
-var tokenName = "jwt=token"
+var tokenName = "jwt-token"
 
 func Create_JWT_Token(
 	user types.User,

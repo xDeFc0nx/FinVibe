@@ -33,7 +33,7 @@ func CreateRecurring(
 		)
 	}
 	if err := json.Unmarshal(data, &recurring); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 		return err
 	}
 
@@ -115,7 +115,7 @@ func CreateTransaction(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 		return
 	}
 
@@ -226,7 +226,7 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 		return
 	}
 
@@ -275,7 +275,7 @@ func GetTransactionById(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 		return
 	}
 
@@ -317,7 +317,7 @@ func UpdateTransaction(
 	if err := json.Unmarshal(data, &transaction); err != nil {
 		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error": "Invalid Data"}`+err.Error())); err != nil {
 			logger.Error("%s", err.Error())
-			Message(ws, "Error: Invalid form data")
+			Message(ws, InvalidData)
 		}
 	}
 
@@ -363,7 +363,7 @@ func DeleteTransaction(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 
 		return
 	}

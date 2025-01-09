@@ -149,7 +149,7 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 			}
 
 			if err := json.Unmarshal(msg, &message); err != nil {
-				Message(ws, "Error: Invalid form data")
+				Message(ws, InvalidData)
 				continue
 			}
 

@@ -23,7 +23,7 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Message(ws, "Error: Invalid Form data")
+		Message(ws, InvalidData)
 	}
 
 	if budget.ID == "" {
@@ -107,7 +107,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Message(ws, "Error: Invalid Form data")
+		Message(ws, InvalidData)
 	}
 	if budget.ID == "" {
 		Message(ws, "Error: ID is required")
@@ -140,7 +140,7 @@ func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Message(ws, "Error: Invalid Form data")
+		Message(ws, InvalidData)
 	}
 
 	if budget.ID == "" {

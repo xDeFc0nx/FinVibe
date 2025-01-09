@@ -31,6 +31,8 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
+import { useWebSocket } from "./WebSocketProvidor";
+import { useEffect } from "react";
 const items = [
   {
     title: "Home",
@@ -61,6 +63,8 @@ const items = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
+   const socket = useWebSocket();
+   const [userData, setUserData] = useState<any>(null);
   const handleLogout = async () => {
     try {
       const response = await fetch("http://localhost:3001/Logout", {
@@ -80,6 +84,13 @@ export function AppSidebar() {
     }
   };
 
+  useEffect(()=>{
+      if(socket){
+          
+               socket.send(JSON.stringify({ Action: "getUser" }));
+
+      }
+  })
   return (
     <Sidebar>
       <SidebarContent>

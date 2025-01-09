@@ -20,7 +20,7 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 		AccountID string `json:"AccountID"`
 	}
 	if err := json.Unmarshal(data, goal); err != nil {
-		Message(ws, "Error: Invalid Goal Data")
+		Message(ws, InvalidData)
 	}
 	if goal.ID == "" {
 		Message(ws, "Error: ID is Required")

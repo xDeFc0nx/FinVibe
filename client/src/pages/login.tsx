@@ -17,9 +17,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -27,7 +25,7 @@ import * as z from "zod";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email format"),
-  password: z.string().min(6, "Password must be at least 8 characters long"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 export default function MyForm() {
@@ -46,7 +44,6 @@ export default function MyForm() {
         credentials: "include",
       });
       const responseData = await response.json();
-      console.log(responseData);
 
       if (response.ok) {
         document.cookie = `jwt=${responseData.token}; path=/; secure; httpOnly`;

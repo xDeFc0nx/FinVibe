@@ -86,7 +86,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 		return
 	}
 
@@ -115,7 +115,7 @@ func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 
 		return
 

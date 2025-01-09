@@ -128,7 +128,7 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := json.Unmarshal(data, &user); err != nil {
-		Message(ws, "Error: Invalid form data")
+		Message(ws, InvalidData)
 		return
 	}
 
