@@ -114,19 +114,14 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 				select {
 				case <-ticker.C:
 					if time.Since(socket.LastPing) > 15*time.Second {
-						if err := ws.WriteMessage(websocket.TextMessage, []byte(`ping`)); err != nil {
-							log.Printf("Error sending ping: %v", err)
-							return
-						}
+						Message(ws, "ping")
+						return
 					}
 
 				case <-timeout:
 					if time.Since(socket.LastPing) > 20*time.Second {
+						Message(ws, "Connection Timeout")
 
-						if err := ws.WriteMessage(websocket.TextMessage, []byte(`connection timeout`)); err != nil {
-							log.Printf("Error sending ping: %v", err)
-							return
-						}
 						ws.Close()
 						return
 					}
