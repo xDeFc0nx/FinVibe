@@ -110,7 +110,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	response := map[string]interface{}{
-		"Success": userData,
+		"userData": userData,
 	}
 
 	responseData, _ := json.Marshal(response)
