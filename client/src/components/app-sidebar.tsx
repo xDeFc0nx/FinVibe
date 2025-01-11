@@ -65,7 +65,12 @@ export function AppSidebar() {
   const navigate = useNavigate();
    const {socket, isReady}= useWebSocket();
 
-   const [userData, setUserData] = useState<any>(null);
+   const [userData, setUserData] = useState({
+       FirstName: "",
+      LastName:"",
+      Email:"",
+      ID:""
+   });
   const handleLogout = async () => {
     try {
       const response = await fetch("http://localhost:3001/Logout", {
@@ -85,15 +90,24 @@ export function AppSidebar() {
     }
   };
 
+ 
+
   useEffect(()=>{
       
-
-      if(socket && isReady){
+         if(socket && isReady){
                socket.send( "getUser" );
 
-      }
-    }, [socket]);
-  return (
+        socket.onMessage((msg)=>{
+    const response =  JSON.parse(msg)
+    if (response.userData) {
+        
+     setUserData(response.userData)
+    }
+    })}},[socket, isReady]) 
+useEffect(() => {
+}, [userData]); 
+    
+    return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
@@ -121,7 +135,7 @@ export function AppSidebar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> Username
+                  <User2 /> {userData.FirstName}
                   <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -136,7 +150,6 @@ export function AppSidebar() {
                   <span>Billing</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
                   <span onClick={handleLogout}>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
