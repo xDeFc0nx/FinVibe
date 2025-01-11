@@ -150,7 +150,7 @@ useEffect(() => {
                   <span>Billing</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
-                  <span onClick={handleLogout}>Sign out</span>
+                  <span onClick={handleLogout} role="button">Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
