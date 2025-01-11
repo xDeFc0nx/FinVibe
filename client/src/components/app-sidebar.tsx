@@ -32,7 +32,7 @@ import {
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useWebSocket } from "./WebSocketProvidor";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 const items = [
   {
     title: "Home",
@@ -63,7 +63,8 @@ const items = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
-   const socket = useWebSocket();
+   const {socket, isReady}= useWebSocket();
+
    const [userData, setUserData] = useState<any>(null);
   const handleLogout = async () => {
     try {
@@ -85,12 +86,13 @@ export function AppSidebar() {
   };
 
   useEffect(()=>{
-      if(socket){
-          
-               socket.send(JSON.stringify({ Action: "getUser" }));
+      
+
+      if(socket && isReady){
+               socket.send( "getUser" );
 
       }
-  })
+    }, [socket]);
   return (
     <Sidebar>
       <SidebarContent>
@@ -145,3 +147,4 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+

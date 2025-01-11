@@ -19,8 +19,9 @@ export class WebSocketClient {
   }
 
   send(message: string) {
+      console.log(this.socket.readyState)
     if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(message);
+      this.socket.send(JSON.stringify({ Action: message}));
     } else {
       console.error("WebSocket is not open.");
     }
