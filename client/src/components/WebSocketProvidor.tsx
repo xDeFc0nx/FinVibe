@@ -1,6 +1,6 @@
 import type React from "react";
 import { WebSocketClient } from "@/lib/socket";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
  
 
 
@@ -38,8 +38,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     };
   }, []);
 
+  const value = useMemo(() => ({ socket, isReady }), [socket, isReady]);
   return (
-    <WebSocketContext.Provider value={{ socket, isReady }}>
+    <WebSocketContext.Provider value={value}>
       {children} {/* Render children here */}
     </WebSocketContext.Provider>
   );
