@@ -81,15 +81,11 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 		return ws.Status(400).JSON(fiber.Map{"error": "Token is missing"})
 	}
 
-	// Decode and validate the JWT token
 	userID, connectionID, err := DecodeJWTToken(token)
 	if err != nil {
 		log.Printf("Failed to decode JWT token: %v\n", err)
 		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
-
-	log.Printf("Decoded user ID from token: %s\n", userID)
-	log.Printf("Decoded connectionID from token: %s\n", connectionID)
 
 	if err := db.DB.Where("connection_id = ?", connectionID).First(socket).Error; err != nil {
 		log.Printf("WebSocket not found for ID: %s\n", socket.ConnectionID)
@@ -104,6 +100,7 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 	}
 
 	return websocket.New(func(ws *websocket.Conn) {
+		logger.Success("User Connected: %s", userID)
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -121,7 +118,6 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 				case <-timeout:
 					if time.Since(socket.LastPing) > 20*time.Second {
 						Message(ws, "Connection Timeout")
-
 						ws.Close()
 						return
 					}
@@ -136,7 +132,7 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 				break
 			}
 
-			logger.Debug("recv: %s", msg)
+			logger.Debug("recv: %s from: %s", msg, userID)
 
 			var message struct {
 				Action string          `json:"action"`
