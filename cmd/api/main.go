@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log/slog"
 	"os"
 
@@ -13,13 +14,30 @@ import (
 )
 
 func main() {
+	file, err := os.OpenFile(
+		"app.log",
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0644,
+	)
+	if err != nil {
+		slog.Error("Error opening log file", slog.String("error", err.Error()))
+		return
+	}
+	defer file.Close()
+
+	multiWriter := io.MultiWriter(file, os.Stdout)
+
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	}
+	handler := slog.NewJSONHandler(multiWriter, opts)
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
+	logger := slog.New(handler)
+
 	slog.SetDefault(logger)
+
 	app := fiber.New()
+
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:3000",
 		AllowMethods:     "GET,POST,PUT,DELETE",
