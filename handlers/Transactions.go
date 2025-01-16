@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
-	"github.com/xDeFc0nx/logger-go-pkg"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -24,7 +24,7 @@ func CreateRecurring(
 	recurring.ID = uuid.NewString()
 	recurring.TransactionID = transactionID
 	recurring.Amount = amount
-	logger.Info("Raw data received: %s", string(data))
+	slog.Info("Raw data received", string(data))
 
 	if recurring.Frequency == "" {
 		return ws.WriteMessage(
@@ -33,11 +33,11 @@ func CreateRecurring(
 		)
 	}
 	if err := json.Unmarshal(data, &recurring); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 		return err
 	}
 
-	logger.Info("Unmarshalled Recurring: %+v", recurring)
+	slog.Info("Unmarshalled Recurring: %+v", recurring)
 
 	recurring.StartDate = time.Now().Truncate(24 * time.Hour)
 
@@ -86,15 +86,15 @@ func CreateRecurring(
 	}
 
 	if err := db.DB.Save(&recurring).Error; err != nil {
-		Message(ws, "Error: failed to Save recurring transaction")
+		Message(ws, "Error: failed to Save recurring transaction", err)
 		return err
 	}
 	go func() {
 		err := handleRecurringTransaction(ws, recurring, userID, accountID)
 		if err != nil {
-			logger.Error(
-				"Failed to handle recurring transaction: %s",
-				err.Error(),
+			slog.Error(
+				"Failed to handle recurring transaction",
+				slog.String("error", err.Error()),
 			)
 		}
 	}()
@@ -115,21 +115,21 @@ func CreateTransaction(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 		return
 	}
 
 	if transaction.AccountID == "" {
-		Message(ws, "Error: Account ID is required")
+		Message(ws, "Account ID is required", nil)
 		return
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, transaction.AccountID).First(&account).Error; err != nil {
-		Message(ws, "Error: AccountID not found")
+		Message(ws, "AccountID not found", err)
 		return
 	}
 	if err := db.DB.Create(&transaction).Error; err != nil {
-		Message(ws, "Error: Failed to create transaction")
+		Message(ws, "Failed to create transaction", err)
 		return
 	}
 
@@ -139,7 +139,7 @@ func CreateTransaction(
 		var inputData map[string]interface{}
 		if err := json.Unmarshal(data, &inputData); err != nil {
 
-			Message(ws, "Error: Failed to parse recurring frequency")
+			Message(ws, "Failed to parse recurring frequency", err)
 			return
 		}
 
@@ -147,12 +147,12 @@ func CreateTransaction(
 			recurring.Frequency = freq
 		} else {
 
-			Message(ws, "Error: Recurring Frequency is required")
+			Message(ws, "Recurring Frequency is required", nil)
 			return
 		}
 
 		if err := db.DB.Create(recurring).Error; err != nil {
-			Message(ws, "Error: Failed to create recurring transaction")
+			Message(ws, "Failed to create recurring transaction", err)
 		}
 		if err := CreateRecurring(ws, data, transaction.ID, account.ID, userID, transaction.Amount); err != nil {
 			return
@@ -173,7 +173,7 @@ func CreateTransaction(
 	responseData, _ := json.Marshal(response)
 
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("failed to send message", err.Error())
 	}
 }
 
@@ -196,7 +196,7 @@ func handleRecurringTransaction(
 		}
 
 		if err := db.DB.Create(&newTransaction).Error; err != nil {
-			Message(ws, "Error: Failed to create new recurring transaction")
+			Message(ws, "Failed to create new recurring transaction", err)
 
 			return nil
 		}
@@ -211,7 +211,7 @@ func handleRecurringTransaction(
 		}
 
 		if err := db.DB.Save(&recurring).Error; err != nil {
-			Message(ws, "Error: Failed to update recurring next date")
+			Message(ws, "Failed to update recurring next date", err)
 			return nil
 		}
 	}
@@ -226,18 +226,18 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 		return
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
-		Message(ws, "Error: Account not found")
+		Message(ws, "Account not found", err)
 		return
 	}
 
 	transactions := []types.Transaction{}
 	if err := db.DB.Where("account_id = ?", requestData.AccountID).Find(&transactions).Error; err != nil {
-		Message(ws, "Error: Could Not get transactions")
+		Message(ws, "Could Not get transactions", err)
 		return
 	}
 
@@ -261,7 +261,7 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	// Marshal the response and send it
 	responseData, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -275,17 +275,17 @@ func GetTransactionById(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 		return
 	}
 
 	if transaction.UserID != userID {
-		Message(ws, "Error: Transaction does not belong to you")
+		Message(ws, "Transaction does not belong to you", nil)
 		return
 	}
 
 	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		Message(ws, "Error: Transaction not found")
+		Message(ws, "Transaction not found", err)
 		return
 	}
 
@@ -303,7 +303,7 @@ func GetTransactionById(
 
 	responseData, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -315,25 +315,22 @@ func UpdateTransaction(
 	transaction := new(types.Transaction)
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error": "Invalid Data"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-			Message(ws, InvalidData)
-		}
+		Message(ws, InvalidData, err)
 	}
 
 	if transaction.UserID != userID {
-		Message(ws, "Error: Transaction does not byte to you")
+		Message(ws, "Transaction does not belong to you", nil)
 		return
 	}
 
 	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		Message(ws, "Error: Transaction not found")
+		Message(ws, "Transaction not found", err)
 		return
 
 	}
 
 	if err := db.DB.Save(transaction).Error; err != nil {
-		Message(ws, "Error: Failed to save")
+		Message(ws, "Failed to save", err)
 	}
 
 	transactionData := map[string]interface{}{
@@ -349,7 +346,7 @@ func UpdateTransaction(
 
 	responseData, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -363,26 +360,26 @@ func DeleteTransaction(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 
 		return
 	}
 	if transaction.UserID != userID {
-		Message(ws, "Error: Transaction does not belong to you")
+		Message(ws, "Transaction does not belong to you", nil)
 		return
 	}
 
 	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		Message(ws, "Error: Transaction not found")
+		Message(ws, "Transaction not found", err)
 		return
 	}
 
 	if err := db.DB.Delete(transaction).Error; err != nil {
-		Message(ws, "Error: Failed to delete")
+		Message(ws, "Failed to delete", err)
 		return
 	}
 
-	Message(ws, "Success: Transaction Deleted")
+	Message(ws, "Success: Transaction Deleted", nil)
 }
 
 func GetAccountBalance(ws *websocket.Conn, accountID string) error {
@@ -392,12 +389,12 @@ func GetAccountBalance(ws *websocket.Conn, accountID string) error {
 	account.ID = accountID
 
 	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		Message(ws, "Error: Account not found")
+		Message(ws, "Account not found", err)
 		return err
 	}
 
 	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-		Message(ws, "Error: Could not get transactions")
+		Message(ws, "Could not get transactions", err)
 		return err
 	}
 
@@ -411,7 +408,7 @@ func GetAccountBalance(ws *websocket.Conn, accountID string) error {
 	account.Balance = totalBalance
 
 	if err := db.DB.Save(account).Error; err != nil {
-		Message(ws, "Error: Failed to save")
+		Message(ws, "Failed to save", err)
 		return err
 	}
 

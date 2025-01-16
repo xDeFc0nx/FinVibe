@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"regexp"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/xDeFc0nx/logger-go-pkg"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xDeFc0nx/FinVibe/db"
@@ -98,7 +98,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Message(ws, "Error: User not found")
+		Message(ws, "User not found", err)
 		return
 	}
 
@@ -107,6 +107,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		"FirstName": user.FirstName,
 		"LastName":  user.LastName,
 		"Email":     user.Email,
+		"Country":   user.Country,
 	}
 
 	response := map[string]interface{}{
@@ -115,7 +116,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	responseData, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -123,18 +124,18 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Message(ws, "Error: User not found")
+		Message(ws, "User not found", err)
 		return
 	}
 
 	if err := json.Unmarshal(data, &user); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 		return
 	}
 
 	if err := db.DB.Save(user).Error; err != nil {
 
-		Message(ws, "Error: Failed to save")
+		Message(ws, "Failed to save", err)
 		return
 	}
 
@@ -151,7 +152,7 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	responseData, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -159,14 +160,14 @@ func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Message(ws, "Error: User not found")
+		Message(ws, "User not found", err)
 		return
 	}
 
 	if err := db.DB.Delete(user).Error; err != nil {
-		Message(ws, "Error: Failed to update user")
+		Message(ws, "Failed to update user", err)
 		return
 	}
 
-	Message(ws, "Success: Updated user")
+	Message(ws, "Success: Updated user", nil)
 }

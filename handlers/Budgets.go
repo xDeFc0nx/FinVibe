@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
-	"github.com/xDeFc0nx/logger-go-pkg"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -23,19 +23,19 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 	}
 
 	if budget.ID == "" {
-		Message(ws, "Erro: ID is required")
+		Message(ws, "ID is required", nil)
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&budget.Account).Error; err != nil {
-		Message(ws, "Error: Account not found")
+		Message(ws, "Account not found", err)
 	}
 
 	if err := db.DB.Create(&budget).Error; err != nil {
-		Message(ws, "Error: Failed to create budget")
+		Message(ws, "Failed to create budget", err)
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
@@ -48,7 +48,7 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	responseData, _ := json.Marshal(response)
 
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("Failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -60,7 +60,7 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := db.DB.Where("user_id =? AND account_id = ?", userID, requestData.AccountID).Find(&budgets).Error; err != nil {
-		Message(ws, "Error: Budgets not found")
+		Message(ws, "Budgets not found", err)
 	}
 	var wg sync.WaitGroup
 	for i := range budgets {
@@ -68,15 +68,16 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 		go func(a *types.Budget) {
 			defer wg.Done()
 			if err := GetBudgetCal(ws, a.ID); err != nil {
-				logger.Error("%s", err.Error())
+				slog.Error(
+					"Failed to get budget",
+					slog.String("error", err.Error()),
+				)
 			}
 		}(&budgets[i])
 	}
 	wg.Wait()
 	if err := db.DB.Where("user_id = ?", userID).Find(&budgets).Error; err != nil {
-		if err := ws.WriteMessage(websocket.TextMessage, []byte(`{"Error":"budgets not found"}`+err.Error())); err != nil {
-			logger.Error("%s", err.Error())
-		}
+		Message(ws, "Budgets not found", err)
 	}
 
 	budgetsData := make([]map[string]interface{}, len(budgets))
@@ -99,7 +100,7 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	responseData, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("Failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -107,18 +108,18 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 	}
 	if budget.ID == "" {
-		Message(ws, "Error: ID is required")
+		Message(ws, "ID is required", nil)
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, budget.ID).First(&budget).Error; err != nil {
-		Message(ws, "Error: Budget not found")
+		Message(ws, "Budget not found", err)
 	}
 
 	if err := db.DB.Save(budget).Error; err != nil {
-		Message(ws, "Error: Saving")
+		Message(ws, "Failed to save", err)
 	}
 
 	response := map[string]interface{}{
@@ -132,7 +133,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	responseData, _ := json.Marshal(response)
 
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("Failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -140,15 +141,15 @@ func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Message(ws, InvalidData)
+		Message(ws, InvalidData, err)
 	}
 
 	if budget.ID == "" {
-		Message(ws, "Error: ID is required")
+		Message(ws, "ID is required", nil)
 	}
 
 	if err := db.DB.Where("user_id =? AND id =?", userID, budget.ID).Delete(&budget).Error; err != nil {
-		Message(ws, "Error: Failed to delete budget")
+		Message(ws, "Failed to delete budget", err)
 	}
 
 	response := map[string]interface{}{
@@ -160,7 +161,7 @@ func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	responseData, _ := json.Marshal(response)
 
 	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("Failed to send message", slog.String("error", err.Error()))
 	}
 }
 
@@ -172,13 +173,13 @@ func GetBudgetCal(ws *websocket.Conn, accountID string) error {
 	account.ID = accountID
 
 	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		Message(ws, "Error: Account not found")
+		Message(ws, "Account not found", err)
 		return err
 	}
 
 	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
 
-		Message(ws, "Error: Could not fetch transactions")
+		Message(ws, "Could not fetch transactions", err)
 		return err
 	}
 
@@ -192,7 +193,7 @@ func GetBudgetCal(ws *websocket.Conn, accountID string) error {
 	budget.TotalSpent = totalBalance
 
 	if err := db.DB.Save(budget).Error; err != nil {
-		Message(ws, "Error: Failed to save")
+		Message(ws, "Failed to save", err)
 		return err
 	}
 

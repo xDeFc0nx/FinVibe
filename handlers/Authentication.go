@@ -3,14 +3,13 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
-	"github.com/xDeFc0nx/logger-go-pkg"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xDeFc0nx/FinVibe/db"
@@ -23,12 +22,6 @@ func Create_JWT_Token(
 	user types.User,
 	connectionID string,
 ) (string, int64, error) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		logger.Error("Error loading.env file")
-		os.Exit(1)
-	}
-
 	exp := time.Now().Add(time.Minute * 30).Unix()
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
@@ -43,32 +36,25 @@ func Create_JWT_Token(
 }
 
 func DecodeJWTToken(token string) (string, string, error) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		logger.Error("Error loading .env file")
-		os.Exit(1)
-	}
-
 	token = strings.TrimPrefix(
 		token,
 		"Bearer ",
-	) // Remove "Bearer " prefix if it exists
+	)
 
-	// Parse the token
 	parsedToken, err := jwt.Parse(
 		token,
 		func(token *jwt.Token) (interface{}, error) {
-			// Ensure the signing method matches the expected method
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method")
 			}
 			return []byte(
 				os.Getenv("SECRET_KEY"),
-			), nil // Use your actual secret key
+			), nil
 		},
 	)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to parse token: %v", err)
+		slog.Error("Failed to parse token", slog.String("error", err.Error()))
+		return "", "", err
 	}
 
 	// Check if the token is valid and extract claims
@@ -77,18 +63,28 @@ func DecodeJWTToken(token string) (string, string, error) {
 		// Extract the userID and connectionID from claims
 		userID, ok := claims["user_id"].(string)
 		if !ok {
-			return "", "", fmt.Errorf("user_id not found in claims")
+			slog.Error(
+				"userID not found in claims",
+			)
+			return "", "", err
+
 		}
 
 		connectionID, ok := claims["connectionID"].(string)
 		if !ok {
-			return "", "", fmt.Errorf("connectionID not found in claims")
+			slog.Error(
+				"connectionID not found in claims",
+			)
+			return "", "", err
+
 		}
 
 		return userID, connectionID, nil
 	}
-
-	return "", "", fmt.Errorf("invalid token or claims")
+	slog.Error(
+		"invalid token or claims",
+	)
+	return "", "", err
 }
 
 func CheckAuth(ws *fiber.Ctx) error {

@@ -2,14 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/xDeFc0nx/logger-go-pkg"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -26,7 +24,12 @@ func CreateWebSocketConnection(userID string) (string, error) {
 
 	// Save to the database
 	if err := db.DB.Create(socket).Error; err != nil {
-		return "", fmt.Errorf("failed to create WebSocket: %w", err)
+		slog.Error(
+			"Creating WebSocket failed",
+			slog.String("UserID", userID),
+			slog.String("error", err.Error()),
+		)
+		return "", err
 	}
 
 	return socket.ID, nil
@@ -37,12 +40,12 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
 
-		Message(ws, "Error: Could not find user")
+		Message(ws, "Could not find user", err)
 		return
 	}
 
 	if err := db.DB.Model(&socket).Update("LastPing", time.Now().UTC()).Error; err != nil {
-		Message(ws, "Error: Failed to update")
+		Message(ws, "Failed to update", err)
 	}
 }
 
@@ -52,15 +55,24 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 		socket := new(types.WebSocketConnection)
 
 		if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
+			slog.Error(
+				"WebSocket not found",
+				slog.String("UserID", userID),
+				slog.String("error", err.Error()),
+			)
 
-			fmt.Printf("WebSocket not found: %v", err)
 			return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 
 		}
 		socket.LastPing = time.Now()
 		socket.IsActive = true
 		if err := db.DB.Save(socket).Error; err != nil {
-			log.Printf("Failed to update WebSocket connection: %v", err)
+			slog.Error(
+				"WebSocket update failed",
+				slog.String("UserID", userID),
+				slog.String("error", err.Error()),
+			)
+
 			return c.Status(500).
 				JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
 		}
@@ -70,37 +82,46 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 	return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 }
 
-func HandleWebSocketConnection(ws *fiber.Ctx) error {
-	log.Println("Incoming WebSocket connection request")
+func HandleWebSocketConnection(c *fiber.Ctx) error {
+	slog.Info("Incoming Socket connection", slog.String("IP Address", c.IP()))
 
 	socket := new(types.WebSocketConnection)
-	token := ws.Cookies("jwt-token")
+	token := c.Cookies("jwt-token")
 
 	if token == "" {
-		log.Println("Token is missing")
-		return ws.Status(400).JSON(fiber.Map{"error": "Token is missing"})
+		slog.Info("Token is missing", slog.String("error", "Token is missing"))
+		return c.Status(400).JSON(fiber.Map{"error": "Token is missing"})
 	}
 
 	userID, connectionID, err := DecodeJWTToken(token)
 	if err != nil {
-		log.Printf("Failed to decode JWT token: %v\n", err)
-		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+		slog.Error(
+			"Failed to decode JWT token",
+			slog.String("error", err.Error()),
+		)
+
+		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
 
 	if err := db.DB.Where("connection_id = ?", connectionID).First(socket).Error; err != nil {
-		log.Printf("WebSocket not found for ID: %s\n", socket.ConnectionID)
-		return ws.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
+		slog.Error(
+			"WebSocket not found",
+			slog.String("UserID", userID),
+			slog.String("error", err.Error()),
+		)
+
+		return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 	}
 
-	if !socket.IsActive {
-		log.Printf("WebSocket with ID %s is not active\n", socket.ConnectionID)
-
-		return ws.Status(403).
-			JSON(fiber.Map{"error": "WebSocket is not active"})
+	socket.IsActive = true
+	if err := db.DB.Save(socket).Error; err != nil {
+		slog.Error("Failed to update socket", slog.String("error", err.Error()))
 	}
-
 	return websocket.New(func(ws *websocket.Conn) {
-		logger.Success("User Connected: %s", userID)
+		slog.Info(
+			"User Connected",
+			slog.String("UserID", userID),
+		)
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -110,16 +131,19 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 
 				select {
 				case <-ticker.C:
-					if time.Since(socket.LastPing) > 15*time.Second {
-						Message(ws, "ping")
-						return
+					if socket.IsActive {
+						if time.Since(socket.LastPing) > 15*time.Second {
+							Message(ws, "ping", err)
+						}
 					}
 
 				case <-timeout:
-					if time.Since(socket.LastPing) > 20*time.Second {
-						Message(ws, "Connection Timeout")
-						ws.Close()
-						return
+					if socket.IsActive {
+						if time.Since(socket.LastPing) > 20*time.Second {
+							Message(ws, "Connection Timeout", err)
+							ws.Close()
+							return
+						}
 					}
 				}
 			}
@@ -128,24 +152,26 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 		for {
 			_, msg, err := ws.ReadMessage()
 			if err != nil {
-				logger.Debug("read: %s", err)
+				slog.Info("read", slog.String("error", err.Error()))
 				break
 			}
-
-			logger.Debug("recv: %s from: %s", msg, userID)
-
 			var message struct {
 				Action string          `json:"action"`
 				Data   json.RawMessage `json:"data"`
 			}
 
 			if err := json.Unmarshal(msg, &message); err != nil {
-				Message(ws, InvalidData)
+				Message(ws, InvalidData, err)
 				continue
 			}
+			slog.Info(
+				"recv",
+				slog.String("action", message.Action),
+				slog.String("from", userID),
+			)
 
 			if message.Action == "" {
-				Message(ws, "Error: Action required")
+				Message(ws, "Action required", err)
 				continue
 			}
 
@@ -176,12 +202,17 @@ func HandleWebSocketConnection(ws *fiber.Ctx) error {
 			if exists {
 				handler(ws, message.Data, userID)
 			} else {
-				Message(ws, "Error: Unknown Action")
+				Message(ws, "Unknown Action", err)
 			}
 		}
 
 		defer func() {
+			slog.Info("Connection Closed", slog.String("user", userID))
 			ws.Close()
+			socket.IsActive = false
+			if err := db.DB.Save(socket).Error; err != nil {
+				Message(ws, "Failed to update", err)
+			}
 		}()
-	})(ws)
+	})(c)
 }

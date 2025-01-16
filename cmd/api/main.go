@@ -1,11 +1,11 @@
 package main
 
 import (
+	"log/slog"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/xDeFc0nx/logger-go-pkg"
 
 	"github.com/xDeFc0nx/FinVibe/cmd/flag"
 	"github.com/xDeFc0nx/FinVibe/db"
@@ -13,6 +13,12 @@ import (
 )
 
 func main() {
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
+	slog.SetDefault(logger)
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     "http://localhost:3000",
@@ -37,7 +43,6 @@ func main() {
 		return c.SendFile("./client/dist/index.html")
 	})
 	if err := app.Listen(os.Getenv("PORT")); err != nil {
-		logger.Error("%s", err.Error())
+		slog.Error("Error Listening", slog.String("error", err.Error()))
 	}
-
 }
