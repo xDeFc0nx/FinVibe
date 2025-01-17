@@ -201,5 +201,5 @@ func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	Send_Message(ws, "Success: Updated user")
+	Send_Message(ws, "Updated user")
 }

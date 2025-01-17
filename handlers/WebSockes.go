@@ -44,7 +44,7 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if err := db.DB.Model(&socket).Update("LastPing", time.Now().UTC()).Error; err != nil {
-		Send_error(ws, "Failed to update", err)
+		Send_Error(ws, "Failed to update", err)
 	}
 }
 
@@ -132,14 +132,22 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				case <-ticker.C:
 					if socket.IsActive {
 						if time.Since(socket.LastPing) > 15*time.Second {
-							Send_Message(ws, "ping", err)
+							response := map[string]string{
+								"message": "pong",
+							}
+							responseJson, _ := json.Marshal(response)
+							Send_Message(ws, string(responseJson))
 						}
 					}
 
 				case <-timeout:
 					if socket.IsActive {
 						if time.Since(socket.LastPing) > 20*time.Second {
-							Send_Message(ws, "Connection Timeout", err)
+							response := map[string]string{
+								"message": "Timeout",
+							}
+							responseJson, _ := json.Marshal(response)
+							Send_Message(ws, string(responseJson))
 							ws.Close()
 							return
 						}
