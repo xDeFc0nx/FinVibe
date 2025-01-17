@@ -1,10 +1,10 @@
 import "./App.css";
 import App from "@/App";
 import Index from "@/pages/(secure)/index";
+import Settings from "@/pages/(secure)/settings/index"
 import { Layout } from "@/pages/(secure)/layout";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
@@ -21,6 +21,7 @@ ReactDOM.createRoot(root).render(
 
       <Route path="/app" element={<Layout />}>
         <Route path="dashboard" element={<Index />} />
+        <Route path="settings" element={<Settings/>} />
       </Route>
     </Routes>
   </BrowserRouter>

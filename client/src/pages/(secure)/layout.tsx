@@ -16,7 +16,6 @@ export function Layout({ children }: LayoutProps): JSX.Element {
       <WebSocketProvider>
         <SidebarProvider>
           <AppSidebar />
-          <SidebarTrigger />
           <Outlet />
         </SidebarProvider>
       </WebSocketProvider>
