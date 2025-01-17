@@ -57,10 +57,8 @@ func DecodeJWTToken(token string) (string, string, error) {
 		return "", "", err
 	}
 
-	// Check if the token is valid and extract claims
 	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok &&
 		parsedToken.Valid {
-		// Extract the userID and connectionID from claims
 		userID, ok := claims["user_id"].(string)
 		if !ok {
 			slog.Error(
