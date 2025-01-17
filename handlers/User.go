@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"regexp"
 	"time"
 
@@ -96,9 +95,8 @@ func CreateUser(c *fiber.Ctx) error {
 
 func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
-
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Message(ws, "User not found", err)
+		Send_Error(ws, "User not found", err)
 		return
 	}
 
@@ -115,27 +113,63 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		slog.Error("failed to send message", slog.String("error", err.Error()))
-	}
+	Send_Message(ws, string(responseData))
 }
 
 func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Message(ws, "User not found", err)
+		Send_Error(ws, "User not found", err)
 		return
 	}
 
 	if err := json.Unmarshal(data, &user); err != nil {
-		Message(ws, InvalidData, err)
+		Send_Error(ws, InvalidData, err)
+		return
+	}
+
+	emailRegex := regexp.MustCompile(
+		`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
+	)
+
+	if !emailRegex.MatchString(user.Email) {
+		Send_Error(ws, "Invalid Email Address", nil)
+		return
+	}
+
+	var existingUser types.User
+	if err := db.DB.Where("email = ? AND id != ?", user.Email, userID).First(&existingUser).Error; err == nil {
+		Send_Error(ws, "Email already exists", nil)
+		return
+	}
+	if user.FirstName == "" {
+		Send_Error(ws, "First Name is required", nil)
+		return
+	}
+
+	if user.LastName == "" {
+		Send_Error(ws, "Last Name s required", nil)
+		return
+	}
+	if user.Email == "" {
+		Send_Error(ws, "Email is required", nil)
+		return
+	}
+
+	if user.Country == "" {
+		Send_Error(ws, "Country is required", nil)
+		return
+	}
+
+	if len(user.Password) < 8 {
+		Send_Error(ws, "Password must be at least 8 characters", nil)
 		return
 	}
 
 	if err := db.DB.Save(user).Error; err != nil {
 
-		Message(ws, "Failed to save", err)
+		Send_Error(ws, "Failed to save", err)
 		return
 	}
 
@@ -151,23 +185,21 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	if err := ws.WriteMessage(websocket.TextMessage, responseData); err != nil {
-		slog.Error("failed to send message", slog.String("error", err.Error()))
-	}
+	Send_Message(ws, string(responseData))
 }
 
 func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
 	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Message(ws, "User not found", err)
+		Send_Error(ws, "User not found", err)
 		return
 	}
 
 	if err := db.DB.Delete(user).Error; err != nil {
-		Message(ws, "Failed to update user", err)
+		Send_Error(ws, "Failed to update user", err)
 		return
 	}
 
-	Message(ws, "Success: Updated user", nil)
+	Send_Message(ws, "Success: Updated user")
 }
