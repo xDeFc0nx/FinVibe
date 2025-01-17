@@ -77,7 +77,14 @@ export default function Index() {
          ID: userData?.ID,
                } );
                             
-       }
+       
+       socket.onMessage((msg)=>{
+
+           const response =  JSON.parse(msg)
+
+       if (response.userData){
+
+       
  setUserData({ 
      ...userData,
         FirstName: values.FirstName,
@@ -85,6 +92,13 @@ export default function Index() {
         Email: values.Email,
         Country: values.Country,
       });
+       }
+       if (response.Error){
+        toast.error(response.Error)
+
+       }
+       }
+                       )}
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");

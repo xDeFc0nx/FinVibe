@@ -8,10 +8,10 @@ export class WebSocketClient {
 
     this.socket.onmessage = (event) => {
       this.messageHandlers.forEach((handler) => handler(event.data));
-        const message = JSON.parse(event.data);
-        console.log(message)
-      if (message === "ping") {
-            if (this.socket.readyState === WebSocket.OPEN) {
+        const response = JSON.parse(event.data);
+        console.log(response)
+       if (response.message === "pong") {
+           if (this.socket.readyState === WebSocket.OPEN) {
         this.socket.send(JSON.stringify({ Action: "pong" }));
             }else {
     console.error("Socket is not open. Cannot send pong.");
