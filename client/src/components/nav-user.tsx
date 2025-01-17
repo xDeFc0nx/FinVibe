@@ -1,13 +1,9 @@
 "use client"
 
 import {
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
   Settings,
-  Sparkles,
 } from "lucide-react"
 
 import {
@@ -18,7 +14,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -30,7 +25,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Link, useNavigate, type Navigate } from "react-router"
+import { Link, useNavigate, } from "react-router"
 import { toast } from "react-toastify"
 
 export function NavUser({

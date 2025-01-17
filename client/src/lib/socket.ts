@@ -9,6 +9,7 @@ export class WebSocketClient {
     this.socket.onmessage = (event) => {
       this.messageHandlers.forEach((handler) => handler(event.data));
         const message = JSON.parse(event.data);
+        console.log(message)
       if (message === "ping") {
             if (this.socket.readyState === WebSocket.OPEN) {
         this.socket.send(JSON.stringify({ Action: "pong" }));
@@ -23,14 +24,17 @@ export class WebSocketClient {
     this.messageHandlers.push(handler);
   }
 
-  send(message: string) {
-    if (this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ Action: message}));
-    } else {
-      console.error("WebSocket is not open.");
+  send(action: string, data: any = null) {
+  if (this.socket.readyState === WebSocket.OPEN) {
+    const message: { Action: string; Data?: any } = { Action: action };    if (data) {
+      message.Data = data;
     }
+    this.socket.send(JSON.stringify(message));
+    console.log(message)
+  } else {
+    console.error("WebSocket is not open.");
   }
-
+}
   close() {
     this.socket.close();
   }

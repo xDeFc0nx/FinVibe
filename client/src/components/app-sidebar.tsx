@@ -1,14 +1,11 @@
 import * as React from "react"
 import {
   AudioWaveform,
-  BookOpen,
-  Bot,
   Command,
   Frame,
   GalleryVerticalEnd,
   Map,
   PieChart,
-  Settings2,
   SquareTerminal,
 } from "lucide-react"
 
@@ -16,7 +13,6 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
-import { useNavigate } from "react-router";
 import { useWebSocket } from "./WebSocketProvidor";
 import { useEffect, useState } from "react";
 import {
@@ -27,6 +23,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { ThemeChanger } from "./ui/theme"
+import { useUserData } from "./context/userData"
 
 const data = {
    teams: [
@@ -76,31 +73,9 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-   const {socket, isReady}= useWebSocket();
 
-   const [userData, setUserData] = useState({
-       FirstName: "",
-      Email:"",
-   });
- 
-
-  useEffect(()=>{
-      
-         if(socket && isReady){
-               socket.send( "getUser" );
-
-        socket.onMessage((msg)=>{
-    const response =  JSON.parse(msg)
-    if (response.userData) {
-        
-     setUserData(response.userData)
-    }
-    })}},[socket, isReady]) 
-useEffect(() => {
-}, [userData]);
-useEffect(() => {
-  console.log("Updated userData:", userData);
-}, [userData]);
+   const {userData }= useUserData();
+  
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>

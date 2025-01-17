@@ -42,41 +42,24 @@ import {
 } from "@/components/ui/password-input"
 import { toast } from "react-toastify"
 import { useWebSocket } from "@/components/WebSocketProvidor"
+import { useUserData } from "@/components/context/userData"
 
 const formSchema = z.object({
   FirstName: z.string(),
   LastName: z.string(),
   Email: z.string(),
   Country: z.string(),
-  OldPassword: z.string().min(8),
-  NewPassword: z.string().min(8),
-  ConfirmPassword: z.string().min(8)
+  OldPassword: z.string().min(8).optional(),
+  NewPassword: z.string().min(8).optional(),
+  ConfirmPassword: z.string().min(8).optional()
 });
 export default function Index() {
      const {socket, isReady}= useWebSocket();
 
-   const [userData, setUserData] = useState({
-       FirstName: "",
-       LastName:"",
-      Email:"",
-      Country: ""
-   });
+  
+
+  const { userData, setUserData } = useUserData();
  
-
-  useEffect(()=>{
-      
-         if(socket && isReady){
-               socket.send( "getUser" );
-
-        socket.onMessage((msg)=>{
-    const response =  JSON.parse(msg)
-    if (response.userData) {
-        
-     setUserData(response.userData)
-    }
-    })}},[socket, isReady]) 
-useEffect(() => {
-}, [userData]);
 
   const form = useForm < z.infer < typeof formSchema >> ({
     resolver: zodResolver(formSchema),
@@ -85,11 +68,23 @@ useEffect(() => {
    function onSubmit(values: z.infer < typeof formSchema > ) {
     try {
       console.log(values);
-      toast(
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>
-      );
+       if(socket && isReady){
+               socket.send( "updateUser", {
+                     FirstName: values.FirstName,
+        LastName: values.LastName,
+        Email: values.Email,
+        Country: values.Country,
+         ID: userData?.ID,
+               } );
+                            
+       }
+ setUserData({ 
+     ...userData,
+        FirstName: values.FirstName,
+        LastName: values.LastName,
+        Email: values.Email,
+        Country: values.Country,
+      });
     } catch (error) {
       console.error("Form submission error", error);
       toast.error("Failed to submit the form. Please try again.");

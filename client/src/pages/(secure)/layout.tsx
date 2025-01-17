@@ -1,5 +1,6 @@
 import { WebSocketProvider } from "@/components/WebSocketProvidor";
 import { AppSidebar } from "@/components/app-sidebar";
+import { UserDataProvider } from "@/components/context/userData";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import CheckAuth from "@/lib/checkAuth";
 import type { JSX } from "react";
@@ -14,10 +15,13 @@ export function Layout({ children }: LayoutProps): JSX.Element {
     <main>
       <CheckAuth />
       <WebSocketProvider>
+       <UserDataProvider>
+
         <SidebarProvider>
           <AppSidebar />
           <Outlet />
         </SidebarProvider>
+       </UserDataProvider>
       </WebSocketProvider>
     </main>
   );
