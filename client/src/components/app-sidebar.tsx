@@ -1,95 +1,86 @@
-"use client";
-
+import * as React from "react"
 import {
-  Calendar,
-  ChevronUp,
-  Home,
-  Inbox,
-  Search,
-  Settings,
-  User2,
-} from "lucide-react";
+  AudioWaveform,
+  BookOpen,
+  Bot,
+  Command,
+  Frame,
+  GalleryVerticalEnd,
+  Map,
+  PieChart,
+  Settings2,
+  SquareTerminal,
+} from "lucide-react"
 
+import { NavMain } from "@/components/nav-main"
+import { NavProjects } from "@/components/nav-projects"
+import { NavUser } from "@/components/nav-user"
+import { TeamSwitcher } from "@/components/team-switcher"
+import { useNavigate } from "react-router";
+import { useWebSocket } from "./WebSocketProvidor";
+import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-} from "@/components/ui/sidebar";
+  SidebarHeader,
+  SidebarRail,
+} from "@/components/ui/sidebar"
 
-import { ThemeChanger } from "@/components/ui/theme";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu";
-import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
-import { useWebSocket } from "./WebSocketProvidor";
-import { useEffect, useState } from "react";
-const items = [
-  {
-    title: "Home",
-    url: "#",
-    icon: Home,
-  },
-  {
-    title: "Inbox",
-    url: "#",
-    icon: Inbox,
-  },
-  {
-    title: "Calendar",
-    url: "#",
-    icon: Calendar,
-  },
-  {
-    title: "Search",
-    url: "#",
-    icon: Search,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
-];
+const data = {
+   teams: [
+    {
+      name: "Acme Inc",
+      logo: GalleryVerticalEnd,
+      plan: "Enterprise",
+    },
+    {
+      name: "Acme Corp.",
+      logo: AudioWaveform,
+      plan: "Startup",
+    },
+    {
+      name: "Evil Corp.",
+      logo: Command,
+      plan: "Free",
+    },
+  ],
+  navMain: [
+    {
+      title: "dashboard",
+      url: "dashboard",
+      icon: SquareTerminal,
+      isActive: true,
+      items: [
+             ],
+    },
+  ],
+  projects: [
+    {
+      name: "Design Engineering",
+      url: "#",
+      icon: Frame,
+    },
+    {
+      name: "Sales & Marketing",
+      url: "#",
+      icon: PieChart,
+    },
+    {
+      name: "Travel",
+      url: "#",
+      icon: Map,
+    },
+  ],
+}
 
-export function AppSidebar() {
-  const navigate = useNavigate();
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
    const {socket, isReady}= useWebSocket();
 
    const [userData, setUserData] = useState({
        FirstName: "",
-      LastName:"",
       Email:"",
-      ID:""
    });
-  const handleLogout = async () => {
-    try {
-      const response = await fetch("http://localhost:3001/Logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        navigate("/login");
-      } else {
-        toast.error("Wrong credentials");
-      }
-    } catch (error) {
-      toast.error("Login Failed ");
-    }
-  };
-
  
 
   useEffect(()=>{
@@ -105,59 +96,23 @@ export function AppSidebar() {
     }
     })}},[socket, isReady]) 
 useEffect(() => {
-}, [userData]); 
-    
-    return (
-    <Sidebar>
+}, [userData]);
+useEffect(() => {
+  console.log("Updated userData:", userData);
+}, [userData]);
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <TeamSwitcher teams={data.teams} />
+      </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <ThemeChanger />
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <NavMain items={data.navMain} />
+        <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton>
-                  <User2 /> {userData.FirstName}
-                  <ChevronUp className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
-                <DropdownMenuItem>
-                  <span>Account</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <span>Billing</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <button onClick={handleLogout} role="button">Sign out</button>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser user={userData} />
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
-  );
+  )
 }
-
