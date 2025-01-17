@@ -22,7 +22,6 @@ func CreateWebSocketConnection(userID string) (string, error) {
 	socket.LastPing = time.Now()
 	socket.CreatedAt = time.Now()
 
-	// Save to the database
 	if err := db.DB.Create(socket).Error; err != nil {
 		slog.Error(
 			"Creating WebSocket failed",
@@ -40,12 +39,12 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
 
-		Message(ws, "Could not find user", err)
+		Send_Error(ws, "Could not find user", err)
 		return
 	}
 
 	if err := db.DB.Model(&socket).Update("LastPing", time.Now().UTC()).Error; err != nil {
-		Message(ws, "Failed to update", err)
+		Send_error(ws, "Failed to update", err)
 	}
 }
 
@@ -133,14 +132,14 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				case <-ticker.C:
 					if socket.IsActive {
 						if time.Since(socket.LastPing) > 15*time.Second {
-							Message(ws, "ping", err)
+							Send_Message(ws, "ping", err)
 						}
 					}
 
 				case <-timeout:
 					if socket.IsActive {
 						if time.Since(socket.LastPing) > 20*time.Second {
-							Message(ws, "Connection Timeout", err)
+							Send_Message(ws, "Connection Timeout", err)
 							ws.Close()
 							return
 						}
@@ -161,7 +160,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			}
 
 			if err := json.Unmarshal(msg, &message); err != nil {
-				Message(ws, InvalidData, err)
+				Send_Error(ws, InvalidData, err)
 				continue
 			}
 			slog.Info(
@@ -171,7 +170,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			)
 
 			if message.Action == "" {
-				Message(ws, "Action required", err)
+				Send_Error(ws, "Action required", err)
 				continue
 			}
 
@@ -202,7 +201,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			if exists {
 				handler(ws, message.Data, userID)
 			} else {
-				Message(ws, "Unknown Action", err)
+				Send_Error(ws, "Unknown Action", err)
 			}
 		}
 
@@ -211,7 +210,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			ws.Close()
 			socket.IsActive = false
 			if err := db.DB.Save(socket).Error; err != nil {
-				Message(ws, "Failed to update", err)
+				Send_Error(ws, "Failed to update", err)
 			}
 		}()
 	})(c)
