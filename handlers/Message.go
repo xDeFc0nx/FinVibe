@@ -19,7 +19,7 @@ func Send_Message(ws *websocket.Conn, sendText string) {
 
 func Send_Error(ws *websocket.Conn, sendText string, err error) {
 	response := map[string]interface{}{
-		"Message": sendText,
+		"Error": sendText,
 	}
 
 	if err != nil {
