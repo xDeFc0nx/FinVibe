@@ -46,9 +46,6 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
      setUserData(response.userData)
     }
     })}},[socket, isReady]) 
-useEffect(() => {
-  console.log("User data updated", userData);
-}, [userData]); // This will log whenever userData is updated
   return (
     <UserDataContext.Provider value={{ userData, setUserData }}>
       {children}
