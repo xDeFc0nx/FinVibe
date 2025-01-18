@@ -11,7 +11,7 @@ import {
   SidebarInset,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Link } from "react-router"
+import { Link, useNavigate } from "react-router"
 import {
     useEffect,
 } from "react"
@@ -42,6 +42,15 @@ import {
 import { toast } from "react-toastify"
 import { useWebSocket } from "@/components/WebSocketProvidor"
 import { useUserData } from "@/components/context/userData"
+import { ThemeChanger } from "@/components/ui/theme"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 const formSchema = z.object({
   FirstName: z.string(),
@@ -55,6 +64,7 @@ const formSchema = z.object({
 export default function Index() {
      const {socket, isReady}= useWebSocket();
 
+    const navigate = useNavigate()
   
 
   const { userData, setUserData } = useUserData();
@@ -112,6 +122,43 @@ export default function Index() {
       form.setValue("Country", userData.Country);
     }
   }, [userData, form]);
+
+  
+  const handleDelete = async ()  => {
+      await fetch("http://localhost:3001/logout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+
+    });
+           navigate("/register");
+
+      try {
+       if(socket && isReady){
+     
+
+               socket.send("deleteUser") 
+       
+       socket.onMessage((msg)=>{
+
+           const response =  JSON.parse(msg)
+
+       if (response.Success){
+
+      toast.success("Account Deleted!")
+    
+       }
+       if (response.Error){
+        toast.error(response.Error)
+       }
+       }
+                       )}
+    } catch (error) {
+      console.error("Form submission error", error);
+      toast.error("Failed to submit the form. Please try again.");
+    }
+  }
+
 
   return (
       <SidebarInset>
@@ -265,8 +312,39 @@ export default function Index() {
         />
         
         <Button type="submit" className="mt-5">Submit</Button>
-      </form>
+      <h3 className="mt-5">Theme</h3>
+            <ThemeChanger/>
+
+
+        </form>
     </Form>
+    <Dialog>
+
+  <DialogTrigger>
+  <Button variant="destructive" >
+
+  Delete Account
+  </Button>
+
+  </DialogTrigger>
+
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Are you absolutely sure?</DialogTitle>
+      <DialogDescription>
+        This action cannot be undone. This will permanently delete your account
+        and remove your data from our servers. <br/>
+            <Button variant="destructive" className="mt-5" onClick={handleDelete} >
+            
+
+  Im Sure!
+  </Button>
+
+      </DialogDescription>
+    </DialogHeader>
+  </DialogContent>
+</Dialog>
+
         </div>
       </SidebarInset>
   )

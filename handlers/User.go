@@ -200,6 +200,9 @@ func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		Send_Error(ws, "Failed to update user", err)
 		return
 	}
-
-	Send_Message(ws, "Updated user")
+	response := map[string]string{
+		"Success": "Deleted User",
+	}
+	responseJson, _ := json.Marshal(response)
+	Send_Message(ws, string(responseJson))
 }
