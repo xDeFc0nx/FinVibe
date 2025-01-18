@@ -14,7 +14,6 @@ import {
 import { Link } from "react-router"
 import {
     useEffect,
-  useState
 } from "react"
 import {
   useForm
@@ -265,7 +264,7 @@ export default function Index() {
           )}
         />
         
-        <Button type="submit">Submit</Button>
+        <Button type="submit" className="mt-5">Submit</Button>
       </form>
     </Form>
         </div>
