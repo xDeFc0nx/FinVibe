@@ -22,7 +22,7 @@ const hero = () => {
               </p>
 
               <div className="mt-7 grid gap-3 w-full sm:inline-flex ">
-                <Link to={"/login"}>
+                <Link to={"/register"}>
                   <Button>Get started</Button>
                 </Link>
               </div>

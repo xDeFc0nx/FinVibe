@@ -15,14 +15,14 @@ ReactDOM.createRoot(root).render(
   <BrowserRouter>
     <ToastContainer />
     <Routes>
-      <Route path="/" element={<App />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
 
+      <Route path="/" element={<App />} />
+      <Route path="login" element={<Login />} />
+      <Route path="register" element={<Register />} />
       <Route path="/app" element={<Layout />}>
         <Route path="dashboard" element={<Index />} />
         <Route path="settings" element={<Settings/>} />
-      </Route>
+    </Route>
     </Routes>
   </BrowserRouter>
 );

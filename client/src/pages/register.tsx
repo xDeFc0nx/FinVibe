@@ -1,13 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Form,
   FormControl,
   FormField,
@@ -16,6 +9,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -59,7 +53,7 @@ export default function MyForm() {
   return (
     <>
       <div className="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-1 lg:px-0">
-        <Link to="/login">
+        <Link to="/app/dashboard">
           <Button className="absolute right-4 top-4 md:right-8 md:top-8">
             Login
           </Button>
@@ -159,20 +153,17 @@ export default function MyForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Your Password Minimum 8 characters"
-                          type=""
-                          {...field}
-                        />
-                      </FormControl>
+                                   <FormControl>
+                <PasswordInput  placeholder="Your Password" {...field} />
+              </FormControl>
+
 
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit">Submit</Button>
+                <Button type="submit" className="mt-5">Submit</Button>
               </form>
             </Form>
             <p className="px-8 text-center text-sm text-muted-foreground pt-5">

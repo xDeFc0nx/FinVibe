@@ -51,9 +51,7 @@ export function NavUser({
 
       if (response.ok) {
         navigate("/login");
-      } else {
-        toast.error("Wrong credentials");
-      }
+      } 
     } catch (error) {
       toast.error("Login Failed ");
     }

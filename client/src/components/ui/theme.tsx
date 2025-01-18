@@ -1,18 +1,36 @@
+
 "use client";
 
+import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Moon, Sun } from "lucide-react";
-import React, { useState, useEffect } from "react";
-import { Button } from "./button";
 
-export function ThemeChanger() {
-  const [darkMode, setDarkMode] = useState(() =>
-    document.documentElement.classList.contains("dark")
-  );
+interface ThemeContextType {
+  darkMode: boolean;
+  toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
+};
+
+interface ThemeProviderProps {
+  children: ReactNode;
+}
+
+export function ThemeProvider({ children }: ThemeProviderProps) {
+  const [darkMode, setDarkMode] = useState(false);
 
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    document.documentElement.classList.toggle("dark");
-    localStorage.setItem("theme", !darkMode ? "dark" : "light");
+    const newTheme = !darkMode;
+    setDarkMode(newTheme);
+    document.documentElement.classList.toggle("dark", newTheme);
+    localStorage.setItem("theme", newTheme ? "dark" : "light");
   };
 
   useEffect(() => {
@@ -26,15 +44,22 @@ export function ThemeChanger() {
   }, []);
 
   return (
-    <div className="absolute top-4 left-4">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={toggleTheme}
-        className="rounded-full"
-      >
-        {darkMode ? <Sun className="size-5" /> : <Moon className="size-5" />}
-      </Button>
-    </div>
+    <ThemeContext.Provider value={{ darkMode, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function ThemeChanger() {
+  const { darkMode, toggleTheme } = useTheme();
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className="p-2 bg-gray-200 rounded dark:bg-gray-800"
+      aria-label="Toggle Theme"
+    >
+      {darkMode ? <Moon /> : <Sun />}
+    </button>
   );
 }

@@ -13,8 +13,6 @@ import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
-import { useWebSocket } from "./WebSocketProvidor";
-import { useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -22,7 +20,6 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
-import { ThemeChanger } from "./ui/theme"
 import { useUserData } from "./context/userData"
 
 const data = {
@@ -81,7 +78,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
-      <ThemeChanger/>
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavProjects projects={data.projects} />

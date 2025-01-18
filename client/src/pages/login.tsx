@@ -1,13 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Form,
   FormControl,
   FormDescription,
@@ -17,6 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
@@ -94,7 +88,6 @@ export default function MyForm() {
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>Enter your email</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -107,20 +100,19 @@ export default function MyForm() {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input
+                        <PasswordInput
                           className="grid w-full max-w-sm items-center gap-1.5"
                           placeholder="Password"
                           type="password"
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>Enter your password</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit">Submit</Button>
+                <Button type="submit" className="mt-5">Submit</Button>
               </form>
             </Form>
             <p className="px-8 text-center text-sm text-muted-foreground pt-5">
