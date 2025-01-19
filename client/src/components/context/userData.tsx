@@ -28,10 +28,13 @@ interface Transaction{
 interface UserDataContextType {
   userData: UserData;
   accounts: Account[];
+    activeAccount: Account | null;
   transactions: Transaction[];
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
+  setActiveAccount: React.Dispatch<React.SetStateAction<Account | null>>;
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -54,7 +57,9 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     Country: "",
   });
 
-const [accounts, setAccounts] = useState<Account[]>([]); 
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [activeAccount, setActiveAccount] = useState<Account | null>(null);
+
   const [transactions, setTransactions] = useState<Transaction[]>([]); 
 
 
@@ -74,24 +79,31 @@ const [accounts, setAccounts] = useState<Account[]>([]);
         
      setUserData(response.userData)
     }
-    if (response.accounts){
-        setAccounts(response.accounts)
-                        socket.send("getTransactions")
+     if (response.accounts) {
+          setAccounts(response.accounts);
 
-    if (response.transactions){
-        setTransactions(response.transactions)
-    }
-    }
-    })}},[socket, isReady]) 
+          if (response.accounts.length > 0) {
+            setActiveAccount(response.accounts[0]);
+          }
+
+          socket.send("getTransactions", {
+            AccountID: response.accounts[0].AccountID,
+          });
+        }
+        if (response.transactions) {
+          setTransactions(response.transactions);
+        }    })}},[socket, isReady]) 
   return (
     <UserDataContext.Provider
-      value={{
+       value={{
         userData,
         setUserData,
         accounts,
         setAccounts,
         transactions,
         setTransactions,
+        activeAccount,
+        setActiveAccount,
       }}
     >      {children}
     </UserDataContext.Provider>
