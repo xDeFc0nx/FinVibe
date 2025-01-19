@@ -247,7 +247,7 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	response := map[string]interface{}{
-		"Success": transactionData,
+		"transactions": transactionData,
 	}
 
 	responseData, _ := json.Marshal(response)

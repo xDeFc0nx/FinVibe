@@ -12,7 +12,6 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -21,25 +20,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { useUserData } from "./context/userData"
+import { AccountSwitcher } from "./account-switcher"
 
 const data = {
-   teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
+ 
   navMain: [
     {
       title: "dashboard",
@@ -71,12 +55,13 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
-   const {userData }= useUserData();
+ const {  userData } = useUserData();
   
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <AccountSwitcher   />
+
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />

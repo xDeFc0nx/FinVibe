@@ -5,14 +5,33 @@ import { useWebSocket } from "@/components/WebSocketProvidor";
 interface UserData {
   ID: string;
   FirstName: string;
-  LastName: string;
+LastName: string;
   Email: string;
   Country: string;
 }
+interface Account {
+ 	ID:             string,
+			UserID:         string,
+			AccountID:      string,
+			AccountBalance: number,
 
+}
+interface Transaction{
+    ID: string,
+			UserID:      string,
+			AccountID:  string, 
+			Amount:      number,
+			IsRecurring: boolean,
+
+
+}
 interface UserDataContextType {
   userData: UserData;
+  accounts: Account[];
+  transactions: Transaction[];
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
+  setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -34,21 +53,47 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
     Email: "",
     Country: "",
   });
+
+const [accounts, setAccounts] = useState<Account[]>([]); 
+  const [transactions, setTransactions] = useState<Transaction[]>([]); 
+
+
+
   useEffect(()=>{
       
          if(socket && isReady){
-               socket.send( "getUser" );
+
+                socket.send("getUser");
+                socket.send("getAccounts")
 
         socket.onMessage((msg)=>{
+
     const response =  JSON.parse(msg)
+
     if (response.userData) {
         
      setUserData(response.userData)
     }
+    if (response.accounts){
+        setAccounts(response.accounts)
+                        socket.send("getTransactions")
+
+    if (response.transactions){
+        setTransactions(response.transactions)
+    }
+    }
     })}},[socket, isReady]) 
   return (
-    <UserDataContext.Provider value={{ userData, setUserData }}>
-      {children}
+    <UserDataContext.Provider
+      value={{
+        userData,
+        setUserData,
+        accounts,
+        setAccounts,
+        transactions,
+        setTransactions,
+      }}
+    >      {children}
     </UserDataContext.Provider>
   );
 };

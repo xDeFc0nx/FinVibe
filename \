@@ -21,11 +21,13 @@ export default function Index() {
             <Separator orientation="vertical" className="mr-2 h-4" />
             <Breadcrumb>
               <BreadcrumbList>
-                             <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
+                <BreadcrumbItem className="hidden md:block">
+                  <BreadcrumbLink href="#">
+                    Building Your Application
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
-              </BreadcrumbList>
+                <BreadcrumbSeparator className="hidden md:block" />
+                           </BreadcrumbList>
             </Breadcrumb>
           </div>
         </header>

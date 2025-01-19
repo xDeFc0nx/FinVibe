@@ -71,8 +71,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	// Package the response
 	response := map[string]interface{}{
-		"Success":  "Fetched Accounts",
-		"Accounts": accountData,
+		"accounts": accountData,
 	}
 
 	responseData, _ := json.Marshal(response)
