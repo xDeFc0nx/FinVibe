@@ -30,8 +30,16 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if err := db.DB.Create(account).Error; err != nil {
 		Send_Error(ws, "Failed to Create Account", err)
 	}
-	responseData, _ := json.Marshal(account)
+	accountData := map[string]interface{}{
+		"ID":   account.ID,
+		"Type": account.Type,
+	}
 
+	response := map[string]interface{}{
+		"account": accountData,
+	}
+
+	responseData, _ := json.Marshal(response)
 	Send_Message(ws, string(responseData))
 }
 
@@ -65,6 +73,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 			"ID":             a.ID,
 			"UserID":         a.UserID,
 			"AccountID":      a.ID,
+			"Type":           a.Type,
 			"AccountBalance": float64(a.Balance),
 		}
 	}
