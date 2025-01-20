@@ -14,6 +14,7 @@ interface Account {
 			UserID:         string,
 			AccountID:      string,
 			AccountBalance: number,
+            Type: string,
 
 }
 interface Transaction{
