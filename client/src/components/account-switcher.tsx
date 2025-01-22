@@ -42,7 +42,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
 
 export function AccountSwitcher() {
-  const { accounts, setTransactions } = useUserData();
+  const { accounts, setAccounts, setTransactions } = useUserData();
   const { isMobile } = useSidebar();
   const [activeAccount, setActiveAccount] = React.useState(accounts[0]);
   const [open, setOpen] = React.useState(false);
@@ -59,14 +59,17 @@ export function AccountSwitcher() {
       Type: '',
     },
   });
-  function saveAccount(account) {
+  function saveAccount(account: any) {
     setActiveAccount(account);
     localStorage.setItem('activeAccount', JSON.stringify(account));
+    console.log('Saved Account to LocalStorage:', account); // Debugging line
   }
   React.useEffect(() => {
     const savedAccount = localStorage.getItem('activeAccount');
     if (savedAccount) {
       setActiveAccount(JSON.parse(savedAccount));
+    } else if (accounts.length > 0) {
+      setActiveAccount(accounts[0]);
     }
   }, []);
   function onSubmit(values: z.infer<typeof formSchema>) {
@@ -84,6 +87,8 @@ export function AccountSwitcher() {
           if (response.account) {
             setOpen(false);
             saveAccount(response.account);
+            setAccounts((prevAccounts) => [...prevAccounts, response.account]);
+            setActiveAccount(response.account);
           }
 
           if (response.Error) {
@@ -98,7 +103,7 @@ export function AccountSwitcher() {
   }
 
   React.useEffect(() => {
-    if (socket && isReady && activeAccount) {
+    if (socket && isReady && activeAccount.AccountID) {
       socket.send('getTransactions', {
         AccountID: activeAccount.AccountID,
       });
