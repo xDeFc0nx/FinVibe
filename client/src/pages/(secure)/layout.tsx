@@ -1,8 +1,8 @@
 import { WebSocketProvider } from '@/components/WebSocketProvidor';
-import { AppSidebar } from '@/components/app-sidebar';
+import { AppSidebar } from '@/components/sidebar/app-sidebar';
 import { UserDataProvider } from '@/components/context/userData';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { ThemeChanger, ThemeProvider } from '@/components/ui/theme';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import { ThemeProvider } from '@/components/ui/theme';
 import CheckAuth from '@/lib/checkAuth';
 import type { JSX } from 'react';
 import type React from 'react';

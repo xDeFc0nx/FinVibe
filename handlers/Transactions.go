@@ -161,8 +161,10 @@ func CreateTransaction(
 			"UserID":      transaction.UserID,
 			"AccountID":   transaction.AccountID,
 			"Amount":      transaction.Amount,
+			"Description": transaction.Description,
 			"IsRecurring": transaction.IsRecurring,
 			"Frequency":   recurring.Frequency,
+			"CreatedAt":   recurring.CreatedAt,
 		},
 	}
 
@@ -242,7 +244,9 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 			"UserID":      t.UserID,
 			"AccountID":   t.AccountID,
 			"Amount":      t.Amount,
+			"Description": t.Description,
 			"IsRecurring": t.IsRecurring,
+			"CreatedAt":   t.CreatedAt,
 		}
 	}
 
