@@ -1,16 +1,8 @@
-"use client"
+'use client';
 
-import {
-  ChevronsUpDown,
-  LogOut,
-  Settings,
-} from "lucide-react"
+import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,45 +10,43 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { Link, useNavigate, } from "react-router"
-import { toast } from "react-toastify"
+} from '@/components/ui/sidebar';
+import { Link, useNavigate } from 'react-router';
+import { toast } from 'react-toastify';
 
 export function NavUser({
   user,
 }: {
   user: {
-    FirstName: string
-    Email: string
+    FirstName: string;
+    Email: string;
     //avatar: string
-  }
+  };
 }) {
-  const { isMobile } = useSidebar()
-  const navigate = useNavigate()
+  const { isMobile } = useSidebar();
+  const navigate = useNavigate();
   const handleLogout = async () => {
-
     try {
-      const response = await fetch("http://localhost:3001/Logout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('http://localhost:3001/Logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
 
-        credentials: "include",
+        credentials: 'include',
       });
 
       if (response.ok) {
-        navigate("/login");
-      } 
+        navigate('/login');
+      }
     } catch (error) {
-      toast.error("Login Failed ");
+      toast.error('Login Failed ');
     }
   };
-
 
   return (
     <SidebarMenu>
@@ -79,7 +69,7 @@ export function NavUser({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
+            side={isMobile ? 'bottom' : 'right'}
             align="end"
             sideOffset={4}
           >
@@ -89,22 +79,22 @@ export function NavUser({
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.FirstName}</span>
+                  <span className="truncate font-semibold">
+                    {user.FirstName}
+                  </span>
                   <span className="truncate text-xs">{user.Email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <Link to="settings" >
-
+            <Link to="settings">
               <DropdownMenuItem>
                 <Settings />
                 Settings
               </DropdownMenuItem>
             </Link>
-                         <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
-
               <LogOut />
               Log out
             </DropdownMenuItem>
@@ -112,5 +102,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

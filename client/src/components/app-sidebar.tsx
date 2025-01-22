@@ -1,4 +1,4 @@
-import * as React from "react"
+import * as React from 'react';
 import {
   AudioWaveform,
   Command,
@@ -7,61 +7,57 @@ import {
   Map,
   PieChart,
   SquareTerminal,
-} from "lucide-react"
+} from 'lucide-react';
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from '@/components/nav-main';
+import { NavProjects } from '@/components/nav-projects';
+import { NavUser } from '@/components/nav-user';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
-import { useUserData } from "./context/userData"
-import { AccountSwitcher } from "./account-switcher"
+} from '@/components/ui/sidebar';
+import { useUserData } from './context/userData';
+import { AccountSwitcher } from './account-switcher';
 
 const data = {
- 
   navMain: [
     {
-      title: "dashboard",
-      url: "dashboard",
+      title: 'dashboard',
+      url: 'dashboard',
       icon: SquareTerminal,
       isActive: true,
-      items: [
-             ],
+      items: [],
     },
   ],
   projects: [
     {
-      name: "Design Engineering",
-      url: "#",
+      name: 'Design Engineering',
+      url: '#',
       icon: Frame,
     },
     {
-      name: "Sales & Marketing",
-      url: "#",
+      name: 'Sales & Marketing',
+      url: '#',
       icon: PieChart,
     },
     {
-      name: "Travel",
-      url: "#",
+      name: 'Travel',
+      url: '#',
       icon: Map,
     },
   ],
-}
+};
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { userData } = useUserData();
 
- const {  userData } = useUserData();
-  
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <AccountSwitcher   />
-
+        <AccountSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
@@ -72,5 +68,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
-  )
+  );
 }

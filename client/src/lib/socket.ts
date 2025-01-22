@@ -8,14 +8,14 @@ export class WebSocketClient {
 
     this.socket.onmessage = (event) => {
       this.messageHandlers.forEach((handler) => handler(event.data));
-        const response = JSON.parse(event.data);
-        console.log(response)
-       if (response.message === "pong") {
-           if (this.socket.readyState === WebSocket.OPEN) {
-        this.socket.send(JSON.stringify({ Action: "pong" }));
-            }else {
-    console.error("Socket is not open. Cannot send pong.");
-  }
+      const response = JSON.parse(event.data);
+      console.log(response);
+      if (response.message === 'pong') {
+        if (this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(JSON.stringify({ Action: 'pong' }));
+        } else {
+          console.error('Socket is not open. Cannot send pong.');
+        }
       }
     };
   }
@@ -25,16 +25,17 @@ export class WebSocketClient {
   }
 
   send(action: string, data: any = null) {
-  if (this.socket.readyState === WebSocket.OPEN) {
-    const message: { Action: string; Data?: any } = { Action: action };    if (data) {
-      message.Data = data;
+    if (this.socket.readyState === WebSocket.OPEN) {
+      const message: { Action: string; Data?: any } = { Action: action };
+      if (data) {
+        message.Data = data;
+      }
+      this.socket.send(JSON.stringify(message));
+      console.log(message);
+    } else {
+      console.error('WebSocket is not open.');
     }
-    this.socket.send(JSON.stringify(message));
-    console.log(message)
-  } else {
-    console.error("WebSocket is not open.");
   }
-}
   close() {
     this.socket.close();
   }

@@ -1,16 +1,16 @@
-'use client'
+'use client';
 
-import { forwardRef, useState } from 'react'
-import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
-import type { InputProps } from '@/components/ui/input'
+import { forwardRef, useState } from 'react';
+import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import type { InputProps } from '@/components/ui/input';
 const PasswordInput = forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...props }, ref) => {
-    const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false);
     const disabled =
-      props.value === '' || props.value === undefined || props.disabled
+      props.value === '' || props.value === undefined || props.disabled;
 
     return (
       <div className="relative">
@@ -48,9 +48,9 @@ const PasswordInput = forwardRef<HTMLInputElement, InputProps>(
 					}
 				`}</style>
       </div>
-    )
+    );
   },
-)
-PasswordInput.displayName = 'PasswordInput'
+);
+PasswordInput.displayName = 'PasswordInput';
 
-export { PasswordInput }
+export { PasswordInput };

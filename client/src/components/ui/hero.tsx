@@ -1,8 +1,8 @@
-import heroimg from "@/assets/heroimg.svg";
-import type { Component } from "react";
-import { Link } from "react-router";
-import { Button } from "./button";
-import { WavyBackground } from "./wavy-background";
+import heroimg from '@/assets/heroimg.svg';
+import type { Component } from 'react';
+import { Link } from 'react-router';
+import { Button } from './button';
+import { WavyBackground } from './wavy-background';
 const hero = () => {
   return (
     <>
@@ -22,7 +22,7 @@ const hero = () => {
               </p>
 
               <div className="mt-7 grid gap-3 w-full sm:inline-flex ">
-                <Link to={"/register"}>
+                <Link to={'/register'}>
                   <Button>Get started</Button>
                 </Link>
               </div>

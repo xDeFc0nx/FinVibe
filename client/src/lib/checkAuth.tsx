@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 export function CheckAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<null | boolean>(null);
@@ -9,9 +9,9 @@ export function CheckAuth() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch("http://localhost:3001/checkAuth", {
-          method: "GET",
-          credentials: "include",
+        const response = await fetch('http://localhost:3001/checkAuth', {
+          method: 'GET',
+          credentials: 'include',
         });
 
         if (response.ok) {
@@ -21,7 +21,7 @@ export function CheckAuth() {
         }
       } catch (error) {
         setIsAuthenticated(false);
-        toast("error try again");
+        toast('error try again');
       }
     };
 
@@ -30,7 +30,7 @@ export function CheckAuth() {
 
   useEffect(() => {
     if (isAuthenticated === false) {
-      navigate("/login");
+      navigate('/login');
     }
   }, [isAuthenticated, navigate]);
 
