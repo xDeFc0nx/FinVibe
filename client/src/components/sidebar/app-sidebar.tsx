@@ -9,9 +9,9 @@ import {
   SquareTerminal,
 } from 'lucide-react';
 
-import { NavMain } from '@/components/nav-main';
-import { NavProjects } from '@/components/nav-projects';
-import { NavUser } from '@/components/nav-user';
+import { NavMain } from '@/components/sidebar/nav-main';
+import { NavProjects } from '@/components/sidebar/nav-projects';
+import { NavUser } from '@/components/sidebar/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -19,8 +19,8 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { useUserData } from './context/userData';
-import { AccountSwitcher } from './account-switcher';
+import { useUserData } from '@/components/context/userData';
+import { AccountSwitcher } from '@/components/sidebar/account-switcher';
 
 const data = {
   navMain: [

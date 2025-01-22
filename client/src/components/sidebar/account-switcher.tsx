@@ -15,17 +15,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { useUserData } from './context/userData';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from './ui/dialog';
-import { useWebSocket } from './WebSocketProvidor';
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,11 +30,19 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
+import { useUserData } from '@/components/context/userData';
+import { useWebSocket } from '@/components/WebSocketProvidor';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 export function AccountSwitcher() {
-  const { accounts, setAccounts, setTransactions } = useUserData();
+  const {
+    accounts,
+    setAccounts,
+    activeAccount,
+    setActiveAccount,
+    setTransactions,
+  } = useUserData();
   const { isMobile } = useSidebar();
-  const [activeAccount, setActiveAccount] = React.useState(accounts[0]);
   const [open, setOpen] = React.useState(false);
 
   const { socket, isReady } = useWebSocket();
@@ -62,7 +60,7 @@ export function AccountSwitcher() {
   function saveAccount(account: any) {
     setActiveAccount(account);
     localStorage.setItem('activeAccount', JSON.stringify(account));
-    console.log('Saved Account to LocalStorage:', account); // Debugging line
+    console.log('Saved Account to LocalStorage:', account); 
   }
   React.useEffect(() => {
     const savedAccount = localStorage.getItem('activeAccount');
