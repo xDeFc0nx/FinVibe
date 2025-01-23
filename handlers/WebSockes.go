@@ -186,6 +186,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				"createAccount":      CreateAccount,
 				"createBudget":       CreateBudget,
 				"createGoal":         CreateGoal,
+				"createTransaction":  CreateTransaction,
 				"deleteAccount":      DeleteAccount,
 				"deleteBudget":       DeleteBudget,
 				"deleteGoal":         DeleteGoal,

@@ -156,7 +156,7 @@ func CreateTransaction(
 	}
 
 	response := map[string]interface{}{
-		"Success": map[string]interface{}{
+		"transaction": map[string]interface{}{
 			"ID":          transaction.ID,
 			"UserID":      transaction.UserID,
 			"AccountID":   transaction.AccountID,

@@ -1,42 +1,38 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { useWebSocket } from "@/components/WebSocketProvidor";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { useWebSocket } from '@/components/WebSocketProvidor';
 
 export interface UserData {
-            ID:         string;
-            FirstName:      string;
-            LastName:       string;
-            Email:          string;
-            Country:        string;
+  ID: string;
+  FirstName: string;
+  LastName: string;
+  Email: string;
+  Country: string;
 }
 export interface Account {
- 	        ID:             string,
-			UserID:         string,
-			AccountID:      string,
-			AccountBalance: number,
-            Type:           string,
-
+  ID: string;
+  UserID: string;
+  AccountID: string;
+  AccountBalance: number;
+  Type: string;
 }
-export interface Transaction{
-            ID:             string,
-			UserID:         string,
-			AccountID:      string, 
-			Amount:         number,
-            Description:    string,
-			IsRecurring:    boolean,
-            CreatedAt:      string,
-
-
+export interface Transaction {
+  ID: string;
+  UserID: string;
+  AccountID: string;
+  Amount: number;
+  Description: string;
+  IsRecurring: boolean;
+  CreatedAt: string;
 }
 export interface UserDataContextType {
-            userData: UserData;
-            accounts: Account[];
-            activeAccount: Account | null;
-            transactions: Transaction[];
-            setUserData: React.Dispatch<React.SetStateAction<UserData>>;
-            setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
-            setActiveAccount: React.Dispatch<React.SetStateAction<Account | null>>;
-            setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-
+  userData: UserData;
+  accounts: Account[];
+  activeAccount: Account | null;
+  transactions: Transaction[];
+  setUserData: React.Dispatch<React.SetStateAction<UserData>>;
+  setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
+  setActiveAccount: React.Dispatch<React.SetStateAction<Account | null>>;
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -44,52 +40,48 @@ const UserDataContext = createContext<UserDataContextType | null>(null);
 export const useUserData = () => {
   const context = useContext(UserDataContext);
   if (!context) {
-    throw new Error("useUserData must be used within a UserDataProvider");
+    throw new Error('useUserData must be used within a UserDataProvider');
   }
   return context;
 };
 
-export const UserDataProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserDataProvider = ({
+  children,
+}: { children: React.ReactNode }) => {
   const { socket, isReady } = useWebSocket();
   const [userData, setUserData] = useState<UserData>({
-    ID: "",
-    FirstName: "",
-    LastName: "",
-    Email: "",
-    Country: "",
+    ID: '',
+    FirstName: '',
+    LastName: '',
+    Email: '',
+    Country: '',
   });
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccount] = useState<Account | null>(null);
 
-  const [transactions, setTransactions] = useState<Transaction[]>([]); 
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+  useEffect(() => {
+    if (socket && isReady) {
+      socket.send('getUser');
+      socket.send('getAccounts');
 
+      socket.onMessage((msg) => {
+        const response = JSON.parse(msg);
 
-  useEffect(()=>{
-      
-         if(socket && isReady){
-
-                socket.send("getUser");
-                socket.send("getAccounts")
-
-        socket.onMessage((msg)=>{
-
-    const response =  JSON.parse(msg)
-
-    if (response.userData) {
-        
-     setUserData(response.userData)
-    }
-     if (response.accounts) {
+        if (response.userData) {
+          setUserData(response.userData);
+        }
+        if (response.accounts) {
           setAccounts(response.accounts);
-
-     
-      
-        }    })}},[socket, isReady]) 
+        }
+      });
+    }
+  }, [socket, isReady]);
   return (
     <UserDataContext.Provider
-       value={{
+      value={{
         userData,
         setUserData,
         accounts,
@@ -99,7 +91,9 @@ export const UserDataProvider = ({ children }: { children: React.ReactNode }) =>
         activeAccount,
         setActiveAccount,
       }}
-    >      {children}
+    >
+      {' '}
+      {children}
     </UserDataContext.Provider>
   );
 };

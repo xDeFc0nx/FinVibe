@@ -32,7 +32,15 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
 import { useUserData } from '@/components/context/userData';
 import { useWebSocket } from '@/components/WebSocketProvidor';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export function AccountSwitcher() {
   const {
@@ -60,7 +68,7 @@ export function AccountSwitcher() {
   function saveAccount(account: any) {
     setActiveAccount(account);
     localStorage.setItem('activeAccount', JSON.stringify(account));
-    console.log('Saved Account to LocalStorage:', account); 
+    console.log('Saved Account to LocalStorage:', account);
   }
   React.useEffect(() => {
     const savedAccount = localStorage.getItem('activeAccount');
@@ -101,9 +109,9 @@ export function AccountSwitcher() {
   }
 
   React.useEffect(() => {
-    if (socket && isReady && activeAccount.AccountID) {
+    if (socket && isReady && activeAccount?.AccountID) {
       socket.send('getTransactions', {
-        AccountID: activeAccount.AccountID,
+        AccountID: activeAccount?.AccountID,
       });
 
       socket.onMessage((msg) => {
