@@ -49,13 +49,11 @@ export const columns: ColumnDef<Transaction>[] = [
     accessorKey: 'Description',
     header: 'Description',
   },
-  
+
   {
     accessorKey: 'amount',
     header: () => <div className="text-right">Amount</div>,
-    cell: ({ row }) => (
-     <div className="text-right">{row.original.Amount}</div>
-    ),
+    cell: ({ row }) => <div className="text-right">{row.original.Amount}</div>,
   },
   {
     id: 'actions',

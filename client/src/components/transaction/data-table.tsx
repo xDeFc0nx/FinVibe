@@ -1,7 +1,6 @@
-
-"use client"
-import * as React from "react"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+'use client';
+import * as React from 'react';
+import { ArrowUpDown, ChevronDown, MoreHorizontal } from 'lucide-react';
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -13,8 +12,8 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import { Input } from "@/components/ui/input"
+} from '@tanstack/react-table';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -22,7 +21,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -31,27 +30,27 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 
-import { AddTransaction } from "./addTransaction"
+import { AddTransaction } from './addTransaction';
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  )
+    [],
+  );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
- 
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+
   const table = useReactTable({
     data,
     columns,
@@ -69,15 +68,15 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
     },
-  })
+  });
   return (
     <div className="w-full">
       <div className="flex items-center py-4 ">
         <Input
           placeholder="Filter emails..."
-          value={(table.getColumn("")?.getFilterValue() as string) ?? ""}
+          value={(table.getColumn('')?.getFilterValue() as string) ?? ''}
           onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
+            table.getColumn('email')?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -86,7 +85,6 @@ export function DataTable<TData, TValue>({
             <Button variant="outline" className="ml-auto">
               Columns <ChevronDown />
             </Button>
-
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             {table
@@ -104,11 +102,11 @@ export function DataTable<TData, TValue>({
                   >
                     {column.id}
                   </DropdownMenuCheckboxItem>
-                )
+                );
               })}
           </DropdownMenuContent>
 
-        <AddTransaction/>
+          <AddTransaction />
         </DropdownMenu>
       </div>
       <div className="rounded-md border">
@@ -123,10 +121,10 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
@@ -136,13 +134,13 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -163,7 +161,7 @@ export function DataTable<TData, TValue>({
       </div>
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredSelectedRowModel().rows.length} of{' '}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
         <div className="space-x-2">
@@ -185,5 +183,6 @@ export function DataTable<TData, TValue>({
           </Button>
         </div>
       </div>
-    </div>  )
+    </div>
+  );
 }

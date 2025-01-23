@@ -1,4 +1,3 @@
-
 import * as z from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -125,7 +124,7 @@ export const AddTransaction = () => {
                       placeholder="Amount"
                       type="number"
                       {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -140,9 +139,7 @@ export const AddTransaction = () => {
                   <FormControl>
                     <Checkbox
                       checked={field.value}
-                      onCheckedChange={(checked) =>
-                        field.onChange(!!checked)
-                      }
+                      onCheckedChange={(checked) => field.onChange(!!checked)}
                       ref={field.ref}
                     />
                   </FormControl>
