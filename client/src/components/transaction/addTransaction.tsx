@@ -33,7 +33,8 @@ const formSchema = z.object({
 
 export const AddTransaction = () => {
   const { socket, isReady } = useWebSocket();
-  const { transactions, setTransactions, activeAccount } = useUserData();
+  const { transactions, setTransactions, activeAccount, setAccounts, setActiveAccount } =
+    useUserData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -70,10 +71,26 @@ export const AddTransaction = () => {
                 CreatedAt: response.transaction.CreatedAt,
               },
             ]);
+            setAccounts((prevAccounts) =>
+              prevAccounts.map((account) => {
+                if (account.AccountID === activeAccount?.AccountID) {
+                  return {
+                    ...account,
+                    AccountBalance: account.AccountBalance + values.Amount,
+                  };
+                }
+                return account;
+              }),
+            );
+
+            setActiveAccount((prev) => {
+              if (!prev) return null;
+              return {
+                ...prev,
+                AccountBalance: prev.AccountBalance + values.Amount,
+              };
+            });
             toast.success('Transaction added successfully!');
-          }
-          if (response.Error) {
-            toast.error(response.Error);
           }
         });
       }

@@ -104,12 +104,11 @@ func CreateTransaction(
 	userID string,
 ) {
 	transaction := new(types.Transaction)
-	account := new(types.Accounts)
 	recurring := new(types.Recurring)
 	transaction.ID = uuid.NewString()
+	account := new(types.Accounts)
 
 	transaction.UserID = userID
-
 	if err := json.Unmarshal(data, &transaction); err != nil {
 		Send_Error(ws, InvalidData, err)
 		return
@@ -120,7 +119,7 @@ func CreateTransaction(
 		return
 	}
 
-	if err := db.DB.Where("user_id =? AND id =?", userID, transaction.AccountID).First(&account).Error; err != nil {
+	if err := db.DB.Where("user_id = ? AND id = ?", userID, transaction.AccountID).First(&account).Error; err != nil {
 		Send_Error(ws, "AccountID not found", err)
 		return
 	}
@@ -132,6 +131,7 @@ func CreateTransaction(
 	if transaction.IsRecurring {
 		recurring.ID = uuid.NewString()
 		recurring.TransactionID = transaction.ID
+
 		var inputData map[string]interface{}
 		if err := json.Unmarshal(data, &inputData); err != nil {
 
@@ -155,16 +155,25 @@ func CreateTransaction(
 		}
 	}
 
+	if err := GetAccountBalance(ws, account.ID); err != nil {
+		Send_Error(ws, "failed to get account balance", err)
+		return
+	}
+	if err := db.DB.Where("id = ?", account.ID).First(&account).Error; err != nil {
+		Send_Error(ws, "Failed to fetch updated account", err)
+		return
+	}
 	response := map[string]interface{}{
 		"transaction": map[string]interface{}{
-			"ID":          transaction.ID,
-			"UserID":      transaction.UserID,
-			"AccountID":   transaction.AccountID,
-			"Amount":      transaction.Amount,
-			"Description": transaction.Description,
-			"IsRecurring": transaction.IsRecurring,
-			"Frequency":   recurring.Frequency,
-			"CreatedAt":   recurring.CreatedAt,
+			"ID":             transaction.ID,
+			"UserID":         transaction.UserID,
+			"AccountID":      transaction.AccountID,
+			"Amount":         transaction.Amount,
+			"Description":    transaction.Description,
+			"IsRecurring":    transaction.IsRecurring,
+			"Frequency":      recurring.Frequency,
+			"CreatedAt":      recurring.CreatedAt,
+			"AccountBalance": account.Balance,
 		},
 	}
 
@@ -394,9 +403,7 @@ func GetAccountBalance(ws *websocket.Conn, accountID string) error {
 
 	totalBalance := float64(0)
 	for _, t := range transactions {
-		if t.AccountID == accountID {
-			totalBalance += t.Amount
-		}
+		totalBalance += t.Amount
 	}
 
 	account.Balance = totalBalance
