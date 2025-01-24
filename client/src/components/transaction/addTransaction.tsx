@@ -108,7 +108,7 @@ export const AddTransaction = () => {
   return (
     <Dialog>
       <DialogTrigger>
-        <Button variant="default" className="pl-5">
+        <Button variant="green" className="pl-5">
           New
         </Button>
       </DialogTrigger>

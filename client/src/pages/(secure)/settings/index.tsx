@@ -262,8 +262,8 @@ export default function Index() {
               )}
             />
 
-            <Button type="submit" className="mt-5">
-              Submit
+            <Button type="submit" variant="green" className="mt-5">
+              Update
             </Button>
             <h3 className="mt-5">Theme</h3>
             <ThemeChanger />
