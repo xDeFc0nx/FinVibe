@@ -17,7 +17,6 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { DataTable } from '@/components/transaction/data-table';
 import { columns } from '@/components/transaction/columns';
-import { Table } from '@/components/ui/table';
 export default function Index() {
   const { activeAccount, transactions } = useUserData();
   return (
@@ -37,19 +36,22 @@ export default function Index() {
         </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <span className="bg-green-500/50 rounded-xl p-1">
-                  {activeAccount?.AccountBalance}
-                </span>
-              </CardTitle>
-              <CardDescription>Balance</CardDescription>
-            </CardHeader>
-          </Card>
+        <div className="grid auto-rows-min gap-4 md:grid-cols-4">
+                  <div className="rounded-xl border bg-card text-card-foreground shadow">
+            <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
+              <h3 className="tracking-tight text-sm font-medium">Balance</h3>
+                         </div>
+            <div className="p-6 pt-0">
+              <div className="text-2xl font-bold">            {activeAccount?.AccountBalance}
+</div>
+              <p className="text-xs text-muted-foreground">
+                +20.1% from last month
+              </p>
+            </div>
+          </div>
           <div className="aspect-video rounded-xl bg-muted/50" />
-          <div className="aspect-video rounded-xl bg-muted/50" />
+           <div className="aspect-video rounded-xl bg-muted/50" />
+<div className="aspect-video rounded-xl bg-muted/50" />
         </div>
         <DataTable columns={columns} data={transactions} />
       </div>

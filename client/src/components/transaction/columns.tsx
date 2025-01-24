@@ -41,9 +41,21 @@ export const columns: ColumnDef<Transaction>[] = [
   {
     accessorKey: 'CreatedAt',
     header: 'Created At',
-    cell: ({ row }) => (
-      <div className="capitalize">{row.getValue('CreatedAt')}</div>
-    ),
+    cell: ({ row }) => {
+      const rawDate = row.getValue('CreatedAt') as string;
+      const date = new Date(rawDate);
+
+      if (isNaN(date.getTime())) throw new Error('Invalid date');
+
+      return (
+        <div>
+          {date.toLocaleString('en-US', {
+            dateStyle: 'short',
+            timeStyle: 'medium',
+          })}
+        </div>
+      );
+    },
   },
   {
     accessorKey: 'Description',
