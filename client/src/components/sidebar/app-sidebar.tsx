@@ -1,16 +1,6 @@
 import * as React from 'react';
-import {
-  AudioWaveform,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  SquareTerminal,
-} from 'lucide-react';
+import { LayoutDashboard, CreditCard } from 'lucide-react';
 
-import { NavMain } from '@/components/sidebar/nav-main';
-import { NavProjects } from '@/components/sidebar/nav-projects';
 import { NavUser } from '@/components/sidebar/nav-user';
 import {
   Sidebar,
@@ -20,34 +10,22 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 import { useUserData } from '@/components/context/userData';
+import { NavMain } from '@/components/sidebar/nav-main';
 import { AccountSwitcher } from '@/components/sidebar/account-switcher';
 
 const data = {
-  navMain: [
+  Links: [
     {
-      title: 'dashboard',
-      url: 'dashboard',
-      icon: SquareTerminal,
-      isActive: true,
-      items: [],
-    },
-  ],
-  projects: [
-    {
-      name: 'Design Engineering',
-      url: '#',
-      icon: Frame,
+      name: 'Dashboard',
+      url: '/app/dashboard',
+      icon: LayoutDashboard,
     },
     {
-      name: 'Sales & Marketing',
-      url: '#',
-      icon: PieChart,
+      name: 'Transactions',
+      url: '/app/transactions',
+      icon: CreditCard,
     },
-    {
-      name: 'Travel',
-      url: '#',
-      icon: Map,
-    },
+
   ],
 };
 
@@ -60,8 +38,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <AccountSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={data.Links} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />

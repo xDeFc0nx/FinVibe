@@ -1,7 +1,8 @@
 import './App.css';
 import App from '@/App';
 import Index from '@/pages/(secure)/index';
-import Settings from '@/pages/(secure)/settings/index';
+import Settings from '@/pages/(secure)/settings';
+import Transactions from '@/pages/(secure)/transactions';
 import { Layout } from '@/pages/(secure)/layout';
 import Login from '@/pages/login';
 import Register from '@/pages/register';
@@ -21,6 +22,7 @@ ReactDOM.createRoot(root).render(
       <Route path="/app" element={<Layout />}>
         <Route path="dashboard" element={<Index />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="transactions" element={<Transactions />} />
       </Route>
     </Routes>
   </BrowserRouter>,
