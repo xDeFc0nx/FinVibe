@@ -33,8 +33,13 @@ const formSchema = z.object({
 
 export const AddTransaction = () => {
   const { socket, isReady } = useWebSocket();
-  const { transactions, setTransactions, activeAccount, setAccounts, setActiveAccount } =
-    useUserData();
+  const {
+    transactions,
+    setTransactions,
+    activeAccount,
+    setAccounts,
+    setActiveAccount,
+  } = useUserData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,7 +92,7 @@ export const AddTransaction = () => {
               if (!prev) return null;
               return {
                 ...prev,
-                AccountBalance: prev.AccountBalance + values.Amount,
+                AccountBalance: response.transaction.AccountBalance,
               };
             });
             toast.success('Transaction added successfully!');
