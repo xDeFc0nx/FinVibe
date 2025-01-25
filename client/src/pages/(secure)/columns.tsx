@@ -16,28 +16,15 @@ import {
 import { useUserData, type Transaction } from '@/components/context/userData';
 
 export const columns: ColumnDef<Transaction>[] = [
-  {
-    accessorKey: 'CreatedAt',
-    header: 'Created At',
-    cell: ({ row }) => {
-      const rawDate = row.getValue('CreatedAt') as string;
-      const date = new Date(rawDate);
 
-      if (isNaN(date.getTime())) throw new Error('Invalid date');
-
-      return (
-        <div>
-          {date.toLocaleString('en-US', {
-            dateStyle: 'short',
-            timeStyle: 'medium',
-          })}
-        </div>
-      );
-    },
-  },
   {
     accessorKey: 'Description',
     header: 'Description',
+  },
+{
+    accessorKey: 'type',
+    header: () => <div className="text-right">Type</div>,
+    cell: ({ row }) => <div className="text-right">{row.original.Type}</div>,
   },
 
   {
