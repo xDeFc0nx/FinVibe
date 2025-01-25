@@ -155,25 +155,21 @@ func CreateTransaction(
 		}
 	}
 
-	if err := GetAccountBalance(ws, account.ID); err != nil {
-		Send_Error(ws, "failed to get account balance", err)
-		return
-	}
 	if err := db.DB.Where("id = ?", account.ID).First(&account).Error; err != nil {
 		Send_Error(ws, "Failed to fetch updated account", err)
 		return
 	}
 	response := map[string]interface{}{
 		"transaction": map[string]interface{}{
-			"ID":             transaction.ID,
-			"UserID":         transaction.UserID,
-			"AccountID":      transaction.AccountID,
-			"Amount":         transaction.Amount,
-			"Description":    transaction.Description,
-			"IsRecurring":    transaction.IsRecurring,
-			"Frequency":      recurring.Frequency,
-			"CreatedAt":      recurring.CreatedAt.Format(time.RFC3339),
-			"AccountBalance": account.Balance,
+			"ID":          transaction.ID,
+			"UserID":      transaction.UserID,
+			"AccountID":   transaction.AccountID,
+			"Type":        transaction.Type,
+			"Amount":      transaction.Amount,
+			"Description": transaction.Description,
+			"IsRecurring": transaction.IsRecurring,
+			"Frequency":   recurring.Frequency,
+			"CreatedAt":   recurring.CreatedAt.Format(time.RFC3339),
 		},
 	}
 
@@ -383,35 +379,4 @@ func DeleteTransaction(
 
 	responseData, _ := json.Marshal(response)
 	Send_Message(ws, string(responseData))
-}
-
-func GetAccountBalance(ws *websocket.Conn, accountID string) error {
-	transactions := []types.Transaction{}
-	account := new(types.Accounts)
-
-	account.ID = accountID
-
-	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		Send_Error(ws, "Account not found", err)
-		return err
-	}
-
-	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Could not get transactions", err)
-		return err
-	}
-
-	totalBalance := float64(0)
-	for _, t := range transactions {
-		totalBalance += t.Amount
-	}
-
-	account.Balance = totalBalance
-
-	if err := db.DB.Save(account).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
-		return err
-	}
-
-	return nil
 }

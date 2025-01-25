@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"sync"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
@@ -51,23 +50,6 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	for i := range accounts {
-		wg.Add(1)
-		go func(a *types.Accounts) {
-			defer wg.Done()
-			if err := GetAccountBalance(ws, a.ID); err != nil {
-				Send_Error(ws, "failed to get account balance", err)
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			if err := db.DB.Where("id = ?", a.ID).First(a).Error; err != nil {
-				Send_Error(ws, "Failed to fetch updated account", err)
-			}
-		}(&accounts[i])
-	}
-	wg.Wait()
 	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
 		Send_Error(ws, "Accounts not found", err)
 	}
