@@ -24,7 +24,6 @@ func CreateRecurring(
 	recurring.ID = uuid.NewString()
 	recurring.TransactionID = transactionID
 	recurring.Amount = amount
-	slog.Info("Raw data received", string(data))
 
 	if recurring.Frequency == "" {
 		Send_Error(ws, "Invalid frequency", nil)
@@ -34,8 +33,6 @@ func CreateRecurring(
 		Send_Error(ws, InvalidData, err)
 		return err
 	}
-
-	slog.Info("Unmarshalled Recurring: %+v", recurring)
 
 	recurring.StartDate = time.Now().Truncate(24 * time.Hour)
 
@@ -154,22 +151,30 @@ func CreateTransaction(
 			return
 		}
 	}
-
+	if err := GetAccountBalance(ws, account.ID); err != nil {
+		Send_Error(ws, "failed to get account balance", err)
+		return
+	}
+	if err := db.DB.Where("id = ?", account.ID).First(&account).Error; err != nil {
+		Send_Error(ws, "Failed to fetch updated account", err)
+		return
+	}
 	if err := db.DB.Where("id = ?", account.ID).First(&account).Error; err != nil {
 		Send_Error(ws, "Failed to fetch updated account", err)
 		return
 	}
 	response := map[string]interface{}{
 		"transaction": map[string]interface{}{
-			"ID":          transaction.ID,
-			"UserID":      transaction.UserID,
-			"AccountID":   transaction.AccountID,
-			"Type":        transaction.Type,
-			"Amount":      transaction.Amount,
-			"Description": transaction.Description,
-			"IsRecurring": transaction.IsRecurring,
-			"Frequency":   recurring.Frequency,
-			"CreatedAt":   recurring.CreatedAt.Format(time.RFC3339),
+			"ID":             transaction.ID,
+			"UserID":         transaction.UserID,
+			"AccountID":      transaction.AccountID,
+			"Type":           transaction.Type,
+			"Amount":         transaction.Amount,
+			"Description":    transaction.Description,
+			"IsRecurring":    transaction.IsRecurring,
+			"Frequency":      recurring.Frequency,
+			"CreatedAt":      recurring.CreatedAt.Format(time.RFC3339),
+			"AccountBalance": account.Balance,
 		},
 	}
 
@@ -248,6 +253,7 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 			"ID":          t.ID,
 			"UserID":      t.UserID,
 			"AccountID":   t.AccountID,
+			"Type":        t.Type,
 			"Amount":      t.Amount,
 			"Description": t.Description,
 			"IsRecurring": t.IsRecurring,
@@ -292,6 +298,7 @@ func GetTransactionById(
 		"ID":          transaction.ID,
 		"UserID":      transaction.UserID,
 		"AccountID":   transaction.AccountID,
+		"Type":        transaction.Type,
 		"Amount":      transaction.Amount,
 		"IsRecurring": transaction.IsRecurring,
 	}
@@ -333,6 +340,7 @@ func UpdateTransaction(
 	transactionData := map[string]interface{}{
 		"ID":        transaction.ID,
 		"UserID":    transaction.UserID,
+		"Type":      transaction.Type,
 		"AccountID": transaction.AccountID,
 		"Amount":    transaction.Amount,
 	}
@@ -379,4 +387,117 @@ func DeleteTransaction(
 
 	responseData, _ := json.Marshal(response)
 	Send_Message(ws, string(responseData))
+}
+
+func GetAccountIncome(
+	ws *websocket.Conn,
+	data json.RawMessage,
+	userID string,
+) {
+	transactions := []types.Transaction{}
+	account := new(types.Accounts)
+
+	var requestData struct {
+		AccountID string `json:"AccountID"`
+	}
+	account.ID = requestData.AccountID
+	if err := json.Unmarshal(data, &requestData); err != nil {
+		Send_Error(ws, InvalidData, err)
+		return
+	}
+
+	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+		Send_Error(ws, "Account not found", err)
+		return
+	}
+
+	if err := db.DB.Where("account_id = ? and type = ?", requestData.AccountID, "Income").Find(&transactions).Error; err != nil {
+		Send_Error(ws, "Could not get transactions", err)
+	}
+
+	totalIncome := 0.0
+	for _, transaction := range transactions {
+		totalIncome += transaction.Amount
+	}
+	account.Income = totalIncome
+
+	if err := db.DB.Save(account).Error; err != nil {
+		Send_Error(ws, "Failed to save", err)
+	}
+	response := map[string]interface{}{
+		"totalIncome": account.Income,
+	}
+
+	responseData, _ := json.Marshal(response)
+	Send_Message(ws, string(responseData))
+}
+
+func GetAccountExpense(
+	ws *websocket.Conn,
+	data json.RawMessage,
+	userID string,
+) {
+	transactions := []types.Transaction{}
+	account := new(types.Accounts)
+
+	var requestData struct {
+		AccountID string `json:"AccountID"`
+	}
+	account.ID = requestData.AccountID
+	if err := json.Unmarshal(data, &requestData); err != nil {
+		Send_Error(ws, InvalidData, err)
+		return
+	}
+	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+		Send_Error(ws, "Account not found", err)
+		return
+	}
+
+	if err := db.DB.Where("account_id = ? and type = ?", requestData.AccountID, "Expense").Find(&transactions).Error; err != nil {
+		Send_Error(ws, "Could not get transactions", err)
+	}
+
+	totalExpense := 0.0
+	for _, transaction := range transactions {
+		totalExpense += transaction.Amount
+	}
+	account.Expense = totalExpense
+
+	if err := db.DB.Save(account).Error; err != nil {
+		Send_Error(ws, "Failed to Save", err)
+	}
+
+	response := map[string]interface{}{
+		"totalExpense": account.Expense,
+	}
+
+	responseData, _ := json.Marshal(response)
+	Send_Message(ws, string(responseData))
+}
+
+func GetAccountBalance(ws *websocket.Conn, accountID string) error {
+	transactions := []types.Transaction{}
+	account := new(types.Accounts)
+
+	account.ID = accountID
+
+	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
+		Send_Error(ws, "Account not found", err)
+		return err
+	}
+
+	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
+		Send_Error(ws, "Could not get transactions", err)
+		return err
+	}
+
+	totalBalance := account.Income - account.Expense
+	account.Balance = totalBalance
+
+	if err := db.DB.Save(account).Error; err != nil {
+		Send_Error(ws, "Failed to save", err)
+		return err
+	}
+
+	return nil
 }

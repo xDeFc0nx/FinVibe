@@ -1,6 +1,4 @@
-import {
-  type LucideIcon,
-} from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 import {
   Collapsible,
   CollapsibleContent,
@@ -39,12 +37,12 @@ export function NavMain({
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                 <Link to={item.url}>
-                <SidebarMenuButton tooltip={item.name}>
-                  {item.icon && <item.icon />}
-                  <span>{item.name}</span>
-                </SidebarMenuButton>
-                  </Link>
+                <Link to={item.url}>
+                  <SidebarMenuButton tooltip={item.name}>
+                    {item.icon && <item.icon />}
+                    <span>{item.name}</span>
+                  </SidebarMenuButton>
+                </Link>
               </CollapsibleTrigger>
             </SidebarMenuItem>
           </Collapsible>

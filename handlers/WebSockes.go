@@ -193,6 +193,8 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				"deleteTransaction":  DeleteTransaction,
 				"deleteUser":         DeleteUser,
 				"getAccounts":        GetAccounts,
+				"getAccountIncome":   GetAccountIncome,
+				"getAccountExpense":  GetAccountExpense,
 				"getBudgets":         GetBudgets,
 				"getGoals":           GetGoals,
 				"getTransactionById": GetTransactionById,

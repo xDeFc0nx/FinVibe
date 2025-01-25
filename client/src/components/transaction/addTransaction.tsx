@@ -25,8 +25,18 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 const formSchema = z.object({
+  Type: z.enum(['Income', 'Expense']),
   Description: z.string().min(1, 'Description is required'),
+
   Amount: z.number().min(1, 'Amount must be greater than 0'),
   IsRecurring: z.boolean(),
 });
@@ -44,6 +54,7 @@ export const AddTransaction = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      Type: 'Income',
       Description: '',
       Amount: 0,
       IsRecurring: false,
@@ -51,10 +62,12 @@ export const AddTransaction = () => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log('Form Values:', values); // Add this line
     try {
       if (socket && isReady) {
         socket.send('createTransaction', {
           AccountID: activeAccount?.AccountID,
+          Type: values.Type,
           Description: values.Description,
           Amount: values.Amount,
           IsRecurring: values.IsRecurring,
@@ -70,21 +83,30 @@ export const AddTransaction = () => {
                 ID: response.transaction.ID,
                 UserID: response.transaction.UserID,
                 AccountID: response.transaction.AccountID,
+                Type: values.Type,
                 Description: values.Description,
                 Amount: values.Amount,
                 IsRecurring: values.IsRecurring,
                 CreatedAt: response.transaction.CreatedAt,
               },
             ]);
+
             setAccounts((prevAccounts) =>
               prevAccounts.map((account) => {
-                if (account.AccountID === activeAccount?.AccountID) {
-                  return {
-                    ...account,
-                    AccountBalance: account.AccountBalance + values.Amount,
-                  };
-                }
-                return account;
+             if (account.AccountID === activeAccount?.AccountID) {
+      const updatedAccount = {
+        ...account,
+        AccountBalance: account.AccountBalance + values.Amount,
+      };
+
+      // Update activeAccount if it matches the updated account
+      if (activeAccount?.AccountID === account.AccountID) {
+        setActiveAccount(updatedAccount);
+      }
+
+      return updatedAccount;
+    }
+    return account;
               }),
             );
 
@@ -93,8 +115,34 @@ export const AddTransaction = () => {
               return {
                 ...prev,
                 AccountBalance: response.transaction.AccountBalance,
+
               };
             });
+            socket.send('getAccountIncome', { AccountID: activeAccount?.ID });
+
+            socket.send('getAccountExpense', { AccountID: activeAccount?.ID });
+            if (response.totalIncome) {
+              setActiveAccount((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      Income: response.totalIncome,
+                    }
+                  : null,
+              );
+            }
+
+            if (response.totalExpense) {
+              setActiveAccount((prev) =>
+                prev
+                  ? {
+                      ...prev,
+                      Expense: response.totalExpense,
+                    }
+                  : null,
+              );
+            }
+
             toast.success('Transaction added successfully!');
           }
         });
@@ -122,6 +170,35 @@ export const AddTransaction = () => {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="Type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Transaction Type</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger className="rounded-lg h-12">
+                        <SelectValue placeholder="Select transaction type" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-lg min-w-[200px]">
+                        <SelectItem value="Income" className="cursor-pointer">
+                          Income
+                        </SelectItem>
+                        <SelectItem value="Expense" className="cursor-pointer">
+                          Expense
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="Description"

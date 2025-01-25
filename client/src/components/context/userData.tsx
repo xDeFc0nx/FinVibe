@@ -12,6 +12,8 @@ export interface Account {
   ID: string;
   UserID: string;
   AccountID: string;
+  Income: number;
+  Expense: number;
   AccountBalance: number;
   Type: string;
 }
@@ -19,6 +21,7 @@ export interface Transaction {
   ID: string;
   UserID: string;
   AccountID: string;
+  Type: string;
   Amount: number;
   Description: string;
   IsRecurring: boolean;
@@ -66,7 +69,6 @@ export const UserDataProvider = ({
     if (socket && isReady) {
       socket.send('getUser');
       socket.send('getAccounts');
-
       socket.onMessage((msg) => {
         const response = JSON.parse(msg);
 

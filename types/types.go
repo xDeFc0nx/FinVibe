@@ -31,6 +31,8 @@ type Accounts struct {
 	UserID       string        `gorm:"not null;column:user_id"`
 	User         User          `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	Type         string        `                                                                          json:"type"`
+	Income       float64       `                                                                          json:"income"`
+	Expense      float64       `                                                                          json:"expense"`
 	Balance      float64       `                                                                          json:"balance"`
 	Transactions []Transaction `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	CreatedAt    time.Time     `                                                                          json:"createdAt"`
