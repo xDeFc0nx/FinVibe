@@ -57,7 +57,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 		wg.Add(1)
 		go func(a *types.Accounts) {
 			defer wg.Done()
-			if err := GetAccountBalance(ws, a.ID); err != nil {
+			if err := GetAccountsBalance(ws, a.ID); err != nil {
 				Send_Error(ws, "failed to get account balance", err)
 			}
 			mu.Lock()
