@@ -151,26 +151,18 @@ func CreateTransaction(
 			return
 		}
 	}
-	totalBalance := account.Income - account.Expense
-	account.Balance = totalBalance
-
-	if err := db.DB.Save(account).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
-		return
-	}
 
 	response := map[string]interface{}{
 		"transaction": map[string]interface{}{
-			"ID":             transaction.ID,
-			"UserID":         transaction.UserID,
-			"AccountID":      transaction.AccountID,
-			"Type":           transaction.Type,
-			"Amount":         transaction.Amount,
-			"Description":    transaction.Description,
-			"IsRecurring":    transaction.IsRecurring,
-			"Frequency":      recurring.Frequency,
-			"CreatedAt":      recurring.CreatedAt.Format(time.RFC3339),
-			"AccountBalance": account.Balance,
+			"ID":          transaction.ID,
+			"UserID":      transaction.UserID,
+			"AccountID":   transaction.AccountID,
+			"Type":        transaction.Type,
+			"Amount":      transaction.Amount,
+			"Description": transaction.Description,
+			"IsRecurring": transaction.IsRecurring,
+			"Frequency":   recurring.Frequency,
+			"CreatedAt":   recurring.CreatedAt.Format(time.RFC3339),
 		},
 	}
 

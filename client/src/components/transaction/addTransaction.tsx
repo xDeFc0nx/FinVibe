@@ -36,7 +36,6 @@ import {
 const formSchema = z.object({
   Type: z.enum(['Income', 'Expense']),
   Description: z.string().min(1, 'Description is required'),
-
   Amount: z.number().min(1, 'Amount must be greater than 0'),
   IsRecurring: z.boolean(),
 });
@@ -44,7 +43,6 @@ const formSchema = z.object({
 export const AddTransaction = () => {
   const { socket, isReady } = useWebSocket();
   const {
-    transactions,
     setTransactions,
     activeAccount,
     setAccounts,
@@ -61,97 +59,71 @@ export const AddTransaction = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log('Form Values:', values); // Add this line
-    try {
-      if (socket && isReady) {
-        socket.send('createTransaction', {
-          AccountID: activeAccount?.AccountID,
-          Type: values.Type,
-          Description: values.Description,
-          Amount: values.Amount,
-          IsRecurring: values.IsRecurring,
-        });
+const onSubmit = (values: z.infer<typeof formSchema>) => {
+  try {
+    if (socket && isReady && activeAccount) {
+      const currentAccountId = activeAccount.AccountID;
 
-        socket.onMessage((msg) => {
-          const response = JSON.parse(msg);
+      socket.send('createTransaction', {
+        AccountID: currentAccountId,
+        ...values
+      });
 
-          if (response.transaction) {
-            setTransactions([
-              ...transactions,
-              {
-                ID: response.transaction.ID,
-                UserID: response.transaction.UserID,
-                AccountID: response.transaction.AccountID,
-                Type: values.Type,
-                Description: values.Description,
-                Amount: values.Amount,
-                IsRecurring: values.IsRecurring,
-                CreatedAt: response.transaction.CreatedAt,
-              },
-            ]);
+      const balanceHandler = (msg: string) => {
+        const response = JSON.parse(msg);
+        
+        if (response.transaction) {
+          setTransactions(prev => [...prev, response.transaction]);
+          toast.success('Transaction added!',{
+                 toastId: "success"
+          });
+        form.reset();
+        }
 
-            setAccounts((prevAccounts) =>
-              prevAccounts.map((account) => {
-             if (account.AccountID === activeAccount?.AccountID) {
-      const updatedAccount = {
-        ...account,
-        AccountBalance: account.AccountBalance + values.Amount,
+        
+        if (response.totalIncome !== undefined) {
+          setAccounts(prev => prev.map(acc => 
+            acc.AccountID === currentAccountId 
+              ? {...acc, Income: response.totalIncome} 
+              : acc
+          ));
+        }
+        
+        if (response.totalExpense !== undefined) {
+          setAccounts(prev => prev.map(acc => 
+            acc.AccountID === currentAccountId 
+              ? {...acc, Expense: response.totalExpense} 
+              : acc
+          ));
+        }
+        
+        if (response.accountBalance !== undefined) {
+          setAccounts(prev => prev.map(acc => 
+            acc.AccountID === currentAccountId 
+              ? {...acc, AccountBalance: response.accountBalance} 
+              : acc
+          ));
+          setActiveAccount(prev => 
+            prev?.AccountID === currentAccountId 
+              ? {...prev, AccountBalance: response.accountBalance} 
+              : prev
+          );
+        }
       };
 
-      // Update activeAccount if it matches the updated account
-      if (activeAccount?.AccountID === account.AccountID) {
-        setActiveAccount(updatedAccount);
-      }
-
-      return updatedAccount;
+      socket.onMessage(balanceHandler);
+      setTimeout(() => {
+        socket.send('getAccountIncome', { AccountID: currentAccountId });
+        socket.send('getAccountExpense', { AccountID: currentAccountId });
+        socket.send('getAccountBalance', { AccountID: currentAccountId });
+      }, 100); 
+      return
     }
-    return account;
-              }),
-            );
-
-            setActiveAccount((prev) => {
-              if (!prev) return null;
-              return {
-                ...prev,
-                AccountBalance: response.transaction.AccountBalance,
-
-              };
-            });
-            socket.send('getAccountIncome', { AccountID: activeAccount?.ID });
-
-            socket.send('getAccountExpense', { AccountID: activeAccount?.ID });
-            if (response.totalIncome) {
-              setActiveAccount((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      Income: response.totalIncome,
-                    }
-                  : null,
-              );
-            }
-
-            if (response.totalExpense) {
-              setActiveAccount((prev) =>
-                prev
-                  ? {
-                      ...prev,
-                      Expense: response.totalExpense,
-                    }
-                  : null,
-              );
-            }
-
-            toast.success('Transaction added successfully!');
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Form submission error', error);
-      toast.error('Failed to submit the form. Please try again.');
-    }
-  };
+  } catch (error) {
+    console.error('Submission error', error);
+    toast.error('Failed to add transaction');
+  }
+};
 
   return (
     <Dialog>
