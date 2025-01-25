@@ -16,12 +16,11 @@ import {
 import { useUserData, type Transaction } from '@/components/context/userData';
 
 export const columns: ColumnDef<Transaction>[] = [
-
   {
     accessorKey: 'Description',
     header: 'Description',
   },
-{
+  {
     accessorKey: 'type',
     header: () => <div className="text-right">Type</div>,
     cell: ({ row }) => <div className="text-right">{row.original.Type}</div>,
@@ -30,7 +29,14 @@ export const columns: ColumnDef<Transaction>[] = [
   {
     accessorKey: 'amount',
     header: () => <div className="text-right">Amount</div>,
-    cell: ({ row }) => <div className="text-right">{row.original.Amount}</div>,
+    cell: ({ row }) => {
+      const amount = row.original.Amount;
+      const type = row.original.Type;
+
+      const formattedAmount = type === 'Income' ? `+${amount}` : `-${amount}`;
+
+      return <div className="text-right">{formattedAmount}</div>;
+    },
   },
   {
     id: 'actions',
