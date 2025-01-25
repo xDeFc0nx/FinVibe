@@ -27,23 +27,28 @@ export const columns: ColumnDef<Transaction>[] = [
   },
 
   {
-    accessorKey: 'amount',
-    header: () => <div className="text-right">Amount</div>,
-    cell: ({ row }) => {
-      const amount = row.original.Amount;
-      const type = row.original.Type;
-
-      const formattedAmount = type === 'Income' ? `+${amount}` : `-${amount}`;
-
-      return <div className="text-right">{formattedAmount}</div>;
-    },
+  accessorKey: 'amount',
+  header: () => <div className="text-right">Amount</div>,
+  cell: ({ row }) => {
+    const amount = row.original.Amount;
+    const type = row.original.Type;
+    
+    // Add + for Income, - for Expense
+    const formattedAmount = type === 'Income' ? `+${amount}` : `-${amount}`;
+    
+    const backgroundColor = type === 'Income' ? 'bg-green-400/50' : 'bg-red-400/50';
+    
+    return (
+      <div className={`text-right p-2 rounded-lg ${backgroundColor}`}>
+        {formattedAmount}
+      </div>
+    );
   },
+},
   {
     id: 'actions',
     enableHiding: false,
     cell: ({ row }) => {
-      const payment = row.original;
-
       const transaction = row.original;
       return (
         <DropdownMenu>
