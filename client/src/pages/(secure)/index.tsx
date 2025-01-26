@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { DataTable } from './dataTable';
 import { columns } from './columns';
+import { BalanceChart } from '@/components/charts/balanceChart';
 export default function Index() {
   const { activeAccount, transactions } = useUserData();
   return (
@@ -40,9 +41,7 @@ export default function Index() {
                 {' '}
                 {activeAccount?.AccountBalance}
               </div>
-              <p className="text-xs text-muted-foreground">
-                +20.1% from last month
-              </p>
+          <BalanceChart/> 
             </div>
           </div>
           <div className="rounded-xl border bg-card text-card-foreground shadow">
