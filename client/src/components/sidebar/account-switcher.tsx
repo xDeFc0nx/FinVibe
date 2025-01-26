@@ -112,6 +112,7 @@ export function AccountSwitcher() {
     if (socket && isReady && activeAccount?.AccountID) {
       socket.send('getTransactions', {
         AccountID: activeAccount?.AccountID,
+        DateRange: activeAccount?.DateRange,
       });
 
       socket.onMessage((msg) => {

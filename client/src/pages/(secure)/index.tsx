@@ -6,14 +6,111 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { DataTable } from './dataTable';
 import { columns } from './columns';
 import { BalanceChart } from '@/components/charts/balanceChart';
+import { useWebSocket } from '@/components/WebSocketProvidor';
+import { useState } from 'react';
+
 export default function Index() {
-  const { activeAccount, transactions } = useUserData();
+  const { setTransactions,transactions, activeAccount, setAccounts, setActiveAccount } =
+    useUserData();
+
+  const [dateRange, setDateRange] = useState('this_month');
+
+  const { socket } = useWebSocket();
+
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(value);
+
+    const currentAccountId = activeAccount?.AccountID;
+    if (socket && activeAccount) {
+      const updatedAccount = { ...activeAccount, DateRange: value };
+      setActiveAccount(updatedAccount);
+
+      socket.send('getTransactions', {
+        AccountID: activeAccount.AccountID,
+        DateRange: value,
+      });
+      socket.send('getAccountIncome', {
+        AccountID: activeAccount.AccountID,
+        DateRange: value,
+      });
+      socket.send('getAccountExpense', {
+        AccountID: activeAccount.AccountID,
+        DateRange: value,
+      });
+      socket.send('getAccountBalance', {
+        AccountID: activeAccount.AccountID,
+        DateRange: value,
+      });
+
+      const messageHandler = (msg: string) => {
+        const response = JSON.parse(msg);
+
+        if (response.transactions) {
+          setTransactions(response.transactions);
+        }
+
+        if (response.totalIncome !== undefined) {
+          setAccounts((prev) =>
+            prev.map((acc) =>
+              acc.AccountID === currentAccountId
+                ? { ...acc, Income: response.totalIncome }
+                : acc,
+            ),
+          );
+              setActiveAccount((prev) =>
+            prev && prev.AccountID === currentAccountId
+              ? { ...prev, Income: response.totalIncome }
+              : prev,
+          );
+        }
+
+        if (response.totalExpense !== undefined) {
+          setAccounts((prev) =>
+            prev.map((acc) =>
+              acc.AccountID === currentAccountId
+                ? { ...acc, Expense: response.totalExpense }
+                : acc,
+            ),
+          );
+              setActiveAccount((prev) =>
+            prev && prev.AccountID === currentAccountId
+              ? { ...prev, Expense: response.totalExpense }
+              : prev,
+          );
+        }
+
+        if (response.accountBalance !== undefined) {
+          setAccounts((prev) =>
+            prev.map((acc) =>
+              acc.AccountID === currentAccountId
+                ? { ...acc, AccountBalance: response.accountBalance }
+                : acc,
+            ),
+          );
+          setActiveAccount((prev) =>
+            prev && prev.AccountID === currentAccountId
+              ? { ...prev, AccountBalance: response.accountBalance }
+              : prev,
+          );
+        }
+      };
+
+      socket.onMessage(messageHandler);
+    }
+  };
+
   return (
     <SidebarInset>
       <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
@@ -29,6 +126,23 @@ export default function Index() {
             </BreadcrumbList>
           </Breadcrumb>
         </div>
+        <div className="flex-1 flex justify-start">
+          <Select
+            value={activeAccount?.DateRange || 'this_month'}
+            onValueChange={handleDateRangeChange}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select Date Range" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="this_month">This Month</SelectItem>
+              <SelectItem value="last_month">Last Month</SelectItem>
+              <SelectItem value="last_6_months">Last 6 Months</SelectItem>
+              <SelectItem value="this_year">This Year</SelectItem>
+              <SelectItem value="last_year">Last Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </header>
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
         <div className="grid auto-rows-min gap-4 md:grid-cols-4">
@@ -38,33 +152,32 @@ export default function Index() {
             </div>
             <div className="p-6 pt-0">
               <div className="text-2xl font-bold">
-                {' '}
                 {activeAccount?.AccountBalance}
               </div>
-          <BalanceChart/> 
+              <BalanceChart />
             </div>
           </div>
           <div className="rounded-xl border bg-card text-card-foreground shadow">
             <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium">Total Income</h3>
+              <h3 className="tracking-tight text-sm font-medium">
+                Total Income
+              </h3>
             </div>
             <div className="p-6 pt-0">
-              <div className="text-2xl font-bold">
-                {' '}
-                {activeAccount?.Income}
-              </div>
+              <div className="text-2xl font-bold"> {activeAccount?.Income}</div>
               <p className="text-xs text-muted-foreground">
                 +20.1% from last month
               </p>
             </div>
           </div>
-         <div className="rounded-xl border bg-card text-card-foreground shadow">
+          <div className="rounded-xl border bg-card text-card-foreground shadow">
             <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="tracking-tight text-sm font-medium">Total Expenses</h3>
+              <h3 className="tracking-tight text-sm font-medium">
+                Total Expenses
+              </h3>
             </div>
             <div className="p-6 pt-0">
               <div className="text-2xl font-bold">
-                {' '}
                 {activeAccount?.Expense}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -75,8 +188,7 @@ export default function Index() {
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>
         <div className="grid auto-rows-min gap-4 md:grid-cols-2">
-          <div className=" rounded-xl bg-muted/50" />
-
+          <div className="rounded-xl bg-muted/50" />
           <DataTable columns={columns} data={transactions} />
         </div>
       </div>

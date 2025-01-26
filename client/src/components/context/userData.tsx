@@ -16,6 +16,7 @@ export interface Account {
   Expense: number;
   AccountBalance: number;
   Type: string;
+  DateRange: string;
 }
 export interface Transaction {
   ID: string;
