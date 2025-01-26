@@ -235,7 +235,7 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	start, end := GetDateRange(requestData.DateRange)
 
 	transactions := []types.Transaction{}
-	if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ??", requestData.AccountID, start, end).Find(&transactions).Error; err != nil {
+	if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?", requestData.AccountID, start, end).Find(&transactions).Error; err != nil {
 		Send_Error(ws, "Could Not get transactions", err)
 		return
 	}
@@ -496,15 +496,18 @@ func GetAccountBalance(
 	Send_Message(ws, string(responseData))
 }
 
-func GetAccountsBalance(ws *websocket.Conn, userID string) error {
+func GetAccountsBalance(ws *websocket.Conn, accountID string) error {
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+	account.ID = accountID
+
+	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
 		Send_Error(ws, "Account not found", err)
 		return err
 	}
-	if err := db.DB.Where("account_id = ?", requestData.AccountID).Find(&transactions).Error; err != nil {
+
+	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
 		Send_Error(ws, "Could not get transactions", err)
 		return err
 	}
