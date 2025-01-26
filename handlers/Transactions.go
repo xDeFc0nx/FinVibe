@@ -12,6 +12,10 @@ import (
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
+var requestData struct {
+	AccountID string `json:"AccountID"`
+}
+
 func CreateRecurring(
 	ws *websocket.Conn,
 	data json.RawMessage,
@@ -214,10 +218,6 @@ func handleRecurringTransaction(
 func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 
-	var requestData struct {
-		AccountID string `json:"AccountID"`
-	}
-
 	if err := json.Unmarshal(data, &requestData); err != nil {
 		Send_Error(ws, InvalidData, err)
 		return
@@ -385,9 +385,6 @@ func GetAccountIncome(
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
-	var requestData struct {
-		AccountID string `json:"AccountID"`
-	}
 	account.ID = requestData.AccountID
 	if err := json.Unmarshal(data, &requestData); err != nil {
 		Send_Error(ws, InvalidData, err)
@@ -428,9 +425,6 @@ func GetAccountExpense(
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
-	var requestData struct {
-		AccountID string `json:"AccountID"`
-	}
 	account.ID = requestData.AccountID
 	if err := json.Unmarshal(data, &requestData); err != nil {
 		Send_Error(ws, InvalidData, err)
@@ -470,9 +464,6 @@ func GetAccountBalance(
 ) {
 	account := new(types.Accounts)
 
-	var requestData struct {
-		AccountID string `json:"AccountID"`
-	}
 	account.ID = requestData.AccountID
 	if err := json.Unmarshal(data, &requestData); err != nil {
 		Send_Error(ws, InvalidData, err)
@@ -498,13 +489,11 @@ func GetAccountBalance(
 	Send_Message(ws, string(responseData))
 }
 
-func GetAccountsBalance(ws *websocket.Conn, accountID string) error {
+func GetAccountsBalance(ws *websocket.Conn, userID string) error {
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
-	account.ID = accountID
-
-	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
+	if err := db.DB.Where(" account_id =? AND user_id", requestData.AccountID, userID).First(&account).Error; err != nil {
 		Send_Error(ws, "Account not found", err)
 		return err
 	}
