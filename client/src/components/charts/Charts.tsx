@@ -23,7 +23,7 @@ const chartConfig = {
 export function BalanceChart() {
   const { activeAccount } = useUserData();
 
- const {chartOverview} = useUserData()
+  const { chartOverview } = useUserData();
 
   return (
     <ChartContainer config={chartConfig}>
@@ -57,7 +57,7 @@ export function BalanceChart() {
 export function IncomeChart() {
   const { activeAccount } = useUserData();
 
- const {chartOverview} = useUserData()
+  const { chartOverview } = useUserData();
 
   return (
     <ChartContainer config={chartConfig}>
@@ -77,14 +77,14 @@ export function IncomeChart() {
           strokeWidth={2}
           dot={false}
         />
-            </LineChart>
+      </LineChart>
     </ChartContainer>
   );
 }
 export function ExpensesChart() {
   const { activeAccount } = useUserData();
 
- const {chartOverview} = useUserData()
+  const { chartOverview } = useUserData();
 
   return (
     <ChartContainer config={chartConfig}>
@@ -104,7 +104,7 @@ export function ExpensesChart() {
           strokeWidth={2}
           dot={false}
         />
-            </LineChart>
+      </LineChart>
     </ChartContainer>
   );
 }

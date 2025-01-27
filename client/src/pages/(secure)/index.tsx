@@ -17,7 +17,11 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { DataTable } from './dataTable';
 import { columns } from './columns';
-import { BalanceChart, ExpensesChart, IncomeChart } from '@/components/charts/Charts';
+import {
+  BalanceChart,
+  ExpensesChart,
+  IncomeChart,
+} from '@/components/charts/Charts';
 import { useWebSocket } from '@/components/WebSocketProvidor';
 import { useState } from 'react';
 
@@ -36,13 +40,13 @@ export default function Index() {
 
   const { socket } = useWebSocket();
   const handleDateRangeChange = (value: string) => {
-       setDateRange(value);
+    setDateRange(value);
 
-      if (socket && activeAccount) {
+    if (socket && activeAccount) {
       const updatedAccount = { ...activeAccount, DateRange: value };
       setActiveAccount(updatedAccount);
 
-           const messageHandler = (msg: string) => {
+      const messageHandler = (msg: string) => {
         const response = JSON.parse(msg);
 
         if (response.transactions) {
@@ -93,10 +97,9 @@ export default function Index() {
               : prev,
           );
         }
-        if(response.chartData){
-            setChartOverview(response.chartData)
+        if (response.chartData) {
+          setChartOverview(response.chartData);
         }
-
       };
 
       socket.onMessage(messageHandler);
@@ -119,10 +122,7 @@ export default function Index() {
           </Breadcrumb>
         </div>
         <div className="flex-1 flex justify-start">
-          <Select
-            value={activeAccount?.DateRange || 'this_month'}
-            onValueChange={handleDateRangeChange}
-          >
+          <Select onValueChange={handleDateRangeChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select Date Range" />
             </SelectTrigger>
@@ -157,8 +157,8 @@ export default function Index() {
             </div>
             <div className="p-6 pt-0">
               <div className="text-2xl font-bold"> {activeAccount?.Income}</div>
-              <IncomeChart/>
-                          </div>
+              <IncomeChart />
+            </div>
           </div>
           <div className="rounded-xl border bg-card text-card-foreground shadow">
             <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
@@ -168,8 +168,8 @@ export default function Index() {
             </div>
             <div className="p-6 pt-0">
               <div className="text-2xl font-bold">{activeAccount?.Expense}</div>
-              <ExpensesChart/>
-                        </div>
+              <ExpensesChart />
+            </div>
           </div>
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>

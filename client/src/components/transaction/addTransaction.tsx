@@ -43,8 +43,14 @@ const formSchema = z.object({
 
 export const AddTransaction = () => {
   const { socket, isReady } = useWebSocket();
-  const { setTransactions, activeAccount, setAccounts, setActiveAccount, setChartOverview, dateRange } =
-    useUserData();
+  const {
+    setTransactions,
+    activeAccount,
+    setAccounts,
+    setActiveAccount,
+    setChartOverview,
+    dateRange,
+  } = useUserData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -111,19 +117,20 @@ export const AddTransaction = () => {
                 : prev,
             );
           }
-             if(response.chartData){
-            setChartOverview(response.chartData)
-        }
-
+          if (response.chartData) {
+            setChartOverview(response.chartData);
+          }
         };
 
-     
         socket.onMessage(balanceHandler);
         setTimeout(() => {
           socket.send('getAccountIncome', { AccountID: currentAccountId });
           socket.send('getAccountExpense', { AccountID: currentAccountId });
           socket.send('getAccountBalance', { AccountID: currentAccountId });
-          socket.send('getCharts', {AccountID: currentAccountId, DataRange: dateRange})
+          socket.send('getCharts', {
+            AccountID: currentAccountId,
+            DataRange: dateRange,
+          });
         }, 100);
         return;
       }

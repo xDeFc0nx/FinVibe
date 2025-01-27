@@ -29,8 +29,8 @@ export interface Transaction {
 }
 export interface ChartOverview {
   Day: string;
-    Income: number;
-    Expense: number;
+  Income: number;
+  Expense: number;
 }
 export interface UserDataContextType {
   userData: UserData;

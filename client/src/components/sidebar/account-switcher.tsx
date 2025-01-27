@@ -113,19 +113,19 @@ export function AccountSwitcher() {
     if (socket && isReady && activeAccount?.AccountID) {
       socket.send('getTransactions', {
         AccountID: activeAccount?.AccountID,
-        DateRange: dateRange
+        DateRange: dateRange,
       });
       socket.send('getAccountIncome', {
         AccountID: activeAccount?.AccountID,
-        DateRange: dateRange
+        DateRange: dateRange,
       });
       socket.send('getAccountExpense', {
         AccountID: activeAccount?.AccountID,
-        DateRange: dateRange
+        DateRange: dateRange,
       });
       socket.send('getAccountBalance', {
         AccountID: activeAccount?.AccountID,
-        DateRange: dateRange
+        DateRange: dateRange,
       });
       socket.send('getCharts', {
         AccountID: activeAccount?.AccountID,
@@ -139,7 +139,7 @@ export function AccountSwitcher() {
           setTransactions(response.transactions);
         }
 
-                if (response.Error) {
+        if (response.Error) {
           toast.error(response.Error);
         }
       });
