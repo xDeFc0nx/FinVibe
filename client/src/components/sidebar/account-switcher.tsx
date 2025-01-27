@@ -41,6 +41,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { isRegExp } from 'util/types';
 
 export function AccountSwitcher() {
   const {
@@ -50,6 +51,8 @@ export function AccountSwitcher() {
     setActiveAccount,
     setTransactions,
     dateRange,
+    setChartOverview,
+    refresh,
   } = useUserData();
   const { isMobile } = useSidebar();
   const [open, setOpen] = React.useState(false);
@@ -111,6 +114,8 @@ export function AccountSwitcher() {
 
   React.useEffect(() => {
     if (socket && isReady && activeAccount?.AccountID) {
+                const currentAccountId = activeAccount.AccountID;
+
       socket.send('getTransactions', {
         AccountID: activeAccount?.AccountID,
         DateRange: dateRange,
@@ -142,9 +147,48 @@ export function AccountSwitcher() {
         if (response.Error) {
           toast.error(response.Error);
         }
-      });
+           if (response.totalIncome !== undefined) {
+            setAccounts((prev) =>
+              prev.map((acc) =>
+                acc.AccountID === currentAccountId
+                  ? { ...acc, Income: response.totalIncome }
+                  : acc,
+              ),
+            );
+          }
+
+          if (response.totalExpense !== undefined) {
+            setAccounts((prev) =>
+              prev.map((acc) =>
+                acc.AccountID === currentAccountId
+                  ? { ...acc, Expense: response.totalExpense }
+                  : acc,
+              ),
+            );
+          }
+
+          if (response.accountBalance !== undefined) {
+            setAccounts((prev) =>
+              prev.map((acc) =>
+                acc.AccountID === currentAccountId
+                  ? { ...acc, AccountBalance: response.accountBalance }
+                  : acc,
+              ),
+            );
+            setActiveAccount((prev) =>
+              prev?.AccountID === currentAccountId
+                ? { ...prev, AccountBalance: response.accountBalance }
+                : prev,
+            );
+          }
+          if (response.chartData) {
+            setChartOverview(response.chartData);
+          }
+        });
+
+
     }
-  }, [activeAccount?.AccountID, dateRange]);
+  }, [activeAccount?.AccountID, dateRange, isReady, refresh]);
   return (
     <SidebarMenu>
       <Dialog open={open} onOpenChange={setOpen}>

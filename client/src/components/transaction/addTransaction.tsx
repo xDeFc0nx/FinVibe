@@ -46,10 +46,8 @@ export const AddTransaction = () => {
   const {
     setTransactions,
     activeAccount,
-    setAccounts,
-    setActiveAccount,
-    setChartOverview,
     dateRange,
+    setRefresh,
   } = useUserData();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -65,14 +63,14 @@ export const AddTransaction = () => {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     try {
       if (socket && isReady && activeAccount) {
-        const currentAccountId = activeAccount.AccountID;
 
         socket.send('createTransaction', {
-          AccountID: currentAccountId,
+          AccountID: activeAccount.AccountID,
           ...values,
         });
 
-        const balanceHandler = (msg: string) => {
+       socket.onMessage((msg) => {
+
           const response = JSON.parse(msg);
 
           if (response.transaction) {
@@ -81,58 +79,10 @@ export const AddTransaction = () => {
               toastId: 'success',
             });
             form.reset();
+            setRefresh(oldKey => oldKey +1)
           }
-
-          if (response.totalIncome !== undefined) {
-            setAccounts((prev) =>
-              prev.map((acc) =>
-                acc.AccountID === currentAccountId
-                  ? { ...acc, Income: response.totalIncome }
-                  : acc,
-              ),
-            );
-          }
-
-          if (response.totalExpense !== undefined) {
-            setAccounts((prev) =>
-              prev.map((acc) =>
-                acc.AccountID === currentAccountId
-                  ? { ...acc, Expense: response.totalExpense }
-                  : acc,
-              ),
-            );
-          }
-
-          if (response.accountBalance !== undefined) {
-            setAccounts((prev) =>
-              prev.map((acc) =>
-                acc.AccountID === currentAccountId
-                  ? { ...acc, AccountBalance: response.accountBalance }
-                  : acc,
-              ),
-            );
-            setActiveAccount((prev) =>
-              prev?.AccountID === currentAccountId
-                ? { ...prev, AccountBalance: response.accountBalance }
-                : prev,
-            );
-          }
-          if (response.chartData) {
-            setChartOverview(response.chartData);
-          }
-        };
-
-        socket.onMessage(balanceHandler);
-        setTimeout(() => {
-          socket.send('getAccountIncome', { AccountID: currentAccountId });
-          socket.send('getAccountExpense', { AccountID: currentAccountId });
-          socket.send('getAccountBalance', { AccountID: currentAccountId });
-          socket.send('getCharts', {
-            AccountID: currentAccountId,
-            DataRange: dateRange,
-          });
-        }, 100);
-        return;
+       })
+       
       }
     } catch (error) {
       console.error('Submission error', error);

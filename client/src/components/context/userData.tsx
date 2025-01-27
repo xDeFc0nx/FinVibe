@@ -37,11 +37,13 @@ export interface UserDataContextType {
   accounts: Account[];
   activeAccount: Account | null;
   dateRange: string;
+  refresh: number;
   chartOverview: ChartOverview[];
   transactions: Transaction[];
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
   setDateRange: React.Dispatch<React.SetStateAction<string>>;
+  setRefresh: React.Dispatch<React.SetStateAction<number>>;
   setActiveAccount: React.Dispatch<React.SetStateAction<Account | null>>;
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   setChartOverview: React.Dispatch<React.SetStateAction<ChartOverview[]>>;
@@ -72,6 +74,7 @@ export const UserDataProvider = ({
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccount] = useState<Account | null>(null);
   const [dateRange, setDateRange] = useState<string>('this_month');
+  const [refresh, setRefresh] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [chartOverview, setChartOverview] = useState<ChartOverview[]>([]);
   useEffect(() => {
@@ -108,6 +111,8 @@ export const UserDataProvider = ({
         setActiveAccount,
         chartOverview,
         setChartOverview,
+        refresh,
+        setRefresh,
       }}
     >
       {' '}
