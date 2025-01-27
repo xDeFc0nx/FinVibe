@@ -62,9 +62,40 @@ func getCharts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	for _, totals := range dailyTotals {
 		formattedData = append(formattedData, *totals)
 	}
+	type byDesc struct {
+		Description string  `json:"Description"`
+		Amount      float64 `json:"Amount"`
+	}
 
+	var Income []byDesc
+	var Expenses []byDesc
+
+	IncomeTotals := make(map[string]float64)
+	ExpensesTotals := make(map[string]float64)
+	for _, t := range transactions {
+		switch t.Type {
+		case "Income":
+			IncomeTotals[t.Description] += t.Amount
+		case "Expense":
+			ExpensesTotals[t.Description] += t.Amount
+		}
+	}
+	for desc, amount := range IncomeTotals {
+		Income = append(Income, byDesc{
+			Description: desc,
+			Amount:      amount,
+		})
+	}
+	for desc, amount := range ExpensesTotals {
+		Expenses = append(Expenses, byDesc{
+			Description: desc,
+			Amount:      amount,
+		})
+	}
 	response := map[string]interface{}{
-		"chartData": formattedData,
+		"chartData":   formattedData,
+		"IncomePie":   Income,
+		"ExpensesPie": Expenses,
 	}
 
 	responseData, _ := json.Marshal(response)
