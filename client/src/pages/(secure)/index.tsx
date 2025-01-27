@@ -122,10 +122,9 @@ export default function Index() {
           </Breadcrumb>
         </div>
         <div className="flex-1 flex justify-start">
-       <Select
-            value={dateRange}
-            onValueChange={handleDateRangeChange}
-          >            <SelectTrigger className="w-[180px]">
+          <Select value={dateRange} onValueChange={handleDateRangeChange}>
+            {' '}
+            <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select Date Range" />
             </SelectTrigger>
             <SelectContent>

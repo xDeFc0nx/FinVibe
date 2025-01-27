@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useWebSocket } from '@/components/WebSocketProvidor';
+import type { Description } from '@radix-ui/react-dialog';
 
 export interface UserData {
   ID: string;
@@ -120,3 +121,32 @@ export const UserDataProvider = ({
     </UserDataContext.Provider>
   );
 };
+export const Descriptions = {
+  Income: [
+    'Salary/Paycheck',
+    'Freelance Income',
+    'Rental Income',
+    'Dividend Payments',
+    'Interest Income',
+    'Bonus',
+    'Sales Revenue',
+    'Investment Returns',
+    'Government Benefits',
+    'Reimbursements',
+  ],
+  Expense: [
+    'Groceries',
+    'Rent/Mortgage Payment',
+    'Utilities',
+    'Transportation',
+    'Dining Out/Restaurants',
+    'Shopping/Retail Purchases',
+    'Subscription Services',
+    'Insurance',
+    'Travel/Vacation Expenses',
+    'Medical Bills',
+    'Education/Tuition Fees',
+    'Loan Repayments',
+    'Taxes',
+  ],
+} as const;

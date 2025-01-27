@@ -33,7 +33,6 @@ export const columns: ColumnDef<Transaction>[] = [
       const amount = row.original.Amount;
       const type = row.original.Type;
 
-      // Add + for Income, - for Expense
       const formattedAmount = type === 'Income' ? `+${amount}` : `-${amount}`;
 
       const backgroundColor =

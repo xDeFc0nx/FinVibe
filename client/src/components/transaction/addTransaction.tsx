@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,7 +25,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-
 import {
   Select,
   SelectContent,
@@ -32,57 +32,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AccountSwitcher } from '../sidebar/account-switcher';
+import { Descriptions } from '@/components/context/userData';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { cn } from '@/lib/utils';
+import { CalendarIcon } from 'lucide-react';
+import { Calendar } from '../ui/calendar';
+import { format } from 'date-fns';
 
 const formSchema = z.object({
   Type: z.enum(['Income', 'Expense']),
   Description: z.string().min(1, 'Description is required'),
   Amount: z.number().min(1, 'Amount must be greater than 0'),
   IsRecurring: z.boolean(),
+  CreatedAt: z.date(),
 });
 
 export const AddTransaction = () => {
   const { socket, isReady } = useWebSocket();
-  const {
-    setTransactions,
-    activeAccount,
-    dateRange,
-    setRefresh,
-  } = useUserData();
+  const { setTransactions, activeAccount, setRefresh } = useUserData();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       Type: 'Income',
       Description: '',
-      Amount: 0,
+         CreatedAt: new Date(),
       IsRecurring: false,
+
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     try {
       if (socket && isReady && activeAccount) {
-
+           const payload = {
+        ...values,
+        CreatedAt: values.CreatedAt.toISOString(),
+      };
         socket.send('createTransaction', {
           AccountID: activeAccount.AccountID,
-          ...values,
+          ...payload,
         });
 
-       socket.onMessage((msg) => {
-
+        socket.onMessage((msg) => {
           const response = JSON.parse(msg);
-
           if (response.transaction) {
             setTransactions((prev) => [...prev, response.transaction]);
-            toast.success('Transaction added!', {
-              toastId: 'success',
-            });
+            toast.success('Transaction added!', { toastId: 'success' });
             form.reset();
-            setRefresh(oldKey => oldKey +1)
+            setRefresh((oldKey) => oldKey + 1);
           }
-       })
-       
+        });
       }
     } catch (error) {
       console.error('Submission error', error);
@@ -136,19 +136,43 @@ export const AddTransaction = () => {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="Description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Description" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const transactionType = form.watch('Type');
+                return (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger className="rounded-lg h-12">
+                          <SelectValue placeholder="Select description" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-lg min-w-[200px]">
+                          {Descriptions[transactionType].map((desc) => (
+                            <SelectItem
+                              key={desc}
+                              value={desc}
+                              className="cursor-pointer"
+                            >
+                              {desc}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
+
             <FormField
               control={form.control}
               name="Amount"
@@ -169,6 +193,47 @@ export const AddTransaction = () => {
             />
             <FormField
               control={form.control}
+              name="CreatedAt"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-[240px] pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground',
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, 'PPP')
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field?.value}
+                        onSelect={field.onChange}
+                        disabled={(date) =>
+                          date > new Date() || date < new Date('1900-01-01')
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="IsRecurring"
               render={({ field }) => (
                 <FormItem className="flex items-center space-x-2">
@@ -183,6 +248,7 @@ export const AddTransaction = () => {
                 </FormItem>
               )}
             />
+
             <DialogFooter>
               <Button variant="default" type="submit">
                 Add!

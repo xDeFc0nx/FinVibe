@@ -235,7 +235,9 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	start, end := GetDateRange(requestData.DateRange)
 
 	transactions := []types.Transaction{}
-	if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?", requestData.AccountID, start, end).Find(&transactions).Error; err != nil {
+	if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?", requestData.AccountID, start, end).
+		Order("created_at DESC").
+		Find(&transactions).Error; err != nil {
 		Send_Error(ws, "Could Not get transactions", err)
 		return
 	}

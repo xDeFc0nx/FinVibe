@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/table';
 
 import { Button } from '@/components/ui/button';
+import { AddTransaction } from '@/components/transaction/addTransaction';
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
