@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { AccountSwitcher } from '../sidebar/account-switcher';
 
 const formSchema = z.object({
   Type: z.enum(['Income', 'Expense']),
@@ -42,7 +43,7 @@ const formSchema = z.object({
 
 export const AddTransaction = () => {
   const { socket, isReady } = useWebSocket();
-  const { setTransactions, activeAccount, setAccounts, setActiveAccount } =
+  const { setTransactions, activeAccount, setAccounts, setActiveAccount, setChartOverview, dateRange } =
     useUserData();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -110,13 +111,19 @@ export const AddTransaction = () => {
                 : prev,
             );
           }
+             if(response.chartData){
+            setChartOverview(response.chartData)
+        }
+
         };
 
+     
         socket.onMessage(balanceHandler);
         setTimeout(() => {
           socket.send('getAccountIncome', { AccountID: currentAccountId });
           socket.send('getAccountExpense', { AccountID: currentAccountId });
           socket.send('getAccountBalance', { AccountID: currentAccountId });
+          socket.send('getCharts', {AccountID: currentAccountId, DataRange: dateRange})
         }, 100);
         return;
       }
