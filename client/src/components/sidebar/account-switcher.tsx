@@ -49,6 +49,7 @@ export function AccountSwitcher() {
     activeAccount,
     setActiveAccount,
     setTransactions,
+    dateRange,
   } = useUserData();
   const { isMobile } = useSidebar();
   const [open, setOpen] = React.useState(false);
@@ -112,7 +113,23 @@ export function AccountSwitcher() {
     if (socket && isReady && activeAccount?.AccountID) {
       socket.send('getTransactions', {
         AccountID: activeAccount?.AccountID,
-        DateRange: activeAccount?.DateRange,
+        DateRange: dateRange
+      });
+      socket.send('getAccountIncome', {
+        AccountID: activeAccount?.AccountID,
+        DateRange: dateRange
+      });
+      socket.send('getAccountExpense', {
+        AccountID: activeAccount?.AccountID,
+        DateRange: dateRange
+      });
+      socket.send('getAccountBalance', {
+        AccountID: activeAccount?.AccountID,
+        DateRange: dateRange
+      });
+      socket.send('getCharts', {
+        AccountID: activeAccount?.AccountID,
+        DateRange: dateRange,
       });
 
       socket.onMessage((msg) => {
@@ -122,12 +139,12 @@ export function AccountSwitcher() {
           setTransactions(response.transactions);
         }
 
-        if (response.Error) {
+                if (response.Error) {
           toast.error(response.Error);
         }
       });
     }
-  }, [activeAccount, socket, isReady]);
+  }, [activeAccount?.AccountID, dateRange]);
   return (
     <SidebarMenu>
       <Dialog open={open} onOpenChange={setOpen}>
