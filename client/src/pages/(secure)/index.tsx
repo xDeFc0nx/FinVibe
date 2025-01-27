@@ -17,44 +17,32 @@ import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { DataTable } from './dataTable';
 import { columns } from './columns';
-import { BalanceChart } from '@/components/charts/balanceChart';
+import { BalanceChart, ExpensesChart, IncomeChart } from '@/components/charts/Charts';
 import { useWebSocket } from '@/components/WebSocketProvidor';
 import { useState } from 'react';
 
 export default function Index() {
-  const { setTransactions,transactions, activeAccount, setAccounts, setActiveAccount } =
-    useUserData();
-
-  const [dateRange, setDateRange] = useState('this_month');
+  const {
+    setTransactions,
+    transactions,
+    activeAccount,
+    setAccounts,
+    setActiveAccount,
+    dateRange,
+    setDateRange,
+    chartOverview,
+    setChartOverview,
+  } = useUserData();
 
   const { socket } = useWebSocket();
-
   const handleDateRangeChange = (value: string) => {
-    setDateRange(value);
+       setDateRange(value);
 
-    const currentAccountId = activeAccount?.AccountID;
-    if (socket && activeAccount) {
+      if (socket && activeAccount) {
       const updatedAccount = { ...activeAccount, DateRange: value };
       setActiveAccount(updatedAccount);
 
-      socket.send('getTransactions', {
-        AccountID: activeAccount.AccountID,
-        DateRange: value,
-      });
-      socket.send('getAccountIncome', {
-        AccountID: activeAccount.AccountID,
-        DateRange: value,
-      });
-      socket.send('getAccountExpense', {
-        AccountID: activeAccount.AccountID,
-        DateRange: value,
-      });
-      socket.send('getAccountBalance', {
-        AccountID: activeAccount.AccountID,
-        DateRange: value,
-      });
-
-      const messageHandler = (msg: string) => {
+           const messageHandler = (msg: string) => {
         const response = JSON.parse(msg);
 
         if (response.transactions) {
@@ -64,13 +52,13 @@ export default function Index() {
         if (response.totalIncome !== undefined) {
           setAccounts((prev) =>
             prev.map((acc) =>
-              acc.AccountID === currentAccountId
+              acc.AccountID === activeAccount.AccountID
                 ? { ...acc, Income: response.totalIncome }
                 : acc,
             ),
           );
-              setActiveAccount((prev) =>
-            prev && prev.AccountID === currentAccountId
+          setActiveAccount((prev) =>
+            prev && prev.AccountID === activeAccount.AccountID
               ? { ...prev, Income: response.totalIncome }
               : prev,
           );
@@ -79,13 +67,13 @@ export default function Index() {
         if (response.totalExpense !== undefined) {
           setAccounts((prev) =>
             prev.map((acc) =>
-              acc.AccountID === currentAccountId
+              acc.AccountID === activeAccount.AccountID
                 ? { ...acc, Expense: response.totalExpense }
                 : acc,
             ),
           );
-              setActiveAccount((prev) =>
-            prev && prev.AccountID === currentAccountId
+          setActiveAccount((prev) =>
+            prev && prev.AccountID === activeAccount.AccountID
               ? { ...prev, Expense: response.totalExpense }
               : prev,
           );
@@ -94,17 +82,21 @@ export default function Index() {
         if (response.accountBalance !== undefined) {
           setAccounts((prev) =>
             prev.map((acc) =>
-              acc.AccountID === currentAccountId
+              acc.AccountID === activeAccount.AccountID
                 ? { ...acc, AccountBalance: response.accountBalance }
                 : acc,
             ),
           );
           setActiveAccount((prev) =>
-            prev && prev.AccountID === currentAccountId
+            prev && prev.AccountID === activeAccount.AccountID
               ? { ...prev, AccountBalance: response.accountBalance }
               : prev,
           );
         }
+        if(response.chartData){
+            setChartOverview(response.chartData)
+        }
+
       };
 
       socket.onMessage(messageHandler);
@@ -165,10 +157,8 @@ export default function Index() {
             </div>
             <div className="p-6 pt-0">
               <div className="text-2xl font-bold"> {activeAccount?.Income}</div>
-              <p className="text-xs text-muted-foreground">
-                +20.1% from last month
-              </p>
-            </div>
+              <IncomeChart/>
+                          </div>
           </div>
           <div className="rounded-xl border bg-card text-card-foreground shadow">
             <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
@@ -177,13 +167,9 @@ export default function Index() {
               </h3>
             </div>
             <div className="p-6 pt-0">
-              <div className="text-2xl font-bold">
-                {activeAccount?.Expense}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                +20.1% from last month
-              </p>
-            </div>
+              <div className="text-2xl font-bold">{activeAccount?.Expense}</div>
+              <ExpensesChart/>
+                        </div>
           </div>
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>

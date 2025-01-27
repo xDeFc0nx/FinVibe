@@ -16,7 +16,6 @@ export interface Account {
   Expense: number;
   AccountBalance: number;
   Type: string;
-  DateRange: string;
 }
 export interface Transaction {
   ID: string;
@@ -28,15 +27,24 @@ export interface Transaction {
   IsRecurring: boolean;
   CreatedAt: string;
 }
+export interface ChartOverview {
+  Day: string;
+    Income: number;
+    Expense: number;
+}
 export interface UserDataContextType {
   userData: UserData;
   accounts: Account[];
   activeAccount: Account | null;
+  dateRange: string;
+  chartOverview: ChartOverview[];
   transactions: Transaction[];
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
+  setDateRange: React.Dispatch<React.SetStateAction<string>>;
   setActiveAccount: React.Dispatch<React.SetStateAction<Account | null>>;
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  setChartOverview: React.Dispatch<React.SetStateAction<ChartOverview[]>>;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -63,9 +71,9 @@ export const UserDataProvider = ({
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [activeAccount, setActiveAccount] = useState<Account | null>(null);
-
+  const [dateRange, setDateRange] = useState<string>('this_month');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-
+  const [chartOverview, setChartOverview] = useState<ChartOverview[]>([]);
   useEffect(() => {
     if (socket && isReady) {
       socket.send('getUser');
@@ -78,6 +86,9 @@ export const UserDataProvider = ({
         }
         if (response.accounts) {
           setAccounts(response.accounts);
+          if (!activeAccount && response.accounts.length > 0) {
+            setActiveAccount(response.accounts[0]);
+          }
         }
       });
     }
@@ -89,10 +100,14 @@ export const UserDataProvider = ({
         setUserData,
         accounts,
         setAccounts,
+        dateRange,
+        setDateRange,
         transactions,
         setTransactions,
         activeAccount,
         setActiveAccount,
+        chartOverview,
+        setChartOverview,
       }}
     >
       {' '}
