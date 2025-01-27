@@ -52,6 +52,8 @@ export function AccountSwitcher() {
     setTransactions,
     dateRange,
     setChartOverview,
+    setIncomePie,
+    setExpensesPie,
     refresh,
   } = useUserData();
   const { isMobile } = useSidebar();
@@ -139,7 +141,6 @@ export function AccountSwitcher() {
 
       socket.onMessage((msg) => {
         const response = JSON.parse(msg);
-
         if (response.transactions) {
           setTransactions(response.transactions);
         }
@@ -183,6 +184,12 @@ export function AccountSwitcher() {
         }
         if (response.chartData) {
           setChartOverview(response.chartData);
+        }
+        if (response.IncomePie) {
+          setIncomePie(response.IncomePie);
+        }
+        if (response.ExpensesPie) {
+          setExpensesPie(response.ExpensesPie);
         }
       });
     }

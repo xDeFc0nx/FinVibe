@@ -33,6 +33,10 @@ export interface ChartOverview {
   Income: number;
   Expense: number;
 }
+export interface PieOverview {
+  Description: string;
+  Amount: number;
+}
 export interface UserDataContextType {
   userData: UserData;
   accounts: Account[];
@@ -40,6 +44,8 @@ export interface UserDataContextType {
   dateRange: string;
   refresh: number;
   chartOverview: ChartOverview[];
+  incomePie: PieOverview[];
+  expensesPie: PieOverview[];
   transactions: Transaction[];
   setUserData: React.Dispatch<React.SetStateAction<UserData>>;
   setAccounts: React.Dispatch<React.SetStateAction<Account[]>>;
@@ -48,6 +54,8 @@ export interface UserDataContextType {
   setActiveAccount: React.Dispatch<React.SetStateAction<Account | null>>;
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   setChartOverview: React.Dispatch<React.SetStateAction<ChartOverview[]>>;
+  setIncomePie: React.Dispatch<React.SetStateAction<PieOverview[]>>;
+  setExpensesPie: React.Dispatch<React.SetStateAction<PieOverview[]>>;
 }
 
 const UserDataContext = createContext<UserDataContextType | null>(null);
@@ -78,6 +86,8 @@ export const UserDataProvider = ({
   const [refresh, setRefresh] = useState<number>(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [chartOverview, setChartOverview] = useState<ChartOverview[]>([]);
+  const [incomePie, setIncomePie] = useState<PieOverview[]>([]);
+  const [expensesPie, setExpensesPie] = useState<PieOverview[]>([]);
   useEffect(() => {
     if (socket && isReady) {
       socket.send('getUser');
@@ -112,6 +122,10 @@ export const UserDataProvider = ({
         setActiveAccount,
         chartOverview,
         setChartOverview,
+        incomePie,
+        setIncomePie,
+        expensesPie,
+        setExpensesPie,
         refresh,
         setRefresh,
       }}

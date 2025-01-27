@@ -20,7 +20,9 @@ import { columns } from './columns';
 import {
   BalanceChart,
   ExpensesChart,
+  ExpensesPie,
   IncomeChart,
+  IncomePie,
 } from '@/components/charts/Charts';
 import { useWebSocket } from '@/components/WebSocketProvidor';
 import { useState } from 'react';
@@ -174,8 +176,9 @@ export default function Index() {
           </div>
           <div className="aspect-video rounded-xl bg-muted/50" />
         </div>
-        <div className="grid auto-rows-min gap-4 md:grid-cols-2">
-          <div className="rounded-xl bg-muted/50" />
+        <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+          <IncomePie />
+          <ExpensesPie />
           <DataTable columns={columns} data={transactions} />
         </div>
       </div>
