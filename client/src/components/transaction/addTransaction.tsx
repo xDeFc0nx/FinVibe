@@ -56,19 +56,18 @@ export const AddTransaction = () => {
     defaultValues: {
       Type: 'Income',
       Description: '',
-         CreatedAt: new Date(),
+      CreatedAt: new Date(),
       IsRecurring: false,
-
     },
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     try {
       if (socket && isReady && activeAccount) {
-           const payload = {
-        ...values,
-        CreatedAt: values.CreatedAt.toISOString(),
-      };
+        const payload = {
+          ...values,
+          CreatedAt: values.CreatedAt.toISOString(),
+        };
         socket.send('createTransaction', {
           AccountID: activeAccount.AccountID,
           ...payload,
