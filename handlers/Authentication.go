@@ -156,9 +156,9 @@ func LoginHandler(c *fiber.Ctx) error {
 	c.Cookie(&cookie)
 	return c.JSON(
 		fiber.Map{
-			"message":      "Success",
-			"Conection ID": ConnectionID,
-			"token":        cookie.Value,
+			"message":       "Success",
+			"Connection ID": ConnectionID,
+			"token":         cookie.Value,
 		},
 	)
 }
