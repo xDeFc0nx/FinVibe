@@ -110,19 +110,19 @@ export function ExpensesChart() {
 	);
 }
 export function IncomePie() {
-	const { incomePie } = useUserData(); 
+	const { incomePie } = useUserData();
 
 	const colorPalette = [
-		"hsl(var(--chart-1))", 
-		"hsl(var(--chart-2))", 
-		"hsl(var(--chart-3))", 
-		"hsl(var(--chart-4))", 
-		"hsl(var(--chart-5))", 
-		"hsl(var(--chart-6))", 
-		"hsl(var(--chart-7))", 
-		"hsl(var(--chart-8))", 
-		"hsl(var(--chart-9))", 
-		"hsl(var(--chart-10))", 
+		"hsl(var(--chart-1))",
+		"hsl(var(--chart-2))",
+		"hsl(var(--chart-3))",
+		"hsl(var(--chart-4))",
+		"hsl(var(--chart-5))",
+		"hsl(var(--chart-6))",
+		"hsl(var(--chart-7))",
+		"hsl(var(--chart-8))",
+		"hsl(var(--chart-9))",
+		"hsl(var(--chart-10))",
 	];
 
 	return (
@@ -143,15 +143,15 @@ export function IncomePie() {
 							content={<ChartTooltipContent hideLabel />}
 						/>
 						<Pie
-							data={incomePie} 
-							dataKey="Amount" 
-							nameKey="Description" 
-							fill="var(--color-Income)" 
+							data={incomePie}
+							dataKey="Amount"
+							nameKey="Description"
+							fill="var(--color-Income)"
 						>
 							{incomePie.map((entry, index) => (
 								<Cell
 									key={`cell-${index}`}
-									fill={colorPalette[index % colorPalette.length]} 
+									fill={colorPalette[index % colorPalette.length]}
 								/>
 							))}
 						</Pie>
@@ -162,12 +162,12 @@ export function IncomePie() {
 	);
 }
 export function ExpensesPie() {
-	const { expensesPie } = useUserData(); 
+	const { expensesPie } = useUserData();
 
 	const colorPalette = [
 		"hsl(var(--chart-1))",
 		"hsl(var(--chart-2))",
-        "hsl(var(--chart-3))",
+		"hsl(var(--chart-3))",
 		"hsl(var(--chart-4))",
 		"hsl(var(--chart-5))",
 		"hsl(var(--chart-6))",
@@ -192,14 +192,14 @@ export function ExpensesPie() {
 						<Pie
 							data={expensesPie}
 							dataKey="Amount"
-							nameKey="Description" 
-							fill="var(--color-Expenses)" 
+							nameKey="Description"
+							fill="var(--color-Expenses)"
 						>
 							{expensesPie.map((entry, index) => (
 								<Cell
 									key={`cell-${index}`}
 									fill={colorPalette[index % colorPalette.length]}
-                                    />
+								/>
 							))}
 						</Pie>
 					</PieChart>

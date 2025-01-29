@@ -15,22 +15,29 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as z from "zod";
+import { handleLogin } from "@/pages/login";
+import CreateAccount from "@/components/ui/createAccount";
+import { useState } from "react";
+import { UserDataProvider } from "@/components/context/userData";
+import { WebSocketProvider } from "@/components/WebSocketProvidor";
 const formSchema = z.object({
 	firstName: z.string(),
 	lastName: z.string(),
-	country: z.string(),
+	currency: z.string(),
 	email: z.string(),
 	password: z.string(),
 });
 
-export default function MyForm() {
+export default function Register() {
 	const navigate = useNavigate();
-
+	const [registered, setRegistered] = useState(false);
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 	});
 
 	const handleSubmit = async (data: z.infer<typeof formSchema>) => {
+		console.log(data);
+
 		try {
 			const response = await fetch("http://localhost:3001/Register", {
 				method: "POST",
@@ -40,8 +47,8 @@ export default function MyForm() {
 			});
 
 			if (response.ok) {
-				toast.success("Success, Please Login");
-				navigate("/login");
+				await handleLogin({ email: data.email, password: data.password });
+				setRegistered(true);
 			} else {
 				toast("Login Failed Try again");
 			}
@@ -49,7 +56,15 @@ export default function MyForm() {
 			toast("Login Failed Try again");
 		}
 	};
-
+	if (registered) {
+		return (
+			<WebSocketProvider>
+				<UserDataProvider>
+					<CreateAccount />;
+				</UserDataProvider>
+			</WebSocketProvider>
+		);
+	}
 	return (
 		<>
 			<div className="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-1 lg:px-0">
@@ -115,16 +130,12 @@ export default function MyForm() {
 
 								<FormField
 									control={form.control}
-									name="country"
+									name="currency"
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel>Country</FormLabel>
 											<FormControl>
-												<Input
-													placeholder="Your Country, this will also set Currency"
-													type=""
-													{...field}
-												/>
+												<Input placeholder="Your currency" type="" {...field} />
 											</FormControl>
 
 											<FormMessage />
@@ -163,7 +174,7 @@ export default function MyForm() {
 								/>
 
 								<Button type="submit" className="mt-5">
-									Submit
+									Continue
 								</Button>
 							</form>
 						</Form>

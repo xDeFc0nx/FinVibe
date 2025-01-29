@@ -50,8 +50,8 @@ func CreateUser(c *fiber.Ctx) error {
 	if user.Password == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Password is required"})
 	}
-	if user.Country == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "Country is required"})
+	if user.Currency == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Currency is required"})
 	}
 
 	if len(user.Password) < 8 {
@@ -105,7 +105,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		"FirstName": user.FirstName,
 		"LastName":  user.LastName,
 		"Email":     user.Email,
-		"Country":   user.Country,
+		"Currency":  user.Currency,
 	}
 
 	response := map[string]interface{}{
@@ -157,8 +157,8 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	if user.Country == "" {
-		Send_Error(ws, "Country is required", nil)
+	if user.Currency == "" {
+		Send_Error(ws, "Currency is required", nil)
 		return
 	}
 

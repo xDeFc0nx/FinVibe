@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
 	Form,
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
@@ -23,33 +22,12 @@ const formSchema = z.object({
 });
 
 export default function MyForm() {
-	const navigate = useNavigate();
-
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 	});
-
-	const handleSubmit = async (data: z.infer<typeof formSchema>) => {
-		try {
-			const response = await fetch("http://localhost:3001/Login", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(data),
-				credentials: "include",
-			});
-			const responseData = await response.json();
-
-			if (response.ok) {
-				document.cookie = `jwt=${responseData.token}; path=/; secure; httpOnly`;
-				navigate("/app/dashboard");
-			} else {
-				toast.error("wrong credentials");
-			}
-		} catch (error) {
-			toast.error("Login Failed Try again");
-		}
+	const onSubmit = async (data: z.infer<typeof formSchema>) => {
+		await handleLogin(data);
 	};
-
 	return (
 		<>
 			<div className="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-1 lg:px-0">
@@ -73,7 +51,7 @@ export default function MyForm() {
 						</div>
 
 						<Form {...form}>
-							<form onSubmit={form.handleSubmit(handleSubmit)}>
+							<form onSubmit={form.handleSubmit(onSubmit)}>
 								<FormField
 									control={form.control}
 									name="email"
@@ -140,3 +118,25 @@ export default function MyForm() {
 		</>
 	);
 }
+export const handleLogin = async (data: {
+	email: string;
+	password: string;
+}) => {
+	try {
+		const response = await fetch("http://localhost:3001/Login", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify(data),
+			credentials: "include",
+		});
+		const responseData = await response.json();
+
+		if (response.ok) {
+			document.cookie = `jwt=${responseData.token}; path=/; secure;`;
+		} else {
+			toast.error("Wrong credentials");
+		}
+	} catch (error) {
+		toast.error("Login Failed. Try again.");
+	}
+};

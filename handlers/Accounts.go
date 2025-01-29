@@ -31,8 +31,8 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		Send_Error(ws, "Failed to Create Account", err)
 	}
 	accountData := map[string]interface{}{
-		"ID":   account.ID,
-		"Type": account.Type,
+		"accountID": account.ID,
+		"Type":      account.Type,
 	}
 
 	response := map[string]interface{}{
