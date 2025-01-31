@@ -1,10 +1,7 @@
 package handlers
 
-import "time"
-
-var (
-	start time.Time
-	end   time.Time
+import (
+	"time"
 )
 
 func GetDateRange(dateRange string) (start, end time.Time) {
@@ -22,7 +19,16 @@ func GetDateRange(dateRange string) (start, end time.Time) {
 			0,
 			now.Location(),
 		)
-		end = start.AddDate(0, 1, -1)
+		end = time.Date(
+			now.Year(),
+			now.Month()+1,
+			0,
+			23,
+			59,
+			59,
+			0,
+			now.Location(),
+		)
 	case "last_month":
 		start = time.Date(
 			now.Year(),
@@ -34,7 +40,16 @@ func GetDateRange(dateRange string) (start, end time.Time) {
 			0,
 			now.Location(),
 		)
-		end = start.AddDate(0, 1, -1)
+		end = time.Date(
+			now.Year(),
+			now.Month(),
+			0,
+			23,
+			59,
+			59,
+			0,
+			now.Location(),
+		)
 	case "last_6_months":
 		start = now.AddDate(0, -6, 0)
 		end = now
@@ -55,7 +70,16 @@ func GetDateRange(dateRange string) (start, end time.Time) {
 			0,
 			now.Location(),
 		)
-		end = start.AddDate(0, 1, -1)
+		end = time.Date(
+			now.Year(),
+			now.Month()+1,
+			0,
+			23,
+			59,
+			59,
+			0,
+			now.Location(),
+		)
 	}
 
 	return start, end

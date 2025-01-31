@@ -76,14 +76,6 @@ export function AccountSwitcher() {
 		localStorage.setItem("activeAccount", JSON.stringify(account));
 		console.log("Saved Account to LocalStorage:", account);
 	}
-	React.useEffect(() => {
-		const savedAccount = localStorage.getItem("activeAccount");
-		if (savedAccount) {
-			setActiveAccount(JSON.parse(savedAccount));
-		} else if (accounts.length > 0) {
-			setActiveAccount(accounts[0]);
-		}
-	}, []);
 	function onSubmit(values: z.infer<typeof formSchema>) {
 		try {
 			console.log(values);

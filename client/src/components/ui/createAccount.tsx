@@ -65,10 +65,8 @@ export default function CreateAccount() {
 
 	useEffect(() => {
 		if (activeAccount) {
-			console.log(activeAccount);
 
 			localStorage.setItem("activeAccount", JSON.stringify(activeAccount));
-			console.log("Saved Account to LocalStorage:", activeAccount);
 		}
 	}, [activeAccount]);
 	return (
