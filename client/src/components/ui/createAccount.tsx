@@ -65,60 +65,44 @@ export default function CreateAccount() {
 
 	useEffect(() => {
 		if (activeAccount) {
-
 			localStorage.setItem("activeAccount", JSON.stringify(activeAccount));
 		}
 	}, [activeAccount]);
 	return (
 		<>
-			<div className="container relative hidden h-screen flex-col items-center justify-center md:grid lg:max-w-none lg:grid-cols-1 lg:px-0">
-				<Link to="/app/dashboard">
-					<Button className="absolute right-4 top-4 md:right-8 md:top-8">
-						Login
-					</Button>
-				</Link>
-
+			<div className=" 0">
 				<div className="lg:p-8">
-					<div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-						<div className="flex flex-col space-y-2 text-center">
-							<h1 className="text-2xl font-semibold tracking-tight">
-								{" "}
-								Welcome!
-							</h1>
-							<p className="text-sm text-muted-foreground">
-								Get ready for a smooth ride to financial freedom—no boring
-								spreadsheets here. Let’s make money management a little more
-								fun, shall we?
-							</p>
-						</div>
-
-						<Form {...form}>
-							<form onSubmit={form.handleSubmit(handleSubmit)}>
-								<FormField
-									control={form.control}
-									name="Type"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>First Name</FormLabel>
-											<FormControl>
-												<Input
-													placeholder="Your First Name"
-													type=""
-													{...field}
-												/>
-											</FormControl>
-
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-
-								<Button type="submit" className="mt-5">
-									Continue
-								</Button>
-							</form>
-						</Form>
+					<div className="flex flex-col space-y-2 text-center">
+						<h1 className="text-2xl font-semibold tracking-tight">
+							Create Account
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							This is where all your transactions are stored,
+						</p>
 					</div>
+
+					<Form {...form}>
+						<form onSubmit={form.handleSubmit(handleSubmit)}>
+							<FormField
+								control={form.control}
+								name="Type"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Account Type</FormLabel>
+										<FormControl>
+											<Input placeholder="Account Type" type="" {...field} />
+										</FormControl>
+
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
+							<Button type="submit" className="mt-5">
+								Create
+							</Button>
+						</form>
+					</Form>
 				</div>
 			</div>
 		</>

@@ -22,13 +22,13 @@ const formSchema = z.object({
 });
 
 export default function Login() {
-    const navigate = useNavigate()
+	const navigate = useNavigate();
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 	});
 	const onSubmit = async (data: z.infer<typeof formSchema>) => {
 		await handleLogin(data);
-        navigate("/app/dashboard")
+		navigate("/app/dashboard");
 	};
 	return (
 		<>
