@@ -41,7 +41,7 @@ export function NavUser({
 			});
 
 			if (response.ok) {
-				navigate("/login");
+				navigate("/auth");
 			}
 		} catch (error) {
 			toast.error("Login Failed ");
