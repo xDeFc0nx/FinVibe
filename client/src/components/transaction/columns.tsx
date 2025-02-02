@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useUserData, type Transaction } from "@/components/context/userData";
+import { useWebSocket } from "../WebSocketProvidor";
+import { toast } from "react-toastify";
 
 export const columns: ColumnDef<Transaction>[] = [
 	{
@@ -91,9 +93,31 @@ export const columns: ColumnDef<Transaction>[] = [
 		id: "actions",
 		enableHiding: false,
 		cell: ({ row }) => {
-			const payment = row.original;
-
+			const { socket, isReady } = useWebSocket();
+			const { transactions, setTransactions, activeAccount, setRefresh } =
+				useUserData();
 			const transaction = row.original;
+
+			const handleDelete = () => {
+				try {
+					if (socket && isReady && activeAccount) {
+						socket.send("deleteTransaction", {
+							ID: transaction.ID,
+						});
+
+						socket.onMessage((msg) => {
+							const response = JSON.parse(msg);
+							if (response.Success) {
+								setRefresh((oldKey) => oldKey + 1);
+							}
+						});
+					}
+				} catch (error) {
+					console.error("Submission error", error);
+					toast.error("Failed to remove transaction");
+				}
+			};
+
 			return (
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
@@ -104,14 +128,8 @@ export const columns: ColumnDef<Transaction>[] = [
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuLabel>Actions</DropdownMenuLabel>
-						<DropdownMenuItem
-							onClick={() => navigator.clipboard.writeText(transaction.ID)}
-						>
-							Copy payment ID
-						</DropdownMenuItem>
+						<DropdownMenuItem onClick={handleDelete}>Delete</DropdownMenuItem>
 						<DropdownMenuSeparator />
-						<DropdownMenuItem>View customer</DropdownMenuItem>
-						<DropdownMenuItem>View payment details</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			);
