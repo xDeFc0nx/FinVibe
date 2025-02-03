@@ -49,7 +49,7 @@ export default function CreateAccount() {
 						console.log(response.account);
 						setAccounts((prevAccounts) => [...prevAccounts, response.account]);
 						setActiveAccount(response.account);
-						//navigate("/app/dashboard")
+						navigate("/app/dashboard");
 					}
 
 					if (response.Error) {

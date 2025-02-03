@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { useUserData, type Transaction } from "@/components/context/userData";
-
 export const columns: ColumnDef<Transaction>[] = [
 	{
 		accessorKey: "Description",
@@ -32,6 +31,7 @@ export const columns: ColumnDef<Transaction>[] = [
 		cell: ({ row }) => {
 			const amount = row.original.Amount;
 			const type = row.original.Type;
+			const { userData } = useUserData();
 
 			const formattedAmount = type === "Income" ? `+${amount}` : `-${amount}`;
 
@@ -40,6 +40,7 @@ export const columns: ColumnDef<Transaction>[] = [
 
 			return (
 				<div className={`text-right p-2 rounded-lg ${backgroundColor}`}>
+					{userData.Currency}
 					{formattedAmount}
 				</div>
 			);

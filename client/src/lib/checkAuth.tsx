@@ -30,7 +30,7 @@ export function CheckAuth() {
 
 	useEffect(() => {
 		if (isAuthenticated === false) {
-			navigate("/login");
+			navigate("/auth");
 		}
 	}, [isAuthenticated, navigate]);
 

@@ -38,6 +38,7 @@ export default function Index() {
 		setDateRange,
 		chartOverview,
 		setChartOverview,
+		userData,
 	} = useUserData();
 
 	const { socket } = useWebSocket();
@@ -147,6 +148,7 @@ export default function Index() {
 						</div>
 						<div className="p-6 pt-0">
 							<div className="text-2xl font-bold">
+								{userData.Currency}
 								{activeAccount?.AccountBalance}
 							</div>
 							<BalanceChart />
@@ -159,7 +161,11 @@ export default function Index() {
 							</h3>
 						</div>
 						<div className="p-6 pt-0">
-							<div className="text-2xl font-bold"> {activeAccount?.Income}</div>
+							<div className="text-2xl font-bold">
+								{" "}
+								{userData.Currency}
+								{activeAccount?.Income}
+							</div>
 							<IncomeChart />
 						</div>
 					</div>
@@ -170,7 +176,11 @@ export default function Index() {
 							</h3>
 						</div>
 						<div className="p-6 pt-0">
-							<div className="text-2xl font-bold">{activeAccount?.Expense}</div>
+							<div className="text-2xl font-bold">
+								{" "}
+								{userData.Currency}
+								{activeAccount?.Expense}
+							</div>
 							<ExpensesChart />
 						</div>
 					</div>

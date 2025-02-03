@@ -7,7 +7,7 @@ export interface UserData {
 	FirstName: string;
 	LastName: string;
 	Email: string;
-	Country: string;
+	Currency: string;
 }
 export interface Account {
 	ID: string;
