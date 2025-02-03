@@ -32,15 +32,14 @@ export const columns: ColumnDef<Transaction>[] = [
 			const amount = row.original.Amount;
 			const type = row.original.Type;
 			const { userData } = useUserData();
-
-			const formattedAmount = type === "Income" ? `+${amount}` : `-${amount}`;
+			const formattedAmount =
+				type === "Income" ? `+${userData.Currency}${amount}` : `-${amount}`;
 
 			const backgroundColor =
 				type === "Income" ? "bg-green-400/50" : "bg-red-400/50";
 
 			return (
 				<div className={`text-right p-2 rounded-lg ${backgroundColor}`}>
-					{userData.Currency}
 					{formattedAmount}
 				</div>
 			);
