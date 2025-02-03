@@ -29,6 +29,7 @@ const formSchema = z.object({
 });
 
 export default function Register() {
+	const [wrongCredentials, setWrongCredentials] = useState(false);
 	const navigate = useNavigate();
 	const [registered, setRegistered] = useState(false);
 	const form = useForm<z.infer<typeof formSchema>>({
@@ -47,7 +48,10 @@ export default function Register() {
 			});
 
 			if (response.ok) {
-				await handleLogin({ email: data.email, password: data.password });
+				await handleLogin(
+					{ email: data.email, password: data.password },
+					setWrongCredentials,
+				);
 				setRegistered(true);
 			} else {
 				toast("Login Failed Try again");
@@ -75,7 +79,7 @@ export default function Register() {
 					shall we?
 				</p>
 			</div>
-
+			<br />
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(handleSubmit)}>
 					<FormField
@@ -83,7 +87,6 @@ export default function Register() {
 						name="firstName"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>First Name</FormLabel>
 								<FormControl>
 									<Input placeholder="Your First Name" type="" {...field} />
 								</FormControl>
@@ -93,12 +96,12 @@ export default function Register() {
 						)}
 					/>
 
+					<br />
 					<FormField
 						control={form.control}
 						name="lastName"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Last Name</FormLabel>
 								<FormControl>
 									<Input placeholder="Your Last Name" type="" {...field} />
 								</FormControl>
@@ -108,12 +111,12 @@ export default function Register() {
 						)}
 					/>
 
+					<br />
 					<FormField
 						control={form.control}
 						name="currency"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Currency</FormLabel>
 								<FormControl>
 									<Input placeholder="Your currency" type="" {...field} />
 								</FormControl>
@@ -123,12 +126,12 @@ export default function Register() {
 						)}
 					/>
 
+					<br />
 					<FormField
 						control={form.control}
 						name="email"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Email</FormLabel>
 								<FormControl>
 									<Input placeholder="Your Email" type="" {...field} />
 								</FormControl>
@@ -137,13 +140,13 @@ export default function Register() {
 							</FormItem>
 						)}
 					/>
+					<br />
 
 					<FormField
 						control={form.control}
 						name="password"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>Password</FormLabel>
 								<FormControl>
 									<PasswordInput placeholder="Your Password" {...field} />
 								</FormControl>
@@ -152,6 +155,7 @@ export default function Register() {
 							</FormItem>
 						)}
 					/>
+					<br />
 					<p className="px-8 text-center text-sm text-muted-foreground pt-5">
 						By clicking continue, you agree to our{" "}
 						<a
