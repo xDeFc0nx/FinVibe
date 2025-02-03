@@ -84,7 +84,6 @@ export const columns: ColumnDef<Transaction>[] = [
 
 			return (
 				<div className={`text-right p-2 rounded-lg ${backgroundColor}`}>
-					{userData.Currency}
 					{formattedAmount}
 				</div>
 			);
