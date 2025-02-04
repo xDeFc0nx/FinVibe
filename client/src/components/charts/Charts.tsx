@@ -110,7 +110,7 @@ export function ExpensesChart() {
 	);
 }
 export function IncomePie() {
-	const { incomePie } = useUserData();
+	const { incomePie, userData } = useUserData();
 
 	const colorPalette = [
 		"hsl(var(--chart-1))",
@@ -138,10 +138,7 @@ export function IncomePie() {
 							cursor={false}
 							content={<ChartTooltipContent hideLabel />}
 						/>
-						<ChartTooltip
-							cursor={false}
-							content={<ChartTooltipContent hideLabel />}
-						/>
+
 						<Pie
 							data={incomePie}
 							dataKey="Amount"

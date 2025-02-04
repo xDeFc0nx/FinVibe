@@ -141,7 +141,7 @@ export default function Index() {
 				</div>
 			</header>
 			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-				<div className="grid auto-rows-min gap-4 md:grid-cols-4">
+				<div className="grid auto-rows-min gap-4 md:grid-cols-3">
 					<div className="rounded-xl border bg-card text-card-foreground shadow">
 						<div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
 							<h3 className="tracking-tight text-sm font-medium">Balance</h3>
@@ -151,6 +151,7 @@ export default function Index() {
 								{userData.Currency}
 								{activeAccount?.AccountBalance}
 							</div>
+
 							<BalanceChart />
 						</div>
 					</div>
@@ -184,7 +185,6 @@ export default function Index() {
 							<ExpensesChart />
 						</div>
 					</div>
-					<div className="aspect-video rounded-xl bg-muted/50" />
 				</div>
 				<div className="grid auto-rows-min gap-4 md:grid-cols-3">
 					<IncomePie />
