@@ -12,9 +12,6 @@ func Flag() {
 			return
 		}
 	}()
-	arg := os.Args[1]
-
-	if arg == "-m" {
-		migrate.Migrate()
-	}
-}
+// 	arg := os.Args[1]
+//
+ }
