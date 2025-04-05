@@ -15,8 +15,8 @@ type WebSocket struct {
 
 type User struct {
 	ID        string    `db:"id" json:"id"`
-	FirstName string    `db:"first_name" json:"firstName"`
-	LastName  string    `db:"last_name" json:"lastName"`
+	FirstName string    `db:"first_name" json:"first_name"`
+	LastName  string    `db:"last_name" json:"last_Name"`
 	Email     string    `db:"email" json:"email"`
 	Password  string    `db:"password" json:"-"`
 	Currency  string    `db:"currency" json:"currency"`
