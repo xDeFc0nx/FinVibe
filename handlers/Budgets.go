@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
+	"os/user"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -18,11 +20,16 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget.ID = uuid.NewString()
 	budget.UserID = userID
 
-	var requestData struct {
-		AccountID string `json:"AccountID"`
+	type requestData struct {
+		AccountID   string  `json:"accountId"`
+		TotalSpent  float64 `json:"totalSpent"`
+		LimitAmount float64 `json:"limit"`
+		Description string  `json:"description"`
 	}
 
-	if err := json.Unmarshal(data, budget); err != nil {
+	var req requestData
+
+	if err := json.Unmarshal(data, req); err != nil {
 		Send_Error(ws, InvalidData, err)
 	}
 
@@ -30,17 +37,34 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 		Send_Error(ws, "ID is required", nil)
 	}
 
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&budget.Account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `	
+	SELECT FROM accounts WHERE id = $1 AND user_id = $2
+		`, req.AccountID, userID); err != nil {
 		Send_Error(ws, "Account not found", err)
 	}
 
-	if err := db.DB.Create(&budget).Error; err != nil {
-		Send_Error(ws, "Failed to create budget", err)
+	if _, err := db.DB.Exec(context.Background(), `
+		INSERT INTO budgets (id, user_id, account_id, limit, total_spent, description)
+		VALUES ($1, $2, $3, $4, $5, $6)
+
+		`,
+		budget.ID,
+		budget.UserID,
+		req.AccountID,
+		req.LimitAmount,
+		req.TotalSpent,
+		req.Description,
+	); err != nil {
+		slog.Error(
+			"Error creating WebSocket connection",
+			"Err",
+			err,
+		)
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
 			"ID":          budget.ID,
-			"Amount":      budget.Limit,
+			"Amount":      budget.LimitAmount,
 			"Description": budget.Description,
 		},
 	}
@@ -53,13 +77,16 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budgets := []types.Budget{}
 
-	var requestData struct {
+	type requestData struct {
 		AccountID string `json:"AccountID"`
 	}
-
-	if err := db.DB.Where("user_id =? AND account_id = ?", userID, requestData.AccountID).Find(&budgets).Error; err != nil {
-		Send_Error(ws, "Budgets not found", err)
+	var req requestData
+	if _, err := db.DB.Exec(context.Background(), `	
+	SELECT FROM budgets WHERE id = $1 AND user_id = $2
+		`, req.AccountID, userID); err != nil {
+		Send_Error(ws, "Account not found", err)
 	}
+
 	var wg sync.WaitGroup
 	for i := range budgets {
 		wg.Add(1)
@@ -74,10 +101,11 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 		}(&budgets[i])
 	}
 	wg.Wait()
-	if err := db.DB.Where("user_id = ?", userID).Find(&budgets).Error; err != nil {
-		Send_Error(ws, "Budgets not found", err)
+	if _, err := db.DB.Exec(context.Background(), `	
+	SELECT FROM budgets WHERE user_id = $1
+		`, userID); err != nil {
+		Send_Error(ws, "budget not found", err)
 	}
-
 	budgetsData := make([]map[string]interface{}, len(budgets))
 
 	for i, a := range budgets {
@@ -85,7 +113,7 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 			"ID":            a.ID,
 			"UserID":        a.UserID,
 			"AccountID":     a.ID,
-			"Budgets Limit": float64(a.Limit),
+			"Budgets Limit": float64(a.LimitAmount),
 			"Budgets Spend": float64(a.TotalSpent),
 		}
 	}
@@ -101,36 +129,55 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 }
 
 func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
+	type requestData struct {
+		AccountID   string  `json:"accountId"`
+		TotalSpent  float64 `json:"totalSpent"`
+		LimitAmount float64 `json:"limit"`
+		Description string  `json:"description"`
+	}
+
+	var req requestData
 	budget := new(types.Budget)
 
-	if err := json.Unmarshal(data, budget); err != nil {
+	if err := json.Unmarshal(data, req); err != nil {
 		Send_Error(ws, InvalidData, err)
 	}
 	if budget.ID == "" {
 		Send_Error(ws, "ID is required", nil)
 	}
 
-	if err := db.DB.Where("user_id =? AND id =?", userID, budget.ID).First(&budget).Error; err != nil {
-		Send_Error(ws, "Budget not found", err)
+	if _, err := db.DB.Exec(context.Background(), `	
+	SELECT FROM budgets WHERE id = $1 AND user_id = $2
+		`, budget.ID, userID); err != nil {
+		Send_Error(ws, "Bugdet not found", err)
 	}
-
-	if err := db.DB.Save(budget).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
+	if _, err := db.DB.Exec(context.Background(), `
+	INSERT INTO budgets(id, user_id, account_id, limit, total_spent, description)
+		VALUES($1, $2, $3, $4, $5, $6)
+		`,
+		budget.ID,
+		budget.UserID,
+		req.AccountID,
+		req.LimitAmount,
+		req.TotalSpent,
+		req.Description,
+	); err != nil {
+		Send_Error(ws, "Failed to update Bugdet", err)
 	}
 
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
 			"ID":     budget.ID,
 			"UserID": budget.UserID,
-			"Amount": budget.Limit,
+			"Amount": budget.LimitAmount,
 		},
 	}
 
 	responseData, _ := json.Marshal(response)
 
 	Send_Message(ws, string(responseData))
-}
 
+}
 func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
@@ -142,8 +189,13 @@ func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 		Send_Error(ws, "ID is required", nil)
 	}
 
-	if err := db.DB.Where("user_id =? AND id =?", userID, budget.ID).Delete(&budget).Error; err != nil {
-		Send_Error(ws, "Failed to delete budget", err)
+	if _, err := db.DB.Exec(context.Background(), `
+    DELETE FROM budgets WHERE id = $1 AND user_id = $2
+		`,
+		budget.ID,
+		userID,
+	); err != nil {
+		Send_Error(ws, "Failed to delete Bugdet", err)
 	}
 
 	response := map[string]interface{}{
@@ -164,17 +216,16 @@ func GetBudgetCal(ws *websocket.Conn, accountID string) error {
 
 	account.ID = accountID
 
-	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		Send_Error(ws, "Account not found", err)
-		return err
+	if _, err := db.DB.Exec(context.Background(), `	
+	SELECT FROM accounts WHERE id = $1
+		`, accountID); err != nil {
+		Send_Error(ws, "Bugdet not found", err)
 	}
-
-	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-
-		Send_Error(ws, "Could not fetch transactions", err)
-		return err
+	if _, err := db.DB.Exec(context.Background(), `
+ SELECT FROM transactions WHERE account_id = $1
+		`, accountID); err != nil {
+		Send_Error(ws, "Transaction not found", err)
 	}
-
 	totalBalance := float64(0)
 	for _, t := range transactions {
 		if t.AccountID == accountID {
@@ -183,11 +234,12 @@ func GetBudgetCal(ws *websocket.Conn, accountID string) error {
 	}
 
 	budget.TotalSpent = totalBalance
-
-	if err := db.DB.Save(budget).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
-		return err
+	if _, err := db.DB.Exec(context.Background(), `
+INSERT INTO budgets 
+		total_spent = $1
+		WHERE account_id = $2
+		`, budget.TotalSpent, accountID); err != nil {
+		Send_Error(ws, "failed to update budgets", err)
 	}
-
 	return nil
 }

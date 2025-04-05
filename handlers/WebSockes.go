@@ -1,20 +1,20 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"log/slog"
-	"time"
-
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"log/slog"
+	"time"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
 func CreateWebSocketConnection(userID string) (string, error) {
-	socket := new(types.WebSocketConnection)
+	socket := new(types.WebSocket)
 	socket.ID = uuid.New().String()
 	socket.UserID = userID
 	socket.ConnectionID = uuid.New().String()
@@ -22,59 +22,68 @@ func CreateWebSocketConnection(userID string) (string, error) {
 	socket.LastPing = time.Now()
 	socket.CreatedAt = time.Now()
 
-	if err := db.DB.Create(socket).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+		INSERT INTO web_sockets (id, user_id, connection_id, is_active, last_ping, created_at) 
+		VALUES ($1, $2, $3, $4, $5, $6)
+
+			`, socket.ID, userID, socket.ConnectionID, socket.IsActive, socket.LastPing, socket.CreatedAt); err != nil {
 		slog.Error(
-			"Creating WebSocket failed",
-			slog.String("UserID", userID),
-			slog.String("error", err.Error()),
+			"Error creating WebSocket connection",
+			"Err",
+			err,
 		)
-		return "", err
 	}
 
 	return socket.ID, nil
 }
 
 func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
-	socket := new(types.WebSocketConnection)
 
-	if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
-
-		Send_Error(ws, "Could not find user", err)
+	var userExists bool
+	err := db.DB.QueryRow(
+		context.Background(),
+		"SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
+		userID,
+	).Scan(&userExists)
+	if err != nil || !userExists {
+		Send_Error(ws, "User not found", err)
 		return
-	}
 
-	if err := db.DB.Model(&socket).Update("LastPing", time.Now().UTC()).Error; err != nil {
-		Send_Error(ws, "Failed to update", err)
+	}
+	if _, err := db.DB.Exec(context.Background(), `
+		UPDATE web_sockets 
+    last_ping = $1
+		WHERE user_id = $2
+
+		`, userID, time.Now().UTC()); err != nil {
+		Send_Error(ws, "Failed to update last ping", err)
+
 	}
 }
-
 func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 	if CheckAuth(c) == nil {
 
-		socket := new(types.WebSocketConnection)
 
-		if err := db.DB.Where("user_id = ?", userID).Find(&socket).Error; err != nil {
-			slog.Error(
-				"WebSocket not found",
-				slog.String("UserID", userID),
-				slog.String("error", err.Error()),
-			)
-
-			return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
+		var userExists bool
+		err := db.DB.QueryRow(
+			context.Background(),
+			"SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
+			userID,
+		).Scan(&userExists)
+		if err != nil || !userExists {
+			return err
 
 		}
-		socket.LastPing = time.Now()
-		socket.IsActive = true
-		if err := db.DB.Save(socket).Error; err != nil {
-			slog.Error(
-				"WebSocket update failed",
-				slog.String("UserID", userID),
-				slog.String("error", err.Error()),
-			)
+		if _, err := db.DB.Exec(context.Background(), `
+		UPDATE web_sockets 
+		is_active = true,
+    last_ping = $1
+		WHERE user_id = $2
 
-			return c.Status(500).
-				JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+		`, userID, time.Now().UTC()); err != nil {
+			JSendFail(c, "Failed to update last ping", 500)
 		}
+
 		return c.Status(101).
 			JSON(fiber.Map{"message": "WebSocket connection updated successfully"})
 	}
@@ -84,7 +93,7 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 func HandleWebSocketConnection(c *fiber.Ctx) error {
 	slog.Info("Incoming Socket connection", slog.String("IP Address", c.IP()))
 
-	socket := new(types.WebSocketConnection)
+	socket := new(types.WebSocket)
 	token := c.Cookies("jwt-token")
 
 	if token == "" {
@@ -101,20 +110,24 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
 	}
+	var userExists bool
+	err = db.DB.QueryRow(
+		context.Background(),
+		"SELECT EXISTS(SELECT 1 FROM web_sockets WHERE connection_id = $1)",
+		connectionID,
+	).Scan(&userExists)
+	if err != nil || !userExists {
+		return err
 
-	if err := db.DB.Where("connection_id = ?", connectionID).First(socket).Error; err != nil {
-		slog.Error(
-			"WebSocket not found",
-			slog.String("UserID", userID),
-			slog.String("error", err.Error()),
-		)
-
-		return c.Status(404).JSON(fiber.Map{"error": "WebSocket not found"})
 	}
+	if _, err := db.DB.Exec(context.Background(), `
+		UPDATE web_sockets 
+		is_active = true,
+    last_ping = $1
+		WHERE user_id = $2
 
-	socket.IsActive = true
-	if err := db.DB.Save(socket).Error; err != nil {
-		slog.Error("Failed to update socket", slog.String("error", err.Error()))
+		`, userID, time.Now().UTC()); err != nil {
+		JSendFail(c, "Failed to update last ping", 500)
 	}
 	return websocket.New(func(ws *websocket.Conn) {
 		slog.Info(
@@ -221,9 +234,13 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		defer func() {
 			slog.Info("Connection Closed", slog.String("user", userID))
 			ws.Close()
-			socket.IsActive = false
-			if err := db.DB.Save(socket).Error; err != nil {
-				Send_Error(ws, "Failed to update", err)
+			if _, err := db.DB.Exec(context.Background(), `
+		UPDATE web_sockets 
+		is_active = false,
+		WHERE user_id = $1
+
+		`, userID); err != nil {
+				JSendFail(c, "Failed to update last ping", 500)
 			}
 		}()
 	})(c)
