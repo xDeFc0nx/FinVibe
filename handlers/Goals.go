@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/gofiber/contrib/websocket"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"log/slog"
 	"sync"
-
-	"github.com/gofiber/contrib/websocket"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -16,22 +18,33 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	goal.UserID = userID
 
-	var requestData struct {
+	type requestData struct {
 		AccountID string `json:"AccountID"`
 	}
+
+	var req requestData
 	if err := json.Unmarshal(data, goal); err != nil {
 		Send_Error(ws, InvalidData, err)
 	}
 	if goal.ID == "" {
 		Send_Error(ws, "ID is Required", nil)
 	}
-
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&goal.Account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+ SELECT FROM goals WHERE id = $1 AND user_id = $2
+		`, req.AccountID, userID); err != nil {
 		Send_Error(ws, "Account not found", err)
 	}
-
-	if err := db.DB.Create(&goal).Error; err != nil {
-		Send_Error(ws, "Failed To Create Goal", err)
+	if _, err := db.DB.Exec(context.Background(), `
+INSERT INTO goals (id, user_id, account_id, amount, description)
+		VALUES ($1, $2, $3, $4, $5) 
+		`,
+		uuid.New().String(),
+		goal.UserID,
+		goal.AccountID,
+		goal.Amount,
+		goal.Description,
+	); err != nil {
+		Send_Error(ws, "failed to create goal", err)
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
@@ -49,12 +62,14 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 	goals := []types.Goal{}
 
-	var requestData struct {
+	type requestData struct {
 		AccountID string `json:"AccountID"`
 	}
-
-	if err := db.DB.Where("user_id =? AND account_id = ?", userID, requestData.AccountID).Find(&goals).Error; err != nil {
-		Send_Error(ws, "Goals Not Found", err)
+	var req requestData
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT FROM accounts WHERE id = $1 AND user_id = $2
+		`, req.AccountID, userID); err != nil {
+		Send_Error(ws, "Account not found", err)
 	}
 	var wg sync.WaitGroup
 	for i := range goals {
@@ -70,8 +85,10 @@ func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 		}(&goals[i])
 	}
 	wg.Wait()
-	if err := db.DB.Where("user_id = ?", userID).Find(&goals).Error; err != nil {
-		Send_Error(ws, "Goals not found", err)
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT FROM goals WHERE user_id = $1
+		`, userID); err != nil {
+		Send_Error(ws, "goals not found", err)
 	}
 
 	goalsData := make([]map[string]interface{}, len(goals))
@@ -96,6 +113,13 @@ func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 }
 
 func UpdateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
+	type requestData struct {
+		AccountID  string  `json:"AccountID"`
+		Ammount    float64 `json:"Ammount"`
+		GoalAmount float64 `json:"GoalAmount"`
+	}
+	var req requestData
+
 	goal := new(types.Goal)
 
 	if err := json.Unmarshal(data, goal); err != nil {
@@ -104,15 +128,23 @@ func UpdateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if goal.ID == "" {
 		Send_Error(ws, "Goal is required", nil)
 	}
-
-	if err := db.DB.Where("user_id =? AND id =?", userID, goal.ID).First(&goal).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT FROM goals WHERE id = $1 AND user_id = $2
+		`, goal.ID, userID); err != nil {
 		Send_Error(ws, "Goal not found", err)
 	}
-
-	if err := db.DB.Save(goal).Error; err != nil {
-		Send_Error(ws, "Goal not found", err)
+	if _, err := db.DB.Exec(context.Background(), `
+INSERT INTO goals (id, user_id, account_id, amount, description)
+VALUES ($1, $2, $3, $4, $5)
+		`,
+		goal.ID,
+		userID,
+		req.AccountID,
+		req.Ammount,
+		req.GoalAmount,
+	); err != nil {
+		Send_Error(ws, "failed to update goal", err)
 	}
-
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
 			"ID":          goal.ID,
@@ -136,11 +168,11 @@ func DeleteGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if goal.ID == "" {
 		Send_Error(ws, "ID is required", nil)
 	}
-
-	if err := db.DB.Where("user_id =? AND id =?", userID, goal.ID).Delete(&goal).Error; err != nil {
-		Send_Error(ws, "Failed to delete goal", err)
+	if _, err := db.DB.Exec(context.Background(), `
+FROM goals WHERE id = $1 AND user_id = $2
+		`, goal.ID, userID); err != nil {
+		Send_Error(ws, "Goal not found", err)
 	}
-
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
 			"ID": goal.ID,
@@ -157,15 +189,25 @@ func GetGoalCal(ws *websocket.Conn, accountID string) error {
 	goal := new(types.Goal)
 
 	account.ID = accountID
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT 1 FROM accounts WHERE id = $1
+		`, accountID); err != nil {
+		Send_Error(ws, "account not found", err)
+	}
+	rows, err := db.DB.Query(context.Background(),
+		`SELECT id, user_id, account_id, amount, description, is_recurring,
+		created_at, FROM transactions WHERE account_id = $1`, account.ID,
+	)
 
-	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		Send_Error(ws, "Account Not found", err)
+	if err != nil {
+		Send_Error(ws, "Account not found", err)
 	}
 
-	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Could not fetch transactions", err)
+	defer rows.Close()
+	transactions, err = pgx.CollectRows(rows,
+		pgx.RowTo[types.Transaction])
+	if err != nil {
 	}
-
 	totalBalance := float64(0)
 	for _, t := range transactions {
 		if t.AccountID == accountID {
@@ -175,8 +217,11 @@ func GetGoalCal(ws *websocket.Conn, accountID string) error {
 
 	goal.Amount = totalBalance
 
-	if err := db.DB.Save(goal).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
+	if _, err := db.DB.Exec(context.Background(), `
+UPDATE goals SET amount = $1 WHERE account_id = $2
+		`, goal.Amount, accountID); err != nil {
+		Send_Error(ws, "failed to update goal", err)
 	}
+
 	return nil
 }
