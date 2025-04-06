@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"log/slog"
@@ -43,9 +44,16 @@ func DecodeJWTToken(token string) (string, string, error) {
 
 	parsedToken, err := jwt.Parse(
 		token,
-		func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method")
+		func(token *jwt.Token) (any, error) {
+			if _, err := token.Method.(*jwt.SigningMethodHMAC); !err {
+				slog.Error(
+					"Unexpected signing method",
+					"method", token.Method.Alg(),
+				)
+				return nil, fmt.Errorf(
+					"unexpected signing method: %v",
+					token.Method.Alg(),
+				)
 			}
 			return []byte(
 				os.Getenv("SECRET_KEY"),
@@ -85,118 +93,177 @@ func DecodeJWTToken(token string) (string, string, error) {
 	return "", "", err
 }
 
-func CheckAuth(ws *fiber.Ctx) error {
-	cookie := ws.Cookies(tokenName)
+func CheckAuth(c *fiber.Ctx) error {
+	cookie := c.Cookies(tokenName)
 
 	token, err := jwt.ParseWithClaims(
 		cookie,
 		&jwt.MapClaims{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(token *jwt.Token) (any, error) {
 			return []byte(os.Getenv("SECRET_KEY")), nil
 		},
 	)
 	if err != nil || !token.Valid {
-		return ws.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+		data := map[string]any{
+			"message": "Token is not valid",
+		}
+		return JSendFail(c, data, fiber.StatusUnauthorized)
 	}
 
 	_, ok := token.Claims.(*jwt.MapClaims)
 	if !ok {
-		return ws.Status(401).JSON(fiber.Map{"error": "Invalid token format"})
+		data := map[string]any{
+			"message": "Invalid token format ",
+		}
+		return JSendFail(c, data, fiber.StatusUnauthorized)
 	}
 
-	return ws.Status(200).JSON(fiber.Map{"message": "Authorized"})
+	data := map[string]any{
+		"message": "Authorized",
+	}
+	return JSendSuccess(c, data)
 }
 
 func LoginHandler(c *fiber.Ctx) error {
-	user := new(types.User)
-
-	if err := c.BodyParser(user); err != nil {
-		return c.Status(400).JSON(err.Error())
+	type Request struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
 	}
-
+	var req Request
+	user := new(types.User)
+	socket := new(types.WebSocket)
+	c.Locals("csrf")
+	if err := c.BodyParser(&req); err != nil {
+		data := map[string]any{
+			"Message": "invalid body",
+		}
+		return JSendFail(c, data, fiber.StatusBadRequest)
+	}
 	var foundUser types.User
-	err := db.DB.Where("Email = ?", user.Email).First(&foundUser).Error
+	err := db.DB.QueryRow(context.Background(), `
+		SELECT  email, 
+		FROM users
+		WHERE email = $1
+	`, req.Email).Scan(
+		&user.Email,
+	)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Invalid Email"})
+		slog.Error(
+			"Email Does not exist",
+			"error",
+			err,
+			"IP",
+			c.IP(),
+		)
 	}
 
 	err = bcrypt.CompareHashAndPassword(
-		[]byte(foundUser.Password),
 		[]byte(user.Password),
+		[]byte(req.Password),
 	)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "Wrong password"})
-	}
+		slog.Error(
+			"Password Login Attempt",
+			"Email",
+			user.Email,
+			"error",
+			err,
+			"IP",
+			c.IP(),
+		)
 
-	socket := new(types.WebSocketConnection)
-	err = db.DB.Where("user_id = ?", foundUser.ID).First(socket).Error
-	if err != nil {
-		return c.Status(500).
-			JSON(fiber.Map{"error": "WebSocket connection not found"})
+		data := map[string]any{
+			"error": "Wrong Email or password",
+		}
+		return JSendError(c, data, fiber.StatusNotFound)
 	}
 	token, exp, err := Create_JWT_Token(foundUser, socket.ConnectionID)
 	if err != nil {
-		return c.Status(500).
-			JSON(fiber.Map{"error": "Failed to create JWT token"})
+		data := map[string]any{
+			"message": "Failed to Create token",
+		}
+		return JSendFail(c, data, fiber.StatusInternalServerError)
+
 	}
-	cookie := fiber.Cookie{
+	c.Cookie(&fiber.Cookie{
 		Name:     tokenName,
 		Value:    token,
 		Expires:  time.Unix(exp, 0),
 		HTTPOnly: true,
-	}
-
-	socket.IsActive = true
-
-	if err := db.DB.Save(socket).Error; err != nil {
-		return c.Status(500).
-			JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
-	}
-	ConnectionID := socket.ConnectionID
-	c.Cookie(&cookie)
-	return c.JSON(
-		fiber.Map{
-			"message":       "Success",
-			"Connection ID": ConnectionID,
-			"token":         cookie.Value,
-		},
+		Secure:   true,
+		SameSite: "Lax",
+	})
+	slog.Info(
+		"Authentication successful",
+		"ID",
+		user.ID,
+		"IP",
+		c.IP(),
 	)
+	data := map[string]any{
+		"message": "Authorized",
+		"expires": exp,
+	}
+	return JSendSuccess(c, data)
 }
 
 func LogoutHandler(c *fiber.Ctx) error {
-	socket := new(types.WebSocketConnection)
-
 	token := c.Cookies(tokenName)
-
+	userID := c.Locals("userID").(string)
+	c.Locals("csrf")
 	if token == "" {
-		log.Println("Token is missing")
-		return c.Status(400).JSON(fiber.Map{"error": "Token is missing"})
+		data := map[string]any{
+			"message": "Token is missing",
+		}
+		return JSendFail(c, data, fiber.StatusBadRequest)
 	}
 	userID, _, err := DecodeJWTToken(token)
 	if err != nil {
-		log.Printf("Failed to decode JWT token: %v\n", err)
-	}
+		log.Printf(" %v\n", err)
+		slog.Info(
+			"Failed to decode JWT token",
+			"ID",
+			userID,
+			"error",
+			err,
+			"IP",
+			c.IP(),
+		)
 
-	if err := db.DB.Where("user_id = ?", userID).First(socket).Error; err != nil {
-		log.Println("Failed to find WebSocket connection: ", err)
-		return c.Status(500).
-			JSON(fiber.Map{"error": "Failed to find WebSocket connection"})
 	}
-
-	socket.IsActive = false
-	if err := db.DB.Save(socket).Error; err != nil {
-		log.Println("Failed to update WebSocket connection: ", err)
-		return c.Status(500).
-			JSON(fiber.Map{"error": "Failed to update WebSocket connection"})
+	if _, err := db.DB.Exec(context.Background(), `
+ UPDATE websockets 
+ SET is_active = false
+ WHERE user_id = $1
+`, userID); err != nil {
+		slog.Error(
+			"Failed to update websocket",
+			"ID",
+			userID,
+			"error",
+			err,
+			"IP",
+			c.IP(),
+		)
 	}
-
 	cookie := fiber.Cookie{
 		Name:     tokenName,
 		Value:    "",
 		Expires:  time.Unix(0, 0),
 		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Lax",
 	}
 	c.Cookie(&cookie)
-
-	return c.JSON(fiber.Map{"message": "Logged out successfully"})
+	slog.Info(
+		"Logged out successfully",
+		"ID",
+		userID,
+		"IP",
+		c.IP(),
+	)
+	data := map[string]any{
+		"message": "Logged out",
+	}
+	return JSendSuccess(c, data)
 }
