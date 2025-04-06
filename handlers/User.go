@@ -1,22 +1,32 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"regexp"
-	"time"
-
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
+		"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-
+	"regexp"
+	"time"
+	"fmt"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
 func CreateUser(c *fiber.Ctx) error {
+	type Request struct {
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Email     string `json:"email"`
+		Password  string `json:"password"`
+		Currency  string `json:"currency"`
+	}
+	req := Request{}
+
 	user := new(types.User)
-	if err := c.BodyParser(user); err != nil {
+	ctx := c.Context()
+	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).
 			JSON(fiber.Map{"error": "Unable to parse request body", "details": err.Error()})
 	}
@@ -32,7 +42,7 @@ func CreateUser(c *fiber.Ctx) error {
 			JSON(fiber.Map{"error": "Invalid email address", "email": user.Email})
 	}
 
-	if err := db.DB.Where(user.Email).Error; err != nil {
+	if err := db.DB.QueryRow(ctx, "SELECT * FROM users WHERE email = $1", user.Email).Scan(&user); err != nil {
 		return c.Status(409).JSON(fiber.Map{"error": "Email already exists"})
 	}
 
@@ -69,10 +79,26 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 	user.Password = string(hashedPassword)
 
-	if err := db.DB.Create(user).Error; err != nil {
+	if _, err := db.DB.Exec(ctx,
+		"INSERT INTO users (id, first_name, last_name, email, password, currency) VALUES ($1, $2, $3, $4, $5, $6)",
+		user.ID, user.FirstName, user.LastName, user.Email, user.Password, user.Currency,
+	); err != nil {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
+
+rows, err := db.DB.Query(ctx, "SELECT * FROM users")
+
+defer rows.Close()
+
+for rows.Next() {
+    var id, firstName, lastName, email string
+    if err := rows.Scan(&id, &firstName, &lastName, &email); err != nil {
+        continue
+    }
+    fmt.Printf("ID: %s, Name: %s %s, Email: %s\n", id, firstName, lastName, email)
+}
+
 	socketID, err := CreateWebSocketConnection(user.ID)
 	if err != nil {
 		return c.Status(500).
@@ -95,7 +121,8 @@ func CreateUser(c *fiber.Ctx) error {
 
 func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
-	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := db.DB.QueryRow(context.Background(),
+		"SELECT * FROM users WHERE id = $1", userID).Scan(&user); err != nil {
 		Send_Error(ws, "User not found", err)
 		return
 	}
@@ -119,11 +146,11 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
-	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := db.DB.QueryRow(context.Background(),
+		"SELECT * FROM users WHERE id = $1", userID).Scan(&user); err != nil {
 		Send_Error(ws, "User not found", err)
 		return
 	}
-
 	if err := json.Unmarshal(data, &user); err != nil {
 		Send_Error(ws, InvalidData, err)
 		return
@@ -139,7 +166,8 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	var existingUser types.User
-	if err := db.DB.Where("email = ? AND id != ?", user.Email, userID).First(&existingUser).Error; err == nil {
+	if err := db.DB.QueryRow(context.Background(), "SELECT * FROM users WHERE email = $1 AND id != $2",
+		user.Email, userID).Scan(&existingUser); err == nil {
 		Send_Error(ws, "Email already exists", nil)
 		return
 	}
@@ -167,8 +195,10 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	if err := db.DB.Save(user).Error; err != nil {
-
+	if _, err := db.DB.Exec(context.Background(),
+		"UPDATE users SET firs_tname = $1, last_name = $2, email = $3, password = $4, currency = $5 WHERE id = $6",
+		user.FirstName, user.LastName, user.Email, user.Password, user.Currency, userID,
+	); err != nil {
 		Send_Error(ws, "Failed to save", err)
 		return
 	}
@@ -191,12 +221,12 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
 
-	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+	if err := db.DB.QueryRow(context.Background(),
+		"SELECT * FROM users WHERE id = $1", userID).Scan(&user); err != nil {
 		Send_Error(ws, "User not found", err)
 		return
 	}
-
-	if err := db.DB.Delete(user).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), "DELETE users WHERE id = $1", userID); err != nil {
 		Send_Error(ws, "Failed to update user", err)
 		return
 	}
