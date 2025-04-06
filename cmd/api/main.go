@@ -46,7 +46,7 @@ func main() {
 	}))
 	db.Conn()
 
-	flag.Flag()
+	// flag.Flag()
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)

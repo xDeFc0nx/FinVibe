@@ -1,9 +1,6 @@
 package flag
 
 import (
-	"os"
-
-	"github.com/xDeFc0nx/FinVibe/cmd/migrate"
 )
 
 func Flag() {
@@ -12,6 +9,6 @@ func Flag() {
 			return
 		}
 	}()
-// 	arg := os.Args[1]
-//
- }
+	// 	arg := os.Args[1]
+	//
+}

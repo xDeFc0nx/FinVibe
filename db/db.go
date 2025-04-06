@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/xDeFc0nx/logger-go-pkg"
 )
-
 var DB *pgx.Conn
 
 func Conn() {
