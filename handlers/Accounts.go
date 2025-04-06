@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"sync"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
@@ -12,31 +12,62 @@ import (
 )
 
 func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
-	account := new(types.Accounts)
+	type Request struct {
+		Type    string  `json:"type"`
+		Balance float64 `json:"balance"`
+		Income  float64 `json:"income"`
+		Expense float64 `json:"expense"`
+	}
+	var req Request
 
-	user := new(types.User)
-
-	account.ID = uuid.NewString()
-	account.UserID = userID
-
-	if err := json.Unmarshal(data, &account); err != nil {
-		Send_Error(ws, "Invalid  form data", err)
+	if err := json.Unmarshal(data, &req); err != nil {
+		Send_Error(ws, "Invalid form data", err)
+		return
+	}
+	account := &types.Accounts{
+		ID:      uuid.NewString(),
+		UserID:  userID,
+		Type:    req.Type,
+		Balance: req.Balance,
+		Income:  req.Income,
+		Expense: req.Expense,
 	}
 
-	if err := db.DB.Where("id = ?", userID).First(&user).Error; err != nil {
-		Send_Error(ws, "User ID Invalid", err)
+	var userExists bool
+	err := db.DB.QueryRow(
+		context.Background(),
+		"SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
+		userID,
+	).Scan(&userExists)
+	if err != nil || !userExists {
+		Send_Error(ws, "User not found", err)
+		return
 	}
 
-	if err := db.DB.Create(account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(),
+		`INSERT INTO accounts (
+id,
+user_id,
+type,
+balance,
+income,
+expense
+)VALUES ($1, $2, $3, $4, $5, $6)`,
+		account.ID,
+		account.UserID,
+		account.Type,
+		account.Balance,
+		account.Income,
+		account.Expense,
+	); err != nil {
 		Send_Error(ws, "Failed to Create Account", err)
 	}
-	accountData := map[string]interface{}{
-		"accountID": account.ID,
-		"Type":      account.Type,
-	}
-
-	response := map[string]interface{}{
-		"account": accountData,
+	response := map[string]any{
+		"account": map[string]any{
+			"accountID": account.ID,
+			"type":      account.Type,
+			"balance":   account.Balance,
+		},
 	}
 
 	responseData, _ := json.Marshal(response)
@@ -44,55 +75,50 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 }
 
 func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
-	accounts := []types.Accounts{}
-
-	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
-		Send_Error(ws, "Accounts not found", err)
+	rows, err := db.DB.Query(
+		context.Background(),
+		`SELECT id, type, balance, income, expense 
+         FROM accounts WHERE user_id = $1`,
+		userID,
+	)
+	if err != nil {
+		Send_Error(ws, "Failed to fetch accounts", err)
 		return
 	}
-
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-	for i := range accounts {
-		wg.Add(1)
-		go func(a *types.Accounts) {
-			defer wg.Done()
-			if err := GetAccountsBalance(ws, a.ID); err != nil {
-				Send_Error(ws, "failed to get account balance", err)
-			}
-			mu.Lock()
-			defer mu.Unlock()
-			if err := db.DB.Where("id = ?", a.ID).First(a).Error; err != nil {
-				Send_Error(ws, "Failed to fetch updated account", err)
-			}
-		}(&accounts[i])
-	}
-	wg.Wait()
-	if err := db.DB.Where("user_id = ?", userID).Find(&accounts).Error; err != nil {
-		Send_Error(ws, "Accounts not found", err)
-	}
-
-	accountData := make([]map[string]interface{}, len(accounts))
-
-	for i, a := range accounts {
-		accountData[i] = map[string]interface{}{
-			"ID":             a.ID,
-			"UserID":         a.UserID,
-			"AccountID":      a.ID,
-			"Type":           a.Type,
-			"AccountBalance": a.Balance,
-			"Income":         a.Income,
-			"Expense":        a.Expense,
+	defer rows.Close()
+	accounts := []types.Accounts{}
+	for rows.Next() {
+		var a types.Accounts
+		if err := rows.Scan(
+			&a.ID, &a.Type, &a.Balance, &a.Income, &a.Expense,
+		); err != nil {
+			Send_Error(ws, "Data processing error", err)
+			return
 		}
+		accounts = append(accounts, a)
 	}
 
-	// Package the response
-	response := map[string]interface{}{
-		"accounts": accountData,
+	accountData := make([]map[string]any, 0, len(accounts))
+	for _, a := range accounts {
+		if err := GetAccountsBalance(ws, a.ID); err != nil {
+			Send_Error(ws, "Failed to get balance", err)
+			continue
+		}
+		accountData = append(accountData, map[string]any{
+			"id":      a.ID,
+			"type":    a.Type,
+			"balance": a.Balance,
+			"income":  a.Income,
+			"expense": a.Expense,
+		})
 	}
 
-	responseData, _ := json.Marshal(response)
-
+	response := map[string]any{"accounts": accountData}
+	responseData, err := json.Marshal(response)
+	if err != nil {
+		Send_Error(ws, "Failed to generate response", err)
+		return
+	}
 	Send_Message(ws, string(responseData))
 }
 
@@ -103,19 +129,33 @@ func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
+	if err := db.DB.QueryRow(context.Background(),
+		"SELECT * FROM accounts WHERE user_id = $1", userID).Scan(&account); err != nil {
 		Send_Error(ws, "Account not found", err)
 		return
 	}
-	if err := db.DB.Save(account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+		UPDATE accounts SET
+		type = $1,
+		balance = $2,
+		income = $3,
+		expense = $4
+		WHERE id = $5 AND user_id = $6`,
+		account.Type,
+		account.Balance,
+		account.Income,
+		account.Expense,
+		account.ID,
+		account.UserID,
+	); err != nil {
 		Send_Error(ws, "Failed to update", err)
 	}
-	accountData := map[string]interface{}{
+	accountData := map[string]any{
 		"ID":   account.ID,
 		"Type": account.Type,
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"Success": accountData,
 	}
 
@@ -133,20 +173,21 @@ func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	}
 
-	if err := db.DB.Where("user_id = ?", userID).Find(&account).Error; err != nil {
-		Send_Error(ws, "account not found", err)
+	if err := db.DB.QueryRow(context.Background(),
+		"SELECT * FROM accounts WHERE user_id = $1", userID).Scan(&account); err != nil {
+		Send_Error(ws, "Account not found", err)
 		return
 	}
-	if err := db.DB.Delete(account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `DELETE FROM accounts WHERE id = $1`, account.ID); err != nil {
 		Send_Error(ws, "Failed to delete", err)
 	}
 
-	accountData := map[string]interface{}{
+	accountData := map[string]any{
 		"ID":   account.ID,
 		"Type": account.Type,
 	}
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"Success": accountData,
 	}
 
