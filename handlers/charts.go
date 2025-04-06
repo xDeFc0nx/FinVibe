@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 
-	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
@@ -15,24 +14,24 @@ func getCharts(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	account := new(types.Accounts)
-	if err := db.DB.Where("user_id = ? AND id = ?", userID, requestData.AccountID).First(account).Error; err != nil {
-		Send_Error(ws, "Account not found", err)
-		return
-	}
+	// account := new(types.Accounts)
+	// if err := db.DB.Where("user_id = ? AND id = ?", userID, requestData.AccountID).First(account).Error; err != nil {
+	// 	Send_Error(ws, "Account not found", err)
+	// 	return
+	// }
 
-	start, end := GetDateRange(requestData.DateRange)
-
-	var transactions []types.Transaction
-	if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?",
-		requestData.AccountID,
-		start,
-		end,
-	).Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Failed to retrieve transactions", err)
-		return
-	}
-
+	// start, end := GetDateRange(requestData.DateRange)
+	//
+	 var transactions []types.Transaction
+	// if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?",
+	// 	requestData.AccountID,
+	// 	start,
+	// 	end,
+	// ).Find(&transactions).Error; err != nil {
+	// 	Send_Error(ws, "Failed to retrieve transactions", err)
+	// 	return
+	// }
+	//
 	type byDay struct {
 		Day     int     `json:"day"`
 		Income  float64 `json:"Income"`

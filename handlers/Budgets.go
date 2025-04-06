@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
-	"os/user"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
@@ -82,10 +84,19 @@ func CreateRecurring(
 		Send_Error(ws, "Invalid frequency", nil)
 		return nil
 	}
+	if _, err := db.DB.Exec(context.Background(), `
 
-	if err := db.DB.Save(&recurring).Error; err != nil {
-		Send_Error(ws, "Error: failed to Save recurring transaction", err)
-		return err
+INSERT INTO recurrings (id, transaction_id, amount, frequency, start_date, next_date)
+			VALUES($1, $2, $3, $4, $5, $6)
+			`,
+		recurring.ID,
+		recurring.TransactionID,
+		recurring.Amount,
+		recurring.Frequency,
+		recurring.StartDate,
+		recurring.NextDate,
+	); err != nil {
+		Send_Error(ws, "Failed to create recurring transaction", err)
 	}
 	go func() {
 		err := handleRecurringTransaction(ws, recurring, userID, accountID)
@@ -120,16 +131,26 @@ func CreateTransaction(
 		Send_Error(ws, "Account ID is required", nil)
 		return
 	}
-
-	if err := db.DB.Where("user_id = ? AND id = ?", userID, transaction.AccountID).First(&account).Error; err != nil {
-		Send_Error(ws, "AccountID not found", err)
-		return
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
+		`, transaction.AccountID, userID); err != nil {
+		Send_Error(ws, "Account not found", err)
 	}
-	if err := db.DB.Create(&transaction).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+ INSERT INTO transactions (id, user_id, account_id, amount,IsRecurring, created_at, updated_at)
+		VALUES($1, $2, $3, $4, $5, $6, $7)
+	
+		`,
+		transaction.ID,
+		transaction.UserID,
+		transaction.AccountID,
+		transaction.Amount,
+		transaction.IsRecurring,
+		transaction.CreatedAt,
+		transaction.UpdatedAt,
+	); err != nil {
 		Send_Error(ws, "Failed to create transaction", err)
-		return
 	}
-
 	if transaction.IsRecurring {
 		recurring.ID = uuid.NewString()
 		recurring.TransactionID = transaction.ID
@@ -147,10 +168,6 @@ func CreateTransaction(
 
 			Send_Error(ws, "Recurring Frequency is required", nil)
 			return
-		}
-
-		if err := db.DB.Create(recurring).Error; err != nil {
-			Send_Error(ws, "Failed to create recurring transaction", err)
 		}
 		if err := CreateRecurring(ws, data, transaction.ID, account.ID, userID, transaction.Amount); err != nil {
 			return
@@ -193,13 +210,19 @@ func handleRecurringTransaction(
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-
-		if err := db.DB.Create(&newTransaction).Error; err != nil {
+		if _, err := db.DB.Exec(context.Background(), `
+INSERT INTO transactions (id, user_id, account_id, amount, created_at, updated_at)
+		VALUES($1, $2, $3, $4, $5, $6)
+			`,
+			newTransaction.ID,
+			newTransaction.UserID,
+			newTransaction.AccountID,
+			newTransaction.Amount,
+			newTransaction.CreatedAt,
+			newTransaction.UpdatedAt,
+		); err != nil {
 			Send_Error(ws, "Failed to create new recurring transaction", err)
-
-			return nil
 		}
-
 		switch recurring.Frequency {
 		case "Daily":
 			recurring.NextDate = recurring.NextDate.Add(24 * time.Hour)
@@ -208,16 +231,17 @@ func handleRecurringTransaction(
 		case "Monthly":
 			recurring.NextDate = recurring.NextDate.AddDate(0, 1, 0)
 		}
-
-		if err := db.DB.Save(&recurring).Error; err != nil {
+		if _, err := db.DB.Exec(context.Background(), `
+UPDATE recurrings
+			SET recurring.next_date = $1
+			WHERE transaction_id = $2
+			`, recurring.NextDate, recurring.TransactionID); err != nil {
 			Send_Error(ws, "Failed to update recurring next date", err)
-			return nil
 		}
 	}
 }
 
 func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
-	account := new(types.Accounts)
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
 		Send_Error(ws, InvalidData, err)
@@ -227,21 +251,34 @@ func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if requestData.DateRange == "" {
 		Send_Error(ws, "Date Range is Required", nil)
 	}
-
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
+		`, requestData.AccountID, userID); err != nil {
 		Send_Error(ws, "Account not found", err)
-		return
 	}
+
 	start, end := GetDateRange(requestData.DateRange)
 
 	transactions := []types.Transaction{}
-	if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?", requestData.AccountID, start, end).
-		Order("created_at DESC").
-		Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Could Not get transactions", err)
-		return
+
+	rows, err := db.DB.Query(context.Background(), `
+SELECT (id, user_id, account_id, type, amount, description, is_recurring, created_at)
+		FROM transactions
+		WHRE account_id = $1 AND created_at BETWEEN $2 AND $3
+		ORDER BY created_at DESC`,
+		requestData.AccountID,
+		start,
+		end,
+	)
+	if err != nil {
+		Send_Error(ws, "failed to get transactions", err)
 	}
 
+	defer rows.Close()
+	transactions, err = pgx.CollectRows(rows, pgx.RowTo[types.Transaction])
+	if err != nil {
+		Send_Error(ws, "failed to collect rows", err)
+	}
 	transactionData := make([]map[string]interface{}, len(transactions))
 
 	for i, t := range transactions {
@@ -285,9 +322,22 @@ func GetTransactionById(
 		return
 	}
 
-	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		Send_Error(ws, "Transaction not found", err)
-		return
+	err := db.DB.QueryRow(context.Background(), `
+SELECT id, user_id, account_id, type, amount, description, is_recurring, created_at
+		FROM transactions
+		WHERE id = $1 
+	  `,
+		transaction.ID).Scan(
+		&transaction.ID,
+		&transaction.UserID,
+		&transaction.AccountID,
+		&transaction.Type,
+		&transaction.Description,
+		&transaction.IsRecurring,
+		&transaction.CreatedAt,
+	)
+	if err != nil {
+		Send_Error(ws, "failed to get transactions", err)
 	}
 
 	transactionData := map[string]interface{}{
@@ -322,17 +372,31 @@ func UpdateTransaction(
 		Send_Error(ws, "Transaction does not belong to you", nil)
 		return
 	}
-
-	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
+	if _, err := db.DB.Query(context.Background(), `
+SELECT EXISTS transactions WHERE id = $1 AND user_id = $2
+		`, transaction.ID, userID); err != nil {
 		Send_Error(ws, "Transaction not found", err)
-		return
 
 	}
-
-	if err := db.DB.Save(transaction).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
+	if _, err := db.DB.Exec(context.Background(), `
+UPDATE transactions  SET 
+		type = $1
+		amount = $2,
+		description = $3,
+		is_recurring = $4,
+		updated_at $5,
+		WHERE user_id = $6 AND id = $7
+		`,
+		transaction.Type,
+		transaction.Amount,
+		transaction.Description,
+		transaction.IsRecurring,
+		time.Now().UTC(),
+		userID,
+		transaction.ID,
+	); err != nil {
+		Send_Error(ws, "Failed to update trnasaction", err)
 	}
-
 	transactionData := map[string]interface{}{
 		"ID":        transaction.ID,
 		"UserID":    transaction.UserID,
@@ -340,18 +404,15 @@ func UpdateTransaction(
 		"AccountID": transaction.AccountID,
 		"Amount":    transaction.Amount,
 	}
-
 	response := map[string]interface{}{
 		"Success": transactionData,
 	}
-
 	responseData, _ := json.Marshal(response)
 	Send_Message(ws, string(responseData))
+
 }
 
-func DeleteTransaction(
-	ws *websocket.Conn,
-	data json.RawMessage,
+func DeleteTransaction(ws *websocket.Conn, data json.RawMessage,
 	userID string,
 ) {
 	transaction := new(types.Transaction)
@@ -367,15 +428,15 @@ func DeleteTransaction(
 		Send_Error(ws, "Transaction does not belong to you", nil)
 		return
 	}
-
-	if err := db.DB.Where("id = ?", transaction.ID).First(&transaction).Error; err != nil {
-		Send_Error(ws, "Transaction not found", err)
-		return
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS transactions WHERE id = $1 AND user_id = $2
+		`, transaction.ID, userID); err != nil {
+		Send_Error(ws, "Trnasaction not found", err)
 	}
-
-	if err := db.DB.Delete(transaction).Error; err != nil {
-		Send_Error(ws, "Failed to delete", err)
-		return
+	if _, err := db.DB.Exec(context.Background(), `
+			DELETE transactions WHERE id = $1 AND user_id = $2
+			`, transaction.ID, userID); err != nil {
+		Send_Error(ws, "Failed to delete trnasaction", err)
 	}
 	response := map[string]interface{}{
 		"Success": "Transaction Deleted",
@@ -399,14 +460,30 @@ func GetAccountIncome(
 		return
 	}
 
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS accounts WHERE id = $1 AND user_id = $2
+				`, account.ID, userID); err != nil {
 		Send_Error(ws, "Account not found", err)
-		return
 	}
 
 	start, end := GetDateRange(requestData.DateRange)
-	if err := db.DB.Where("account_id = ? and type = ? AND created_at BETWEEN ? AND ?", requestData.AccountID, "Income", start, end).Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Could not get transactions", err)
+	rows, err := db.DB.Query(context.Background(), `
+SELECT (id, user_id, account_id, type, amount, description, is_recurring, created_at)
+		FROM transactions
+		WHRE account_id = $1 AND created_at BETWEEN $2 AND $3
+		ORDER BY created_at DESC`,
+		requestData.AccountID,
+		start,
+		end,
+	)
+	if err != nil {
+		Send_Error(ws, "failed to get transactions", err)
+	}
+
+	defer rows.Close()
+	transactions, err = pgx.CollectRows(rows, pgx.RowTo[types.Transaction])
+	if err != nil {
+		Send_Error(ws, "failed to collect rows", err)
 	}
 
 	totalIncome := 0.0
@@ -415,8 +492,13 @@ func GetAccountIncome(
 	}
 	account.Income = totalIncome
 
-	if err := db.DB.Save(account).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
+	if _, err := db.DB.Exec(context.Background(), `
+		UPDATE accounts SET
+		income = $1,
+		where id = $2 AND user_id = $3
+	
+		`, totalIncome, account.ID, userID); err != nil {
+		Send_Error(ws, "Failed to update account income", err)
 	}
 	response := map[string]interface{}{
 		"totalIncome": account.Income,
@@ -439,23 +521,44 @@ func GetAccountExpense(
 		Send_Error(ws, InvalidData, err)
 		return
 	}
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS accounts WHERE id = $1 AND user_id = $2
+				`, account.ID, userID); err != nil {
 		Send_Error(ws, "Account not found", err)
-		return
 	}
 
 	start, end := GetDateRange(requestData.DateRange)
-	if err := db.DB.Where("account_id = ? and type = ? AND created_at BETWEEN ? AND ?", requestData.AccountID, "Expense", start, end).Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Could not get transactions", err)
+	rows, err := db.DB.Query(context.Background(), `
+SELECT (id, user_id, account_id, type, amount, description, is_recurring, created_at)
+		FROM transactions
+		WHRE account_id = $1 AND created_at BETWEEN $2 AND $3
+		ORDER BY created_at DESC`,
+		requestData.AccountID,
+		start,
+		end,
+	)
+	if err != nil {
+		Send_Error(ws, "failed to get transactions", err)
 	}
+
+	defer rows.Close()
+	transactions, err = pgx.CollectRows(rows, pgx.RowTo[types.Transaction])
+	if err != nil {
+		Send_Error(ws, "failed to collect rows", err)
+	}
+
 	totalExpense := 0.0
 	for _, transaction := range transactions {
 		totalExpense += transaction.Amount
 	}
-	account.Expense = totalExpense
-
-	if err := db.DB.Save(account).Error; err != nil {
-		Send_Error(ws, "Failed to Save", err)
+	if _, err := db.DB.Exec(context.Background(), `
+		UPDATE accounts SET
+		expnese = $1,
+		where id = $2 AND user_id = $3
+	
+		`, totalExpense, account.ID, userID); err != nil {
+		Send_Error(ws, "Failed to update account income", err)
 	}
 
 	response := map[string]interface{}{
@@ -478,18 +581,22 @@ func GetAccountBalance(
 		Send_Error(ws, InvalidData, err)
 		return
 	}
-	if err := db.DB.Where("user_id =? AND id =?", userID, requestData.AccountID).First(&account).Error; err != nil {
+
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS accounts WHERE id = $1 AND user_id = $2
+				`, account.ID, userID); err != nil {
 		Send_Error(ws, "Account not found", err)
-		return
 	}
 
 	totalBalance := account.Income - account.Expense
-	account.Balance = totalBalance
-
-	if err := db.DB.Save(account).Error; err != nil {
-		Send_Error(ws, "Failed to Save", err)
+	if _, err := db.DB.Exec(context.Background(), `
+		UPDATE accounts SET
+		balance = $1,
+		where id = $2 AND user_id = $3
+	
+		`, totalBalance, account.ID, userID); err != nil {
+		Send_Error(ws, "Failed to update account income", err)
 	}
-
 	response := map[string]interface{}{
 		"accountBalance": account.Balance,
 	}
@@ -499,28 +606,28 @@ func GetAccountBalance(
 }
 
 func GetAccountsBalance(ws *websocket.Conn, accountID string) error {
-	transactions := []types.Transaction{}
-	account := new(types.Accounts)
-
-	account.ID = accountID
-
-	if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
-		Send_Error(ws, "Account not found", err)
-		return err
-	}
-
-	if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
-		Send_Error(ws, "Could not get transactions", err)
-		return err
-	}
-
-	totalBalance := account.Income - account.Expense
-	account.Balance = totalBalance
-
-	if err := db.DB.Save(account).Error; err != nil {
-		Send_Error(ws, "Failed to save", err)
-		return err
-	}
-
-	return nil
+	// transactions := []types.Transaction{}
+	// account := new(types.Accounts)
+	//
+	// account.ID = accountID
+	//
+	// if err := db.DB.Where(" id =?", account.ID).First(&account).Error; err != nil {
+	// 	Send_Error(ws, "Account not found", err)
+	// 	return err
+	// }
+	//
+	// if err := db.DB.Where("account_id = ?", account.ID).Find(&transactions).Error; err != nil {
+	// 	Send_Error(ws, "Could not get transactions", err)
+	// 	return err
+	// }
+	//
+	// totalBalance := account.Income - account.Expense
+	// account.Balance = totalBalance
+	//
+	// if err := db.DB.Save(account).Error; err != nil {
+	// 	Send_Error(ws, "Failed to save", err)
+	// 	return err
+	// }
+	//
+ return nil
 }

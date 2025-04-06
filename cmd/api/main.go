@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 
-	"github.com/xDeFc0nx/FinVibe/cmd/flag"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/handlers"
 )
@@ -46,7 +45,6 @@ func main() {
 	}))
 	db.Conn()
 
-	// flag.Flag()
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)
