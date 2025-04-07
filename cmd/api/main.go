@@ -7,12 +7,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-
+	"github.com/joho/godotenv"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/handlers"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+	}
 	file, err := os.OpenFile(
 		"app.log",
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
@@ -44,7 +47,6 @@ func main() {
 		AllowCredentials: true,
 	}))
 	db.Conn()
-
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)
