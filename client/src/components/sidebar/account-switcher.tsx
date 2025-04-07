@@ -60,8 +60,7 @@ export function AccountSwitcher() {
 	const [open, setOpen] = React.useState(false);
 
 	const { socket, isReady } = useWebSocket();
-
-	const formSchema = z.object({
+  console.log("AccountSwitcher RENDER: activeAccount is:", JSON.stringify(activeAccount));	const formSchema = z.object({
 		Type: z.string().min(1, "Account type is required"),
 	});
 
@@ -107,27 +106,27 @@ export function AccountSwitcher() {
 	}
 
 	React.useEffect(() => {
-		if (socket && isReady && activeAccount?.AccountID) {
-			const currentAccountId = activeAccount.AccountID;
+		if (socket && isReady && activeAccount?.id) {
+			const currentAccountId = activeAccount.id;
 
 			socket.send("getTransactions", {
-				AccountID: activeAccount?.AccountID,
+				AccountID: activeAccount?.id,
 				DateRange: dateRange,
 			});
 			socket.send("getAccountIncome", {
-				AccountID: activeAccount?.AccountID,
+				AccountID: activeAccount?.id,
 				DateRange: dateRange,
 			});
 			socket.send("getAccountExpense", {
-				AccountID: activeAccount?.AccountID,
+				AccountID: activeAccount?.id,
 				DateRange: dateRange,
 			});
 			socket.send("getAccountBalance", {
-				AccountID: activeAccount?.AccountID,
+				AccountID: activeAccount?.id,
 				DateRange: dateRange,
 			});
 			socket.send("getCharts", {
-				AccountID: activeAccount?.AccountID,
+				AccountAccountID: activeAccount?.id,
 				DateRange: dateRange,
 			});
 
@@ -143,7 +142,7 @@ export function AccountSwitcher() {
 				if (response.totalIncome !== undefined) {
 					setAccounts((prev) =>
 						prev.map((acc) =>
-							acc.AccountID === currentAccountId
+							acc.id === currentAccountId
 								? { ...acc, Income: response.totalIncome }
 								: acc,
 						),
@@ -153,7 +152,7 @@ export function AccountSwitcher() {
 				if (response.totalExpense !== undefined) {
 					setAccounts((prev) =>
 						prev.map((acc) =>
-							acc.AccountID === currentAccountId
+							acc.id === currentAccountId
 								? { ...acc, Expense: response.totalExpense }
 								: acc,
 						),
@@ -163,13 +162,13 @@ export function AccountSwitcher() {
 				if (response.accountBalance !== undefined) {
 					setAccounts((prev) =>
 						prev.map((acc) =>
-							acc.AccountID === currentAccountId
+							acc.id === currentAccountId
 								? { ...acc, AccountBalance: response.accountBalance }
 								: acc,
 						),
 					);
 					setActiveAccount((prev) =>
-						prev?.AccountID === currentAccountId
+						prev?.id === currentAccountId
 							? { ...prev, AccountBalance: response.accountBalance }
 							: prev,
 					);
@@ -185,7 +184,7 @@ export function AccountSwitcher() {
 				}
 			});
 		}
-	}, [activeAccount?.AccountID, dateRange, isReady, refresh]);
+	}, [activeAccount?.id, dateRange, isReady, refresh]);
 	return (
 		<SidebarMenu>
 			<Dialog open={open} onOpenChange={setOpen}>
@@ -198,7 +197,7 @@ export function AccountSwitcher() {
 							>
 								<div className="grid flex-1 text-left text-sm leading-tight">
 									<span className="truncate font-semibold">
-										{activeAccount?.Type}
+										{activeAccount?.type}
 									</span>
 								</div>
 								<ChevronsUpDown className="ml-auto" />
@@ -215,11 +214,11 @@ export function AccountSwitcher() {
 							</DropdownMenuLabel>
 							{accounts.map((account) => (
 								<DropdownMenuItem
-									key={account.AccountID}
+									key={account.id}
 									onClick={() => saveAccount(account)}
 									className="gap-2 p-2"
 								>
-									{account.Type}
+									{account.type}
 									<DropdownMenuShortcut>
 										⌘{accounts.indexOf(account) + 1}
 									</DropdownMenuShortcut>

@@ -8,15 +8,15 @@ export interface UserData {
 	LastName: string;
 	Email: string;
 	Currency: string;
+  Country: string;
 }
 export interface Account {
-	ID: string;
-	UserID: string;
-	AccountID: string;
-	Income: number;
-	Expense: number;
-	AccountBalance: number;
-	Type: string;
+	id: string;
+	userID: string;
+	income: number;
+	expense: number;
+	balance: number;
+	type: string;
 }
 export interface Transaction {
 	ID: string;
@@ -77,6 +77,7 @@ export const UserDataProvider = ({
 		FirstName: "",
 		LastName: "",
 		Email: "",
+    Currency: "$",
 		Country: "",
 	});
 

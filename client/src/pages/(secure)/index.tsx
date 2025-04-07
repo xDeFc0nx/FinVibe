@@ -59,13 +59,13 @@ export default function Index() {
 				if (response.totalIncome !== undefined) {
 					setAccounts((prev) =>
 						prev.map((acc) =>
-							acc.AccountID === activeAccount.AccountID
+							acc.id === activeAccount.id
 								? { ...acc, Income: response.totalIncome }
 								: acc,
 						),
 					);
 					setActiveAccount((prev) =>
-						prev && prev.AccountID === activeAccount.AccountID
+						prev && prev.id === activeAccount.id
 							? { ...prev, Income: response.totalIncome }
 							: prev,
 					);
@@ -74,13 +74,13 @@ export default function Index() {
 				if (response.totalExpense !== undefined) {
 					setAccounts((prev) =>
 						prev.map((acc) =>
-							acc.AccountID === activeAccount.AccountID
+							acc.id === activeAccount.id
 								? { ...acc, Expense: response.totalExpense }
 								: acc,
 						),
 					);
 					setActiveAccount((prev) =>
-						prev && prev.AccountID === activeAccount.AccountID
+						prev && prev.id === activeAccount.id
 							? { ...prev, Expense: response.totalExpense }
 							: prev,
 					);
@@ -89,13 +89,13 @@ export default function Index() {
 				if (response.accountBalance !== undefined) {
 					setAccounts((prev) =>
 						prev.map((acc) =>
-							acc.AccountID === activeAccount.AccountID
+							acc.id === activeAccount.id
 								? { ...acc, AccountBalance: response.accountBalance }
 								: acc,
 						),
 					);
 					setActiveAccount((prev) =>
-						prev && prev.AccountID === activeAccount.AccountID
+						prev && prev.id === activeAccount.id
 							? { ...prev, AccountBalance: response.accountBalance }
 							: prev,
 					);
