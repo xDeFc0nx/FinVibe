@@ -20,15 +20,16 @@ import (
 var tokenName = "jwt-token"
 
 func Create_JWT_Token(
-	user types.User,
+	userID string,
 	connectionID string,
 ) (string, int64, error) {
 	exp := time.Now().Add(time.Minute * 30).Unix()
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-	claims["user_id"] = user.ID
-	claims["connectionID"] = connectionID
-	claims["exp"] = exp
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"user_id":       userID,
+		"connection_id": connectionID,
+		"exp":           exp,
+	})
+
 	t, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		return "", 0, err
@@ -76,7 +77,7 @@ func DecodeJWTToken(token string) (string, string, error) {
 
 		}
 
-		connectionID, ok := claims["connectionID"].(string)
+		connectionID, ok := claims["connection_id"].(string)
 		if !ok {
 			slog.Error(
 				"connectionID not found in claims",
@@ -139,25 +140,28 @@ func LoginHandler(c *fiber.Ctx) error {
 		}
 		return JSendFail(c, data, fiber.StatusBadRequest)
 	}
-	var foundUser types.User
-	err := db.DB.QueryRow(context.Background(), `
-		SELECT  email, 
-		FROM users
-		WHERE email = $1
-	`, req.Email).Scan(
-		&user.Email,
-	)
-	if err != nil {
-		slog.Error(
-			"Email Does not exist",
-			"error",
-			err,
-			"IP",
-			c.IP(),
-		)
+	if err := db.DB.QueryRow(context.Background(), `
+    SELECT id, first_name, last_name, email, password, currency, created_at 
+    FROM users 
+    WHERE email = $1
+`, req.Email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Currency, &user.CreatedAt); err != nil {
+		slog.Error("Failed to fetch user", slog.String("error", err.Error()))
+		data := map[string]any{
+			"message": "email or password wrong",
+		}
+		return JSendError(c, data, fiber.StatusNotFound)
 	}
-
-	err = bcrypt.CompareHashAndPassword(
+	if err := db.DB.QueryRow(context.Background(), `
+		SELECT connection_id 
+		FROM web_sockets
+		WHERE user_id = $1
+		`, user.ID).Scan(&socket.ConnectionID); err != nil {
+		data := map[string]any{
+			"message": "failed to find ConnectionID",
+		}
+		return JSendError(c, data, fiber.StatusNotFound)
+	}
+	err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
 		[]byte(req.Password),
 	)
@@ -177,7 +181,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		}
 		return JSendError(c, data, fiber.StatusNotFound)
 	}
-	token, exp, err := Create_JWT_Token(foundUser, socket.ConnectionID)
+	token, exp, err := Create_JWT_Token(user.ID, socket.ConnectionID)
 	if err != nil {
 		data := map[string]any{
 			"message": "Failed to Create token",
@@ -209,7 +213,6 @@ func LoginHandler(c *fiber.Ctx) error {
 
 func LogoutHandler(c *fiber.Ctx) error {
 	token := c.Cookies(tokenName)
-	userID := c.Locals("userID").(string)
 	c.Locals("csrf")
 	if token == "" {
 		data := map[string]any{

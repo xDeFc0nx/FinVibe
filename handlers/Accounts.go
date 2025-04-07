@@ -75,6 +75,7 @@ expense
 }
 
 func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
+		accounts := []types.Accounts{}
 	rows, err := db.DB.Query(
 		context.Background(),
 		`SELECT id, type, balance, income, expense 
@@ -86,7 +87,6 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 	defer rows.Close()
-	accounts := []types.Accounts{}
 	for rows.Next() {
 		var a types.Accounts
 		if err := rows.Scan(

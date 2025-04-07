@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-		"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
-	"regexp"
-	"time"
-	"fmt"
+	"github.com/google/uuid"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
+	"golang.org/x/crypto/bcrypt"
+	"log/slog"
+	"regexp"
+	"time"
 )
 
 func CreateUser(c *fiber.Ctx) error {
 	type Request struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
+		FirstName string `json:"firstName"`
+		LastName  string `json:"lastName"`
 		Email     string `json:"email"`
 		Password  string `json:"password"`
 		Currency  string `json:"currency"`
@@ -30,86 +30,94 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(400).
 			JSON(fiber.Map{"error": "Unable to parse request body", "details": err.Error()})
 	}
-	user.ID = uuid.New().String()
-	user.CreatedAt = time.Now()
-
 	emailRegex := regexp.MustCompile(
 		`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
 	)
 
-	if !emailRegex.MatchString(user.Email) {
+	if !emailRegex.MatchString(req.Email) {
 		return c.Status(400).
-			JSON(fiber.Map{"error": "Invalid email address", "email": user.Email})
+			JSON(fiber.Map{"error": "Invalid email address", "email": req.Email})
 	}
-
-	if err := db.DB.QueryRow(ctx, "SELECT * FROM users WHERE email = $1", user.Email).Scan(&user); err != nil {
-		return c.Status(409).JSON(fiber.Map{"error": "Email already exists"})
+	var emailExists bool
+	if err := db.DB.QueryRow(ctx, `
+		SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)
+		`, req.Email).Scan(&emailExists); err != nil {
+		slog.Error("Failed to check email existence", slog.String("error", err.Error()))
 	}
+	if emailExists {
+		data := map[string]any{
+			"message": "Email already exists",
+		}
+		return JSendError(c, data, fiber.StatusBadRequest)
+	}
+	user.ID = uuid.New().String()
 
-	if user.FirstName == "" {
+	if req.FirstName == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "First Name is Required"})
 	}
 
-	if user.LastName == "" {
+	if req.LastName == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Last Name is Required"})
 	}
-	if user.Email == "" {
+	if req.Email == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Email is Required"})
 	}
 
-	if user.Password == "" {
+	if req.Password == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Password is required"})
 	}
-	if user.Currency == "" {
+	if req.Currency == "" {
 		return c.Status(400).JSON(fiber.Map{"error": "Currency is required"})
 	}
 
-	if len(user.Password) < 8 {
+	if len(req.Password) < 8 {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Password requires at least 8 characters"})
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword(
-		[]byte(user.Password),
+		[]byte(req.Password),
 		bcrypt.DefaultCost,
 	)
 	if err != nil {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Failed to Hash", "details": err.Error()})
 	}
-	user.Password = string(hashedPassword)
 
-	if _, err := db.DB.Exec(ctx,
-		"INSERT INTO users (id, first_name, last_name, email, password, currency) VALUES ($1, $2, $3, $4, $5, $6)",
-		user.ID, user.FirstName, user.LastName, user.Email, user.Password, user.Currency,
+	if _, err := db.DB.Exec(context.Background(),
+		"INSERT INTO users (id, first_name, last_name, email, password, currency, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		user.ID,
+		req.FirstName,
+		req.LastName,
+		req.Email,
+		hashedPassword,
+		req.Currency,
+		time.Now().UTC(),
 	); err != nil {
-		return c.Status(500).
-			JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
+		data := map[string]any{
+			"message": "error creating user",
+		}
+		JSendError(c, data, fiber.StatusBadRequest)
+
+		return nil
+
 	}
 
-rows, err := db.DB.Query(ctx, "SELECT * FROM users")
-
-defer rows.Close()
-
-for rows.Next() {
-    var id, firstName, lastName, email string
-    if err := rows.Scan(&id, &firstName, &lastName, &email); err != nil {
-        continue
-    }
-    fmt.Printf("ID: %s, Name: %s %s, Email: %s\n", id, firstName, lastName, email)
-}
-
-	socketID, err := CreateWebSocketConnection(user.ID)
+	socketID, err := CreateWebSocket(user.ID)
 	if err != nil {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Failed to create WebSocket", "details": err.Error()})
 	}
-	token, exp, err := Create_JWT_Token(*user, socketID)
+	token, exp, err := Create_JWT_Token(user.ID, socketID)
 	if err != nil {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
 	}
-
+	slog.Info(
+		"User Created",
+		"userID",
+		user.ID,
+	)
 	return c.JSON(fiber.Map{
 		"message":  "User created successfully",
 		"userID":   user.ID,
@@ -121,9 +129,13 @@ for rows.Next() {
 
 func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	user := new(types.User)
-	if err := db.DB.QueryRow(context.Background(),
-		"SELECT * FROM users WHERE id = $1", userID).Scan(&user); err != nil {
-		Send_Error(ws, "User not found", err)
+	if err := db.DB.QueryRow(context.Background(), `
+    SELECT id, first_name, last_name, email, password, currency, created_at 
+    FROM users 
+    WHERE id = $1
+`, userID).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Currency, &user.CreatedAt); err != nil {
+		slog.Error("Failed to fetch user", slog.String("error", err.Error()))
+		Send_Error(ws, "failed to get user data", err)
 		return
 	}
 

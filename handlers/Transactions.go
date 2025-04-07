@@ -460,9 +460,9 @@ func GetAccountIncome(
 		return
 	}
 
-	if _, err := db.DB.Exec(context.Background(), `
-SELECT EXISTS accounts WHERE id = $1 AND user_id = $2
-				`, account.ID, userID); err != nil {
+	if  err := db.DB.QueryRow(context.Background(), `
+SELECT type, income, expense, balance
+				`, account.ID, userID).Scan(&account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
 		Send_Error(ws, "Account not found", err)
 	}
 

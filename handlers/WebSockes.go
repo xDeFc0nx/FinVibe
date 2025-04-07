@@ -3,30 +3,40 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
+	"time"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"log/slog"
-	"time"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
-func CreateWebSocketConnection(userID string) (string, error) {
+func CreateWebSocket(userID string) (string, error) {
 	socket := new(types.WebSocket)
-	socket.ID = uuid.New().String()
 	socket.UserID = userID
 	socket.ConnectionID = uuid.New().String()
 	socket.IsActive = true
 	socket.LastPing = time.Now()
 	socket.CreatedAt = time.Now()
 
+	var userExists bool
+	checkErr := db.DB.QueryRow(context.Background(), `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&userExists)
+	if checkErr != nil {
+		slog.Error("Failed to check user existence for websocket", slog.String("error", checkErr.Error()), slog.String("userID", userID))
+		return "", nil
+	}
+	if !userExists {
+		slog.Error("user with ID %s not found for webscoket", userID)
+		return "", nil
+	}
 	if _, err := db.DB.Exec(context.Background(), `
 		INSERT INTO web_sockets (id, user_id, connection_id, is_active, last_ping, created_at) 
 		VALUES ($1, $2, $3, $4, $5, $6)
 
-			`, socket.ID, userID, socket.ConnectionID, socket.IsActive, socket.LastPing, socket.CreatedAt); err != nil {
+			`, userID, userID, socket.ConnectionID, socket.IsActive, socket.LastPing, socket.CreatedAt); err != nil {
 		slog.Error(
 			"Error creating WebSocket connection",
 			"Err",
@@ -62,7 +72,6 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 }
 func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 	if CheckAuth(c) == nil {
-
 
 		var userExists bool
 		err := db.DB.QueryRow(
@@ -126,7 +135,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
     last_ping = $1
 		WHERE user_id = $2
 
-		`, userID, time.Now().UTC()); err != nil {
+		`, time.Now().UTC(), userID); err != nil {
 		JSendFail(c, "Failed to update last ping", 500)
 	}
 	return websocket.New(func(ws *websocket.Conn) {

@@ -1,7 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
 SELECT 'up SQL query';
-
 CREATE TABLE goals (
     id UUID PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -11,7 +10,8 @@ CREATE TABLE goals (
     description TEXT,
     created_at TIMESTAMPTZ ,
     updated_at TIMESTAMPTZ 
-  ); -- +goose StatementEnd
+  );
+-- +goose StatementEnd
 
 
 -- +goose Down
