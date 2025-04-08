@@ -48,7 +48,7 @@ func CreateUser(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Email already exists",
 		}
-		return JSendError(c, data, fiber.StatusBadRequest)
+		JSendError(c, data, fiber.StatusBadRequest)
 	}
 	user.ID = uuid.New().String()
 

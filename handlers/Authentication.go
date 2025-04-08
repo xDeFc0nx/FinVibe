@@ -108,7 +108,7 @@ func CheckAuth(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Token is not valid",
 		}
-		return JSendFail(c, data, fiber.StatusUnauthorized)
+		JSendFail(c, data, fiber.StatusUnauthorized)
 	}
 
 	_, ok := token.Claims.(*jwt.MapClaims)
@@ -116,13 +116,14 @@ func CheckAuth(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Invalid token format ",
 		}
-		return JSendFail(c, data, fiber.StatusUnauthorized)
+		JSendFail(c, data, fiber.StatusUnauthorized)
 	}
 
 	data := map[string]any{
 		"message": "Authorized",
 	}
-	return JSendSuccess(c, data)
+	JSendSuccess(c, data)
+	return nil
 }
 
 func LoginHandler(c *fiber.Ctx) error {
@@ -138,7 +139,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"Message": "invalid body",
 		}
-		return JSendFail(c, data, fiber.StatusBadRequest)
+		JSendFail(c, data, fiber.StatusBadRequest)
 	}
 	if err := db.DB.QueryRow(context.Background(), `
     SELECT id, first_name, last_name, email, password, currency, created_at 
@@ -149,7 +150,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "email or password wrong",
 		}
-		return JSendError(c, data, fiber.StatusNotFound)
+		JSendError(c, data, fiber.StatusNotFound)
 	}
 	if err := db.DB.QueryRow(context.Background(), `
 		SELECT connection_id 
@@ -159,7 +160,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "failed to find ConnectionID",
 		}
-		return JSendError(c, data, fiber.StatusNotFound)
+		JSendError(c, data, fiber.StatusNotFound)
 	}
 	err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
@@ -179,14 +180,14 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"error": "Wrong Email or password",
 		}
-		return JSendError(c, data, fiber.StatusNotFound)
+		JSendError(c, data, fiber.StatusNotFound)
 	}
 	token, exp, err := Create_JWT_Token(user.ID, socket.ConnectionID)
 	if err != nil {
 		data := map[string]any{
 			"message": "Failed to Create token",
 		}
-		return JSendFail(c, data, fiber.StatusInternalServerError)
+		JSendFail(c, data, fiber.StatusInternalServerError)
 
 	}
 	c.Cookie(&fiber.Cookie{
@@ -208,7 +209,8 @@ func LoginHandler(c *fiber.Ctx) error {
 		"message": "Authorized",
 		"expires": exp,
 	}
-	return JSendSuccess(c, data)
+	JSendSuccess(c, data)
+	return nil
 }
 
 func LogoutHandler(c *fiber.Ctx) error {
@@ -218,7 +220,7 @@ func LogoutHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Token is missing",
 		}
-		return JSendFail(c, data, fiber.StatusBadRequest)
+		JSendFail(c, data, fiber.StatusBadRequest)
 	}
 	userID, _, err := DecodeJWTToken(token)
 	if err != nil {
@@ -268,5 +270,6 @@ func LogoutHandler(c *fiber.Ctx) error {
 	data := map[string]any{
 		"message": "Logged out",
 	}
-	return JSendSuccess(c, data)
+	JSendSuccess(c, data)
+	return nil
 }
