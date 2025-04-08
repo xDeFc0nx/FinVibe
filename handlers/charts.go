@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
-
 	"github.com/gofiber/contrib/websocket"
+	"log/slog"
 
+	"context"
+	"github.com/jackc/pgx/v5"
+	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
@@ -14,24 +17,34 @@ func getCharts(ws *websocket.Conn, data json.RawMessage, userID string) {
 		return
 	}
 
-	// account := new(types.Accounts)
-	// if err := db.DB.Where("user_id = ? AND id = ?", userID, requestData.AccountID).First(account).Error; err != nil {
-	// 	Send_Error(ws, "Account not found", err)
-	// 	return
-	// }
+	if _, err := db.DB.Exec(context.Background(), `
+SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
+		`, requestData.AccountID, userID); err != nil {
+		Send_Error(ws, "Account not found", err)
+	}
+	start, end := GetDateRange(requestData.DateRange)
+	rows, err := db.DB.Query(context.Background(), `
+SELECT amount, id, user_id, account_id, type, description, is_recurring, created_at, updated_at
+		FROM transactions
+		WHERE account_id = $1 
+		AND created_at BETWEEN $2 AND $3
+		ORDER BY created_at DESC`,
+		requestData.AccountID,
+		start,
+		end,
+	)
+	if err != nil {
+		slog.Error("Failed to get transactions", slog.String("error", err.Error()))
+		Send_Error(ws, "failed to get transactions", err)
+	}
 
-	// start, end := GetDateRange(requestData.DateRange)
-	//
-	 var transactions []types.Transaction
-	// if err := db.DB.Where("account_id = ? AND created_at BETWEEN ? AND ?",
-	// 	requestData.AccountID,
-	// 	start,
-	// 	end,
-	// ).Find(&transactions).Error; err != nil {
-	// 	Send_Error(ws, "Failed to retrieve transactions", err)
-	// 	return
-	// }
-	//
+	defer rows.Close()
+	var transactions []types.Transaction
+	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
+	if err != nil {
+		Send_Error(ws, "failed to collect rows", err)
+	}
+
 	type byDay struct {
 		Day     int     `json:"day"`
 		Income  float64 `json:"Income"`
