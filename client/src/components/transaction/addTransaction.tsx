@@ -69,7 +69,7 @@ export const AddTransaction = () => {
 					CreatedAt: values.CreatedAt.toISOString(),
 				};
 				socket.send("createTransaction", {
-					id: activeAccount.id,
+					AccountID: activeAccount.id,
 					...payload,
 				});
 

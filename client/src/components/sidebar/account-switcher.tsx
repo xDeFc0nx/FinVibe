@@ -126,7 +126,7 @@ export function AccountSwitcher() {
 				DateRange: dateRange,
 			});
 			socket.send("getCharts", {
-				AccountAccountID: activeAccount?.id,
+				AccountID: activeAccount?.id,
 				DateRange: dateRange,
 			});
 
