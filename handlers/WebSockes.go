@@ -196,6 +196,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			slog.Info(
 				"recv",
 				slog.String("action", message.Action),
+				"data", message.Data,
 				slog.String("from", userID),
 			)
 
