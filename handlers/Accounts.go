@@ -3,10 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"log/slog"
+	"time"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
@@ -43,25 +46,28 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		Send_Error(ws, "User not found", err)
 		return
 	}
-
-	if _, err := db.DB.Exec(context.Background(),
-		`INSERT INTO accounts (
-id,
-user_id,
-type,
-balance,
-income,
-expense
-)VALUES ($1, $2, $3, $4, $5, $6)`,
-		account.ID,
-		account.UserID,
-		account.Type,
-		account.Balance,
-		account.Income,
-		account.Expense,
-	); err != nil {
-		Send_Error(ws, "Failed to Create Account", err)
-	}
+if _, err := db.DB.Exec(context.Background(),
+    `INSERT INTO accounts (
+        id,
+        user_id,
+        type,
+        balance,
+        income,
+        expense,
+        created_at,
+        updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    account.ID,
+    account.UserID,
+    account.Type,
+    account.Balance,
+    account.Income,
+    account.Expense,
+    time.Now().UTC(),
+    time.Now().UTC(),
+); err != nil {
+    Send_Error(ws, "Failed to Create Account", err)
+}
 	response := map[string]any{
 		"account": map[string]any{
 			"accountID": account.ID,
@@ -75,29 +81,25 @@ expense
 }
 
 func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
-		accounts := []types.Accounts{}
 	rows, err := db.DB.Query(
 		context.Background(),
-		`SELECT id, type, balance, income, expense 
-         FROM accounts WHERE user_id = $1`,
+		`SELECT income, expense, balance, id, user_id, type, created_at, updated_at
+     FROM accounts
+		 WHERE user_id = $1`,
 		userID,
 	)
 	if err != nil {
 		Send_Error(ws, "Failed to fetch accounts", err)
 		return
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var a types.Accounts
-		if err := rows.Scan(
-			&a.ID, &a.Type, &a.Balance, &a.Income, &a.Expense,
-		); err != nil {
-			Send_Error(ws, "Data processing error", err)
-			return
-		}
-		accounts = append(accounts, a)
-	}
 
+	defer rows.Close()
+	accounts := []types.Accounts{}
+accounts, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Accounts])
+	if err != nil {
+		slog.Error("failed", slog.String("err", err.Error()))
+		Send_Error(ws, "failed to collect rows", err)
+	}
 	accountData := make([]map[string]any, 0, len(accounts))
 	for _, a := range accounts {
 		if err := GetAccountsBalance(ws, a.ID); err != nil {
