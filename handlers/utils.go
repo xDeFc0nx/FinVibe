@@ -51,7 +51,8 @@ func Send_Message(ws *websocket.Conn, sendText string) {
 }
 
 func Send_Error(ws *websocket.Conn, sendText string, err error) {
-	response := map[string]interface{}{
+	slog.Error("message", sendText, "error", err)
+	response := map[string]any{
 		"Error": sendText,
 	}
 	responseJSON, _ := json.Marshal(response)
