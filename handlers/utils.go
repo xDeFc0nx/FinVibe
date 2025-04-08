@@ -9,34 +9,30 @@ import (
 	"github.com/gofiber/contrib/websocket"
 )
 
-type Error struct{
-
-
-
+type Error struct {
 }
-
 
 type Response struct {
 	Status string `json:"status"`
 	Data   any    `json:"data"`
 }
 
-func JSendSuccess(c *fiber.Ctx, data any) error {
-	return c.Status(fiber.StatusOK).JSON(Response{
+func JSendSuccess(c *fiber.Ctx, data any) {
+	c.Status(fiber.StatusOK).JSON(Response{
 		Status: "success",
 		Data:   data,
 	})
 }
 
-func JSendFail(c *fiber.Ctx, data any, code int) error {
-	return c.Status(code).JSON(Response{
+func JSendFail(c *fiber.Ctx, data any, code int) {
+	c.Status(code).JSON(Response{
 		Status: "fail",
 		Data:   data,
 	})
 }
 
-func JSendError(c *fiber.Ctx, data any, code int) error {
-	return c.Status(code).JSON(Response{
+func JSendError(c *fiber.Ctx, data any, code int) {
+	c.Status(code).JSON(Response{
 		Status: "error",
 		Data:   data,
 	})
