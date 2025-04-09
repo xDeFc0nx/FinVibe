@@ -1,15 +1,16 @@
 package main
 
 import (
-	"io"
-	"log/slog"
-	"os"
-
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
+	"github.com/pkg/errors"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/handlers"
+	"io"
+	"log/slog"
+	"os"
 )
 
 func main() {
@@ -62,6 +63,7 @@ func main() {
 		return c.SendFile("./client/dist/index.html")
 	})
 	if err := app.Listen(os.Getenv("PORT")); err != nil {
-		slog.Error("Error Listening", slog.String("error", err.Error()))
+		slog.Error("Error Listening",
+			slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))))
 	}
 }
