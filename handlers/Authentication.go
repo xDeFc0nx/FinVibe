@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"log"
 	"log/slog"
 	"os"
@@ -46,11 +47,11 @@ func DecodeJWTToken(token string) (string, string, error) {
 	parsedToken, err := jwt.Parse(
 		token,
 		func(token *jwt.Token) (any, error) {
-			if _, err := token.Method.(*jwt.SigningMethodHMAC); !err {
-				slog.Error(
-					"Unexpected signing method",
-					"method", token.Method.Alg(),
-				)
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				err := fmt.Errorf("unexpected signing method: %v", token.Method.Alg())
+				slog.Error("Unexpected signing method",
+					slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))))
+
 				return nil, fmt.Errorf(
 					"unexpected signing method: %v",
 					token.Method.Alg(),
@@ -62,7 +63,8 @@ func DecodeJWTToken(token string) (string, string, error) {
 		},
 	)
 	if err != nil {
-		slog.Error("Failed to parse token", slog.String("error", err.Error()))
+		slog.Error(MsgTokenDecodeFailed,
+			slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))))
 		return "", "", err
 	}
 
@@ -71,18 +73,18 @@ func DecodeJWTToken(token string) (string, string, error) {
 		userID, ok := claims["user_id"].(string)
 		if !ok {
 			slog.Error(
-				"userID not found in claims",
-			)
-			return "", "", err
+				MsgConnectionIDNotFound,
+				slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))))
+			return "", "", nil
 
 		}
 
 		connectionID, ok := claims["connection_id"].(string)
 		if !ok {
 			slog.Error(
-				"connectionID not found in claims",
-			)
-			return "", "", err
+				MsgConnectionIDNotFound,
+				slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))))
+			return "", "", nil
 
 		}
 
@@ -108,7 +110,7 @@ func CheckAuth(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Token is not valid",
 		}
-		JSendFail(c, data, fiber.StatusUnauthorized)
+		JSendFail(c, data, fiber.StatusUnauthorized, err)
 	}
 
 	_, ok := token.Claims.(*jwt.MapClaims)
@@ -116,7 +118,7 @@ func CheckAuth(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Invalid token format ",
 		}
-		JSendFail(c, data, fiber.StatusUnauthorized)
+		JSendFail(c, data, fiber.StatusUnauthorized, err)
 	}
 
 	data := map[string]any{
@@ -139,7 +141,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"Message": "invalid body",
 		}
-		JSendFail(c, data, fiber.StatusBadRequest)
+		JSendFail(c, data, fiber.StatusBadRequest, err)
 	}
 	if err := db.DB.QueryRow(context.Background(), `
     SELECT id, first_name, last_name, email, password, currency, created_at 
@@ -150,7 +152,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "email or password wrong",
 		}
-		JSendError(c, data, fiber.StatusNotFound)
+		JSendError(c, data, fiber.StatusNotFound, err)
 	}
 	if err := db.DB.QueryRow(context.Background(), `
 		SELECT connection_id 
@@ -160,7 +162,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "failed to find ConnectionID",
 		}
-		JSendError(c, data, fiber.StatusNotFound)
+		JSendError(c, data, fiber.StatusNotFound, err)
 	}
 	err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
@@ -180,14 +182,14 @@ func LoginHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"error": "Wrong Email or password",
 		}
-		JSendError(c, data, fiber.StatusNotFound)
+		JSendError(c, data, fiber.StatusNotFound, err)
 	}
 	token, exp, err := CreateJWTToken(user.ID, socket.ConnectionID)
 	if err != nil {
 		data := map[string]any{
 			"message": "Failed to Create token",
 		}
-		JSendFail(c, data, fiber.StatusInternalServerError)
+		JSendFail(c, data, fiber.StatusInternalServerError, err)
 
 	}
 	c.Cookie(&fiber.Cookie{
@@ -220,7 +222,7 @@ func LogoutHandler(c *fiber.Ctx) error {
 		data := map[string]any{
 			"message": "Token is missing",
 		}
-		JSendFail(c, data, fiber.StatusBadRequest)
+		JSendFail(c, data, fiber.StatusBadRequest, nil)
 	}
 	userID, _, err := DecodeJWTToken(token)
 	if err != nil {
