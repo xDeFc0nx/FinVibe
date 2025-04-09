@@ -19,7 +19,7 @@ import (
 
 var tokenName = "jwt-token"
 
-func Create_JWT_Token(
+func CreateJWTToken(
 	userID string,
 	connectionID string,
 ) (string, int64, error) {
@@ -182,7 +182,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		}
 		JSendError(c, data, fiber.StatusNotFound)
 	}
-	token, exp, err := Create_JWT_Token(user.ID, socket.ConnectionID)
+	token, exp, err := CreateJWTToken(user.ID, socket.ConnectionID)
 	if err != nil {
 		data := map[string]any{
 			"message": "Failed to Create token",

@@ -108,7 +108,7 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Failed to create WebSocket", "details": err.Error()})
 	}
-	token, exp, err := Create_JWT_Token(user.ID, socketID)
+	token, exp, err := CreateJWTToken(user.ID, socketID)
 	if err != nil {
 		return c.Status(500).
 			JSON(fiber.Map{"error": "Failed to Create User", "details": err.Error()})
