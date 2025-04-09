@@ -3,11 +3,11 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
-	"sync"
-
+	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
+	"log/slog"
+	"sync"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -33,13 +33,13 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	if budget.ID == "" {
-		Send_Error(ws, "ID is required", nil)
+		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, ("Bugdet ID")), nil)
 	}
 
 	if _, err := db.DB.Exec(context.Background(), `	
 	SELECT FROM accounts WHERE id = $1 AND user_id = $2
 		`, req.AccountID, userID); err != nil {
-		Send_Error(ws, "Account not found", err)
+		Send_Error(ws, MsgAccountNotFound, err)
 	}
 
 	if _, err := db.DB.Exec(context.Background(), `
@@ -54,11 +54,7 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 		req.TotalSpent,
 		req.Description,
 	); err != nil {
-		slog.Error(
-			"Error creating WebSocket connection",
-			"Err",
-			err,
-		)
+		Send_Error(ws, MsgWebSocketCreationFailed, err)
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
@@ -83,7 +79,7 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if _, err := db.DB.Exec(context.Background(), `	
 	SELECT FROM budgets WHERE id = $1 AND user_id = $2
 		`, req.AccountID, userID); err != nil {
-		Send_Error(ws, "Account not found", err)
+		Send_Error(ws, MsgAccountNotFound, err)
 	}
 
 	var wg sync.WaitGroup
@@ -96,6 +92,7 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 					"Failed to get budget",
 					slog.String("error", err.Error()),
 				)
+				Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Bugdet"), err)
 			}
 		}(&budgets[i])
 	}
@@ -103,7 +100,7 @@ func GetBudgets(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if _, err := db.DB.Exec(context.Background(), `	
 	SELECT FROM budgets WHERE user_id = $1
 		`, userID); err != nil {
-		Send_Error(ws, "budget not found", err)
+		Send_Error(ws, MsgBudgetNotFound, err)
 	}
 	budgetsData := make([]map[string]interface{}, len(budgets))
 
@@ -148,7 +145,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if _, err := db.DB.Exec(context.Background(), `	
 	SELECT FROM budgets WHERE id = $1 AND user_id = $2
 		`, budget.ID, userID); err != nil {
-		Send_Error(ws, "Bugdet not found", err)
+		Send_Error(ws, MsgBudgetNotFound, err)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 	INSERT INTO budgets(id, user_id, account_id, limit, total_spent, description)
@@ -161,7 +158,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 		req.TotalSpent,
 		req.Description,
 	); err != nil {
-		Send_Error(ws, "Failed to update Bugdet", err)
+		Send_Error(ws, fmt.Sprintf(MsgCreateFailedFmt, "Bugdet"), err)
 	}
 
 	response := map[string]interface{}{
@@ -181,7 +178,7 @@ func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
 	if err := json.Unmarshal(data, budget); err != nil {
-		Send_Error(ws, InvalidData, err)
+		Send_Error(ws, MsgInvalidData, err)
 	}
 
 	if budget.ID == "" {
@@ -194,7 +191,7 @@ func DeleteBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 		budget.ID,
 		userID,
 	); err != nil {
-		Send_Error(ws, "Failed to delete Bugdet", err)
+		Send_Error(ws, fmt.Sprintf(MsgDeleteFailedFmt, "Budget"), err)
 	}
 
 	response := map[string]interface{}{
@@ -218,12 +215,12 @@ func GetBudgetCal(ws *websocket.Conn, accountID string) error {
 	if _, err := db.DB.Exec(context.Background(), `	
 	SELECT FROM accounts WHERE id = $1
 		`, accountID); err != nil {
-		Send_Error(ws, "Bugdet not found", err)
+		Send_Error(ws, MsgBudgetNotFound, err)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
  SELECT FROM transactions WHERE account_id = $1
 		`, accountID); err != nil {
-		Send_Error(ws, "Transaction not found", err)
+		Send_Error(ws, MsgTransactionNotFound, err)
 	}
 	totalBalance := float64(0)
 	for _, t := range transactions {
@@ -238,7 +235,7 @@ INSERT INTO budgets
 		total_spent = $1
 		WHERE account_id = $2
 		`, budget.TotalSpent, accountID); err != nil {
-		Send_Error(ws, "failed to update budgets", err)
+		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Budget"), err)
 	}
 	return nil
 }
