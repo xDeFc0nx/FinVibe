@@ -15,6 +15,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
+		slog.Error("Error loading env", slog.String("err", err.Error()))
 	}
 	file, err := os.OpenFile(
 		"app.log",
