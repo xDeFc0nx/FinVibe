@@ -33,11 +33,11 @@ func CreateRecurring(
 	recurring.Amount = amount
 
 	if recurring.Frequency == "" {
-		Send_Error(ws, MsgInvalidFrequency, nil)
+		SendError(ws, MsgInvalidFrequency, nil)
 		return nil
 	}
 	if err := json.Unmarshal(data, &recurring); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return err
 	}
 
@@ -81,7 +81,7 @@ func CreateRecurring(
 		)
 
 	default:
-		Send_Error(ws, "Invalid frequency", nil)
+		SendError(ws, "Invalid frequency", nil)
 		return nil
 	}
 	if _, err := db.DB.Exec(context.Background(), `
@@ -96,12 +96,12 @@ INSERT INTO recurrings (id, transaction_id, amount, frequency, start_date, next_
 		recurring.StartDate,
 		recurring.NextDate,
 	); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgCreateFailedFmt, "Transaction"), err)
+		SendError(ws, fmt.Sprintf(MsgCreateFailedFmt, "Transaction"), err)
 	}
 	go func() {
 		err := handleRecurringTransaction(ws, recurring, userID, accountID)
 		if err != nil {
-			Send_Error(ws, "Failed to handle recurring transactions", err)
+			SendError(ws, "Failed to handle recurring transactions", err)
 		}
 	}()
 
@@ -120,18 +120,18 @@ func CreateTransaction(
 
 	transaction.UserID = userID
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 
 	if transaction.AccountID == "" {
-		Send_Error(ws, MsgMissingAccountID, nil)
+		SendError(ws, MsgMissingAccountID, nil)
 		return
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 		`, transaction.AccountID, userID); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
  INSERT INTO transactions (id, user_id, account_id, type, description, amount, is_recurring, created_at, updated_at)
@@ -148,14 +148,14 @@ SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 		transaction.CreatedAt,
 		transaction.UpdatedAt,
 	); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgCreateFailedFmt, "Transaction"), err)
+		SendError(ws, fmt.Sprintf(MsgCreateFailedFmt, "Transaction"), err)
 	}
 	if transaction.IsRecurring {
 
 		var inputData map[string]any
 		if err := json.Unmarshal(data, &inputData); err != nil {
 
-			Send_Error(ws, "Failed to parse recurring frequency", err)
+			SendError(ws, "Failed to parse recurring frequency", err)
 			return
 		}
 
@@ -163,7 +163,7 @@ SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 			recurring.Frequency = freq
 		} else {
 
-			Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "Frequency"), nil)
+			SendError(ws, fmt.Sprintf(MsgMissingFieldFmt, "Frequency"), nil)
 			return
 		}
 		if err := CreateRecurring(ws, data, transaction.ID, account.ID, userID, transaction.Amount); err != nil {
@@ -187,7 +187,7 @@ SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 
 	responseData, _ := json.Marshal(response)
 
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func handleRecurringTransaction(
@@ -218,7 +218,7 @@ INSERT INTO transactions (id, user_id, account_id, amount, created_at, updated_a
 			newTransaction.CreatedAt,
 			newTransaction.UpdatedAt,
 		); err != nil {
-			Send_Error(ws, fmt.Sprintf(MsgCreateFailedFmt, "Transactions"), err)
+			SendError(ws, fmt.Sprintf(MsgCreateFailedFmt, "Transactions"), err)
 		}
 		switch recurring.Frequency {
 		case "Daily":
@@ -233,7 +233,7 @@ UPDATE recurrings
 			SET recurring.next_date = $1
 			WHERE transaction_id = $2
 			`, recurring.NextDate, recurring.TransactionID); err != nil {
-			Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Recurring"), err)
+			SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Recurring"), err)
 		}
 	}
 }
@@ -241,17 +241,17 @@ UPDATE recurrings
 func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Send_Error(ws, InvalidData, err)
+		SendError(ws, InvalidData, err)
 		return
 	}
 
 	if requestData.DateRange == "" {
-		Send_Error(ws, requestData.DateRange, nil)
+		SendError(ws, requestData.DateRange, nil)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 		`, requestData.AccountID, userID); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 
 	start, end := GetDateRange(requestData.DateRange)
@@ -266,7 +266,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		end,
 	)
 	if err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
 	}
 
 	defer rows.Close()
@@ -274,7 +274,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
 		slog.Error("failed", slog.String("err", err.Error()))
-		Send_Error(ws, MsgCollectRowsFailed, err)
+		SendError(ws, MsgCollectRowsFailed, err)
 	}
 	transactionData := make([]map[string]any, len(transactions))
 
@@ -297,7 +297,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 
 	responseData, _ := json.Marshal(response)
 
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func GetTransactionById(
@@ -310,12 +310,12 @@ func GetTransactionById(
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 
 	if transaction.UserID != userID {
-		Send_Error(ws, "Transaction does not belong to you", nil)
+		SendError(ws, MsgUnauthorized, nil)
 		return
 	}
 
@@ -334,7 +334,7 @@ func GetTransactionById(
 		&transaction.CreatedAt,
 	)
 	if err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
 	}
 
 	transactionData := map[string]any{
@@ -351,7 +351,7 @@ func GetTransactionById(
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func UpdateTransaction(
@@ -362,17 +362,17 @@ func UpdateTransaction(
 	transaction := new(types.Transaction)
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 	}
 
 	if transaction.UserID != userID {
-		Send_Error(ws, "Transaction does not belong to you", nil)
+		SendError(ws, MsgUnauthorized, nil)
 		return
 	}
 	if _, err := db.DB.Query(context.Background(), `
 SELECT EXISTS transactions WHERE id = $1 AND user_id = $2
 		`, transaction.ID, userID); err != nil {
-		Send_Error(ws, MsgTransactionNotFound, err)
+		SendError(ws, MsgTransactionNotFound, err)
 
 	}
 	if _, err := db.DB.Exec(context.Background(), `
@@ -392,7 +392,7 @@ UPDATE transactions  SET
 		userID,
 		transaction.ID,
 	); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
 	}
 	transactionData := map[string]any{
 		"ID":        transaction.ID,
@@ -405,7 +405,7 @@ UPDATE transactions  SET
 		"Success": transactionData,
 	}
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 
 }
 
@@ -417,30 +417,30 @@ func DeleteTransaction(ws *websocket.Conn, data json.RawMessage,
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 
 		return
 	}
 	if transaction.UserID != userID {
-		Send_Error(ws, "Transaction does not belong to you", nil)
+		SendError(ws, MsgUnauthorized, nil)
 		return
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT EXISTS transactions WHERE id = $1 AND user_id = $2
 		`, transaction.ID, userID); err != nil {
-		Send_Error(ws, MsgTransactionNotFound, err)
+		SendError(ws, MsgTransactionNotFound, err)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 			DELETE transactions WHERE id = $1 AND user_id = $2
 			`, transaction.ID, userID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgDeleteFailedFmt, "Transaction"), err)
+		SendError(ws, fmt.Sprintf(MsgDeleteFailedFmt, "Transaction"), err)
 	}
 	response := map[string]any{
 		"Success": "Transaction Deleted",
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func GetAccountIncome(
@@ -453,7 +453,7 @@ func GetAccountIncome(
 
 	account.ID = requestData.AccountID
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 
@@ -462,7 +462,7 @@ SELECT 1 id, type, income, expense, balance
 	FROM accounts
 		WHERE id = $1 AND user_id = $2
 				`, account.ID, userID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 	incType := "Income"
 	start, end := GetDateRange(requestData.DateRange)
@@ -479,13 +479,13 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		incType,
 	)
 	if err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
 	}
 
 	defer rows.Close()
 	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
-		Send_Error(ws, MsgCollectRowsFailed, err)
+		SendError(ws, MsgCollectRowsFailed, err)
 	}
 
 	totalIncome := 0.0
@@ -500,14 +500,14 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		WHERE id = $2 AND user_id = $3
 	
 		`, totalIncome, requestData.AccountID, userID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account"), err)
+		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account"), err)
 	}
 	response := map[string]any{
 		"totalIncome": account.Income,
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func GetAccountExpense(
@@ -520,7 +520,7 @@ func GetAccountExpense(
 
 	account.ID = requestData.AccountID
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 	if err := db.DB.QueryRow(context.Background(), `
@@ -528,7 +528,7 @@ SELECT 1 id, type, income, expense, balance
 	FROM accounts
 		WHERE id = $1 AND user_id = $2
 				`, account.ID, userID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 	expType := "Expense"
 	start, end := GetDateRange(requestData.DateRange)
@@ -545,13 +545,13 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		expType,
 	)
 	if err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
 	}
 
 	defer rows.Close()
 	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
-		Send_Error(ws, MsgCollectRowsFailed, err)
+		SendError(ws, MsgCollectRowsFailed, err)
 	}
 
 	totalExpense := 0.0
@@ -564,7 +564,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		where id = $2 AND user_id = $3
 	
 		`, totalExpense, requestData.AccountID, userID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Expense"), err)
+		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Expense"), err)
 	}
 
 	response := map[string]any{
@@ -572,7 +572,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func GetAccountBalance(
@@ -583,7 +583,7 @@ func GetAccountBalance(
 	account := new(types.Accounts)
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 
@@ -601,7 +601,7 @@ SELECT *
 		&account.CreatedAt,
 		&account.UpdatedAt,
 	); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 	totalBalance := account.Income - account.Expense
 	if _, err := db.DB.Exec(context.Background(), `
@@ -610,14 +610,14 @@ SELECT *
 		WHERE id = $2 AND user_id = $3
 	
 		`, totalBalance, requestData.AccountID, userID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
+		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
 	}
 	response := map[string]any{
 		"accountBalance": account.Balance,
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func GetAccountsBalance(ws *websocket.Conn, AccountID string) error {
@@ -637,7 +637,7 @@ func GetAccountsBalance(ws *websocket.Conn, AccountID string) error {
 		&account.CreatedAt,
 		&account.UpdatedAt,
 	); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 	totalBalance := account.Income - account.Expense
 	if _, err := db.DB.Exec(context.Background(), `
@@ -646,7 +646,7 @@ func GetAccountsBalance(ws *websocket.Conn, AccountID string) error {
 		WHERE id = $2
 	
 		`, totalBalance, AccountID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
+		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
 	}
 
 	return nil

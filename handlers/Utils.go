@@ -54,13 +54,13 @@ func JSendError(c *fiber.Ctx, data any, code int, err error) {
 
 var InvalidData = "Error: Invalid form data"
 
-func Send_Message(ws *websocket.Conn, sendText string) {
+func SendMessage(ws *websocket.Conn, sendText string) {
 	if err := ws.WriteMessage(websocket.TextMessage, []byte(sendText)); err != nil {
 		slog.Error("failed to send message", slog.String("Error", err.Error()))
 	}
 }
 
-func Send_Error(ws *websocket.Conn, sendText string, err error) {
+func SendError(ws *websocket.Conn, sendText string, err error) {
 	slog.Error("error",
 		slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))),
 	)

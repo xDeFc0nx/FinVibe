@@ -182,7 +182,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
     FROM users 
     WHERE id = $1
 `, userID).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Currency, &user.CreatedAt); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "User"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "User"), err)
 		return
 	}
 
@@ -199,7 +199,7 @@ func GetUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
@@ -207,11 +207,11 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := db.DB.QueryRow(context.Background(),
 		"SELECT * FROM users WHERE id = $1", userID).Scan(&user); err != nil {
-		Send_Error(ws, MsgUserNotFound, err)
+		SendError(ws, MsgUserNotFound, err)
 		return
 	}
 	if err := json.Unmarshal(data, &user); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 
@@ -220,37 +220,37 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	)
 
 	if !emailRegex.MatchString(user.Email) {
-		Send_Error(ws, MsgInvalidEmail, nil)
+		SendError(ws, MsgInvalidEmail, nil)
 		return
 	}
 
 	var existingUser types.User
 	if err := db.DB.QueryRow(context.Background(), "SELECT * FROM users WHERE email = $1 AND id != $2",
 		user.Email, userID).Scan(&existingUser); err == nil {
-		Send_Error(ws, MsgEmailExists, nil)
+		SendError(ws, MsgEmailExists, nil)
 		return
 	}
 	if user.FirstName == "" {
-		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "First Name"), nil)
+		SendError(ws, fmt.Sprintf(MsgMissingFieldFmt, "First Name"), nil)
 		return
 	}
 
 	if user.LastName == "" {
-		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "Last Name"), nil)
+		SendError(ws, fmt.Sprintf(MsgMissingFieldFmt, "Last Name"), nil)
 		return
 	}
 	if user.Email == "" {
-		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "Email"), nil)
+		SendError(ws, fmt.Sprintf(MsgMissingFieldFmt, "Email"), nil)
 		return
 	}
 
 	if user.Currency == "" {
-		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "Currency"), nil)
+		SendError(ws, fmt.Sprintf(MsgMissingFieldFmt, "Currency"), nil)
 		return
 	}
 
 	if len(user.Password) < 8 {
-		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "Password must be at least 8 characters"), nil)
+		SendError(ws, fmt.Sprintf(MsgMissingFieldFmt, "Password must be at least 8 characters"), nil)
 		return
 	}
 
@@ -258,7 +258,7 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 		"UPDATE users SET firs_tname = $1, last_name = $2, email = $3, password = $4, currency = $5 WHERE id = $6",
 		user.FirstName, user.LastName, user.Email, user.Password, user.Currency, userID,
 	); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "User"), err)
+		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "User"), err)
 		return
 	}
 
@@ -274,7 +274,7 @@ func UpdateUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	responseData, _ := json.Marshal(response)
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }
 
 func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
@@ -282,16 +282,16 @@ func DeleteUser(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := db.DB.QueryRow(context.Background(),
 		"SELECT * FROM users WHERE id = $1", userID).Scan(&user); err != nil {
-		Send_Error(ws, MsgUserNotFound, err)
+		SendError(ws, MsgUserNotFound, err)
 		return
 	}
 	if _, err := db.DB.Exec(context.Background(), "DELETE users WHERE id = $1", userID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgDeleteFailedFmt, "User"), err)
+		SendError(ws, fmt.Sprintf(MsgDeleteFailedFmt, "User"), err)
 		return
 	}
 	response := map[string]string{
 		"Success": "Deleted User",
 	}
 	responseJson, _ := json.Marshal(response)
-	Send_Message(ws, string(responseJson))
+	SendMessage(ws, string(responseJson))
 }

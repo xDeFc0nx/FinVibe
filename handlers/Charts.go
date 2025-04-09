@@ -12,14 +12,14 @@ import (
 
 func getCharts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		Send_Error(ws, MsgInvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 		`, requestData.AccountID, userID); err != nil {
-		Send_Error(ws, MsgAccountNotFound, err)
+		SendError(ws, MsgAccountNotFound, err)
 	}
 	start, end := GetDateRange(requestData.DateRange)
 	rows, err := db.DB.Query(context.Background(), `
@@ -33,14 +33,14 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		end,
 	)
 	if err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "transactions"), err)
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "transactions"), err)
 	}
 
 	defer rows.Close()
 	var transactions []types.Transaction
 	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
-		Send_Error(ws, MsgCollectRowsFailed, err)
+		SendError(ws, MsgCollectRowsFailed, err)
 	}
 
 	type byDay struct {
@@ -110,5 +110,5 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 
 	responseData, _ := json.Marshal(response)
 
-	Send_Message(ws, string(responseData))
+	SendMessage(ws, string(responseData))
 }

@@ -59,7 +59,7 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 		userID,
 	).Scan(&userExists)
 	if err != nil || !userExists {
-		Send_Error(ws, MsgUserNotFound, err)
+		SendError(ws, MsgUserNotFound, err)
 		return
 
 	}
@@ -69,7 +69,7 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 		WHERE user_id = $2
 
 		`, userID, time.Now().UTC()); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "WebSocket"), err)
+		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "WebSocket"), err)
 
 	}
 }
@@ -172,7 +172,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 								"message": "pong",
 							}
 							responseJson, _ := json.Marshal(response)
-							Send_Message(ws, string(responseJson))
+							SendMessage(ws, string(responseJson))
 						}
 					}
 
@@ -183,7 +183,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 								"message": "Timeout",
 							}
 							responseJson, _ := json.Marshal(response)
-							Send_Message(ws, string(responseJson))
+							SendMessage(ws, string(responseJson))
 							ws.Close()
 							return
 						}
@@ -204,7 +204,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			}
 
 			if err := json.Unmarshal(msg, &message); err != nil {
-				Send_Error(ws, InvalidData, err)
+				SendError(ws, InvalidData, err)
 				continue
 			}
 			slog.Info(
@@ -215,7 +215,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			)
 
 			if message.Action == "" {
-				Send_Error(ws, "Action required", err)
+				SendError(ws, "Action required", err)
 				continue
 			}
 
@@ -251,7 +251,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			if exists {
 				handler(ws, message.Data, userID)
 			} else {
-				Send_Error(ws, "Unknown Action", err)
+				SendError(ws, "Unknown Action", err)
 			}
 		}
 
