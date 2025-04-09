@@ -142,17 +142,23 @@ func LoginHandler(c *fiber.Ctx) error {
 			"Message": "invalid body",
 		}
 		JSendFail(c, data, fiber.StatusBadRequest, err)
+		return err
 	}
+	var emailExists bool
 	if err := db.DB.QueryRow(context.Background(), `
-    SELECT id, first_name, last_name, email, password, currency, created_at 
-    FROM users 
-    WHERE email = $1
-`, req.Email).Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.Currency, &user.CreatedAt); err != nil {
-		slog.Error("Failed to fetch user", slog.String("error", err.Error()))
+		SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)
+		`, req.Email).Scan(&emailExists); err != nil {
 		data := map[string]any{
-			"message": "email or password wrong",
+			"message": "Failed to check email existence",
 		}
-		JSendError(c, data, fiber.StatusNotFound, err)
+		JSendError(c, data, fiber.StatusBadRequest, err)
+	}
+	if !emailExists {
+		data := map[string]any{
+			"message": "Email does not Exist",
+		}
+		JSendError(c, data, fiber.StatusBadRequest, nil)
+		return nil
 	}
 	if err := db.DB.QueryRow(context.Background(), `
 		SELECT connection_id 
@@ -163,12 +169,12 @@ func LoginHandler(c *fiber.Ctx) error {
 			"message": "failed to find ConnectionID",
 		}
 		JSendError(c, data, fiber.StatusNotFound, err)
+		return err
 	}
-	err := bcrypt.CompareHashAndPassword(
+	if err := bcrypt.CompareHashAndPassword(
 		[]byte(user.Password),
 		[]byte(req.Password),
-	)
-	if err != nil {
+	); err != nil {
 		slog.Error(
 			"Password Login Attempt",
 			"Email",
@@ -183,6 +189,7 @@ func LoginHandler(c *fiber.Ctx) error {
 			"error": "Wrong Email or password",
 		}
 		JSendError(c, data, fiber.StatusNotFound, err)
+		return err
 	}
 	token, exp, err := CreateJWTToken(user.ID, socket.ConnectionID)
 	if err != nil {
@@ -190,6 +197,7 @@ func LoginHandler(c *fiber.Ctx) error {
 			"message": "Failed to Create token",
 		}
 		JSendFail(c, data, fiber.StatusInternalServerError, err)
+		return err
 
 	}
 	c.Cookie(&fiber.Cookie{
