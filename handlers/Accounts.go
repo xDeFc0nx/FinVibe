@@ -24,7 +24,7 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	var req Request
 
 	if err := json.Unmarshal(data, &req); err != nil {
-		Send_Error(ws, MsgInvalidData, StackTrace)
+		Send_Error(ws, MsgInvalidData, err)
 		return
 	}
 	account := &types.Accounts{
@@ -43,7 +43,7 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		userID,
 	).Scan(&userExists)
 	if err != nil || !userExists {
-		Send_Error(ws, MsgUserNotFound, StackTrace)
+		Send_Error(ws, MsgUserNotFound, err)
 		return
 	}
 	if _, err := db.DB.Exec(context.Background(),
@@ -66,7 +66,7 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		time.Now().UTC(),
 		time.Now().UTC(),
 	); err != nil {
-		Send_Error(ws, MsgCreateFailedFmt, StackTrace)
+		Send_Error(ws, MsgCreateFailedFmt, err)
 	}
 	response := map[string]any{
 		"account": map[string]any{
@@ -89,7 +89,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 		userID,
 	)
 	if err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account"), StackTrace)
+		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account"), err)
 		return
 	}
 
@@ -97,12 +97,12 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	accounts := []types.Accounts{}
 	accounts, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Accounts])
 	if err != nil {
-		Send_Error(ws, MsgCollectRowsFailed, StackTrace)
+		Send_Error(ws, MsgCollectRowsFailed, err)
 	}
 	accountData := make([]map[string]any, 0, len(accounts))
 	for _, a := range accounts {
 		if err := GetAccountsBalance(ws, a.ID); err != nil {
-			Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Balance"), StackTrace)
+			Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Balance"), err)
 
 			continue
 		}
@@ -118,7 +118,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	response := map[string]any{"accounts": accountData}
 	responseData, err := json.Marshal(response)
 	if err != nil {
-		Send_Error(ws, MsgGenerateResponseFailed, StackTrace)
+		Send_Error(ws, MsgGenerateResponseFailed, err)
 		return
 	}
 	Send_Message(ws, string(responseData))
@@ -127,13 +127,13 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		Send_Error(ws, MsgInvalidData, StackTrace)
+		Send_Error(ws, MsgInvalidData, err)
 		return
 	}
 
 	if err := db.DB.QueryRow(context.Background(),
 		"SELECT * FROM accounts WHERE user_id = $1", userID).Scan(&account); err != nil {
-		Send_Error(ws, MsgAccountNotFound, StackTrace)
+		Send_Error(ws, MsgAccountNotFound, err)
 		return
 	}
 	if _, err := db.DB.Exec(context.Background(), `
@@ -150,7 +150,7 @@ func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		account.ID,
 		account.UserID,
 	); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account"), StackTrace)
+		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account"), err)
 	}
 	accountData := map[string]any{
 		"ID":   account.ID,
@@ -169,7 +169,7 @@ func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
-		Send_Error(ws, MsgInvalidData, StackTrace)
+		Send_Error(ws, MsgInvalidData, err)
 
 		return
 
@@ -177,11 +177,11 @@ func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := db.DB.QueryRow(context.Background(),
 		"SELECT * FROM accounts WHERE user_id = $1", userID).Scan(&account); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account"), StackTrace)
+		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account"), err)
 		return
 	}
 	if _, err := db.DB.Exec(context.Background(), `DELETE FROM accounts WHERE id = $1`, account.ID); err != nil {
-		Send_Error(ws, fmt.Sprintf(MsgDeleteFailedFmt, "Account"), StackTrace)
+		Send_Error(ws, fmt.Sprintf(MsgDeleteFailedFmt, "Account"), err)
 	}
 
 	accountData := map[string]any{
