@@ -1,10 +1,5 @@
 package handlers
 
-import (
-	"fmt"
-	"github.com/pkg/errors"
-)
-
 const (
 	MsgInvalidData        = "Invalid form data" // You already have this as a var, using const for consistency
 	MsgInvalidInput       = "Invalid input provided"
@@ -24,8 +19,6 @@ const (
 	MsgMissingFrequency   = "Recurring frequency is required"
 	MsgDateRangeRequired  = "Date range is required"
 )
-
-var stackTrace = fmt.Sprintf("%+v", errors.Wrap(err, ""))
 
 // --- Not Found Errors ---
 const (
