@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"log/slog"
+	"sync"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"log/slog"
-	"sync"
 
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
@@ -27,12 +29,12 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 		Send_Error(ws, InvalidData, err)
 	}
 	if goal.ID == "" {
-		Send_Error(ws, "ID is Required", nil)
+		Send_Error(ws, MsgMissingID, nil)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
  SELECT FROM goals WHERE id = $1 AND user_id = $2
 		`, req.AccountID, userID); err != nil {
-		Send_Error(ws, "Account not found", err)
+		Send_Error(ws, MsgAccountNotFound, err)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 INSERT INTO goals (id, user_id, account_id, amount, description)
@@ -44,7 +46,7 @@ INSERT INTO goals (id, user_id, account_id, amount, description)
 		goal.Amount,
 		goal.Description,
 	); err != nil {
-		Send_Error(ws, "failed to create goal", err)
+		Send_Error(ws, fmt.Sprintf(MsgCreateFailedFmt, "Goal"), err)
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
@@ -69,7 +71,7 @@ func GetGoals(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT FROM accounts WHERE id = $1 AND user_id = $2
 		`, req.AccountID, userID); err != nil {
-		Send_Error(ws, "Account not found", err)
+		Send_Error(ws, MsgAccountNotFound, err)
 	}
 	var wg sync.WaitGroup
 	for i := range goals {
@@ -77,10 +79,7 @@ SELECT FROM accounts WHERE id = $1 AND user_id = $2
 		go func(a *types.Goal) {
 			defer wg.Done()
 			if err := GetGoalCal(ws, a.ID); err != nil {
-				slog.Error(
-					"failed to get goal",
-					slog.String("error", err.Error()),
-				)
+				Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Goal"), err)
 			}
 		}(&goals[i])
 	}
@@ -88,7 +87,7 @@ SELECT FROM accounts WHERE id = $1 AND user_id = $2
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT FROM goals WHERE user_id = $1
 		`, userID); err != nil {
-		Send_Error(ws, "goals not found", err)
+		Send_Error(ws, fmt.Sprintf(MsgFetchFailedFmt, "Goal"), err)
 	}
 
 	goalsData := make([]map[string]interface{}, len(goals))
@@ -123,10 +122,10 @@ func UpdateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	goal := new(types.Goal)
 
 	if err := json.Unmarshal(data, goal); err != nil {
-		Send_Error(ws, "Invalid goal data", err)
+		Send_Error(ws, MsgInvalidData, err)
 	}
 	if goal.ID == "" {
-		Send_Error(ws, "Goal is required", nil)
+		Send_Error(ws, fmt.Sprintf(MsgMissingFieldFmt, "Goal ID"), nil)
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT FROM goals WHERE id = $1 AND user_id = $2
@@ -162,7 +161,7 @@ func DeleteGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	goal := new(types.Goal)
 
 	if err := json.Unmarshal(data, goal); err != nil {
-		Send_Error(ws, "Invalid goal data", err)
+		Send_Error(ws, MsgInvalidData, err)
 	}
 
 	if goal.ID == "" {
@@ -171,7 +170,7 @@ func DeleteGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 	if _, err := db.DB.Exec(context.Background(), `
 FROM goals WHERE id = $1 AND user_id = $2
 		`, goal.ID, userID); err != nil {
-		Send_Error(ws, "Goal not found", err)
+		Send_Error(ws, MsgBudgetNotFound, err)
 	}
 	response := map[string]interface{}{
 		"Success": map[string]interface{}{
@@ -192,7 +191,7 @@ func GetGoalCal(ws *websocket.Conn, accountID string) error {
 	if _, err := db.DB.Exec(context.Background(), `
 SELECT 1 FROM accounts WHERE id = $1
 		`, accountID); err != nil {
-		Send_Error(ws, "account not found", err)
+		Send_Error(ws, MsgAccountNotFound, err)
 	}
 	rows, err := db.DB.Query(context.Background(),
 		`SELECT id, user_id, account_id, amount, description, is_recurring,
@@ -200,7 +199,7 @@ SELECT 1 FROM accounts WHERE id = $1
 	)
 
 	if err != nil {
-		Send_Error(ws, "Account not found", err)
+		Send_Error(ws, MsgAccountNotFound, err)
 	}
 
 	defer rows.Close()
@@ -220,7 +219,7 @@ SELECT 1 FROM accounts WHERE id = $1
 	if _, err := db.DB.Exec(context.Background(), `
 UPDATE goals SET amount = $1 WHERE account_id = $2
 		`, goal.Amount, accountID); err != nil {
-		Send_Error(ws, "failed to update goal", err)
+		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Goal"), err)
 	}
 
 	return nil
