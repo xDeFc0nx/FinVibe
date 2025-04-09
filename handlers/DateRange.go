@@ -60,26 +60,6 @@ func GetDateRange(dateRange string) (start, end time.Time) {
 		start = time.Date(now.Year()-1, 1, 1, 0, 0, 0, 0, now.Location())
 		end = time.Date(now.Year()-1, 12, 31, 23, 59, 59, 0, now.Location())
 	default:
-		start = time.Date(
-			now.Year(),
-			now.Month(),
-			1,
-			0,
-			0,
-			0,
-			0,
-			now.Location(),
-		)
-		end = time.Date(
-			now.Year(),
-			now.Month()+1,
-			0,
-			23,
-			59,
-			59,
-			0,
-			now.Location(),
-		)
 	}
 
 	return start, end
