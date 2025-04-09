@@ -3,20 +3,20 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"log/slog"
-	"time"
-
+	"fmt"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"log/slog"
+	"time"
 
+	"github.com/pkg/errors"
 	"github.com/xDeFc0nx/FinVibe/db"
 	"github.com/xDeFc0nx/FinVibe/types"
 )
 
 func CreateWebSocket(userID string) (string, error) {
 	socket := new(types.WebSocket)
-	socket.UserID = userID
 	socket.ConnectionID = uuid.New().String()
 	socket.IsActive = true
 	socket.LastPing = time.Now()
@@ -25,11 +25,15 @@ func CreateWebSocket(userID string) (string, error) {
 	var userExists bool
 	checkErr := db.DB.QueryRow(context.Background(), `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`, userID).Scan(&userExists)
 	if checkErr != nil {
-		slog.Error("Failed to check user existence for websocket", slog.String("error", checkErr.Error()), slog.String("userID", userID))
+
+		slog.Error(
+			"Failed to check user existence for websocket",
+			slog.String("userID", userID),
+			slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(checkErr, ""))))
 		return "", nil
 	}
 	if !userExists {
-		slog.Error("user with ID %s not found for webscoket", userID)
+		slog.Error("user with ID %s not found for webscoket", "UserID", userID)
 		return "", nil
 	}
 	if _, err := db.DB.Exec(context.Background(), `
@@ -39,9 +43,8 @@ func CreateWebSocket(userID string) (string, error) {
 			`, userID, userID, socket.ConnectionID, socket.IsActive, socket.LastPing, socket.CreatedAt); err != nil {
 		slog.Error(
 			"Error creating WebSocket connection",
-			"Err",
-			err,
-		)
+			slog.String("userID", userID),
+			slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))))
 	}
 
 	return socket.ID, nil
@@ -56,7 +59,7 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 		userID,
 	).Scan(&userExists)
 	if err != nil || !userExists {
-		Send_Error(ws, "User not found", err)
+		Send_Error(ws, MsgUserNotFound, err)
 		return
 
 	}
@@ -66,7 +69,7 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 		WHERE user_id = $2
 
 		`, userID, time.Now().UTC()); err != nil {
-		Send_Error(ws, "Failed to update last ping", err)
+		Send_Error(ws, fmt.Sprintf(MsgUpdateFailedFmt, "WebSocket"), err)
 
 	}
 }
@@ -90,13 +93,18 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 		WHERE user_id = $2
 
 		`, userID, time.Now().UTC()); err != nil {
-			JSendFail(c, "Failed to update last ping", 500)
+			JSendFail(c, fmt.Sprintf(MsgUpdateFailedFmt, "WebSocket"), fiber.StatusBadRequest, err)
 		}
 
 		return c.Status(101).
 			JSON(fiber.Map{"message": "WebSocket connection updated successfully"})
+
 	}
-	return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+	data := map[string]any{
+		"message": MsgUnauthorized,
+	}
+	JSendError(c, data, fiber.StatusUnauthorized, nil)
+	return nil
 }
 
 func HandleWebSocketConnection(c *fiber.Ctx) error {
@@ -106,18 +114,20 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	token := c.Cookies("jwt-token")
 
 	if token == "" {
-		slog.Info("Token is missing", slog.String("error", "Token is missing"))
-		return c.Status(400).JSON(fiber.Map{"error": "Token is missing"})
+		data := map[string]any{
+			"message": MsgMissingToken,
+		}
+		JSendError(c, data, fiber.StatusUnauthorized, nil)
+		return nil
 	}
 
 	userID, connectionID, err := DecodeJWTToken(token)
 	if err != nil {
-		slog.Error(
-			"Failed to decode JWT token",
-			slog.String("error", err.Error()),
-		)
-
-		return c.Status(401).JSON(fiber.Map{"error": "Unauthorized"})
+		data := map[string]any{
+			"message": MsgTokenDecodeFailed,
+		}
+		JSendError(c, data, fiber.StatusUnauthorized, nil)
+		return nil
 	}
 	var userExists bool
 	err = db.DB.QueryRow(
@@ -126,6 +136,10 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		connectionID,
 	).Scan(&userExists)
 	if err != nil || !userExists {
+		data := map[string]any{
+			"message": fmt.Sprintf(MsgFetchFailedFmt, "WebSocket"),
+		}
+		JSendError(c, data, fiber.StatusInternalServerError, err)
 		return err
 
 	}
@@ -136,7 +150,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		WHERE user_id = $2
 
 		`, time.Now().UTC(), userID); err != nil {
-		JSendFail(c, "Failed to update last ping", 500)
+		JSendFail(c, MsgWebSocketUpdateFailed, fiber.StatusBadRequest, err)
 	}
 	return websocket.New(func(ws *websocket.Conn) {
 		slog.Info(
@@ -250,7 +264,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		WHERE user_id = $1
 
 		`, userID); err != nil {
-				JSendFail(c, "Failed to update last ping", 500)
+				JSendFail(c, MsgWebSocketUpdateFailed, fiber.StatusBadRequest, err)
 			}
 		}()
 	})(c)
