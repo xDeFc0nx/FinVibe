@@ -147,7 +147,10 @@ func LoginHandler(c *fiber.Ctx) error {
 	var emailExists bool
 	if err := db.DB.QueryRow(context.Background(), `
 		SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)
-		`, req.Email).Scan(&emailExists); err != nil {
+		`, req.Email).Scan(
+		&emailExists,
+		&user.ID,
+	); err != nil {
 		data := map[string]any{
 			"message": "Failed to check email existence",
 		}

@@ -241,7 +241,7 @@ UPDATE recurrings
 func GetTransactions(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	if err := json.Unmarshal(data, &requestData); err != nil {
-		SendError(ws, InvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 		return
 	}
 

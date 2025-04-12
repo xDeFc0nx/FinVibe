@@ -10,6 +10,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/joho/godotenv v1.5.1
 	github.com/pkg/errors v0.9.1
+	github.com/rotisserie/eris v0.5.4
 	golang.org/x/crypto v0.35.0
 )
 

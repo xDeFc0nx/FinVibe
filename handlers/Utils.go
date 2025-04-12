@@ -2,17 +2,20 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
-
-	"github.com/gofiber/fiber/v2"
-
-	"fmt"
-	"github.com/pkg/errors"
-
 	"github.com/gofiber/contrib/websocket"
+	"github.com/gofiber/fiber/v2"
+	"github.com/rotisserie/eris"
+	"log/slog"
 )
 
-type Error struct {
+func Eris(err error, status string, data any) {
+
+	wrapError := eris.Wrap(err, "error occurred during operation")
+	errorJson := eris.ToJSON(wrapError, true)
+	slog.Error(status,
+		data,
+		slog.Any(status, errorJson),
+	)
 }
 
 type Response struct {
@@ -33,11 +36,7 @@ func JSendFail(c *fiber.Ctx, data any, code int, err error) {
 		Status: "fail",
 		Data:   data,
 	})
-	slog.Info("fail",
-		data,
-		slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))),
-	)
-
+	Eris(err, "fail", data)
 }
 
 func JSendError(c *fiber.Ctx, data any, code int, err error) {
@@ -46,13 +45,9 @@ func JSendError(c *fiber.Ctx, data any, code int, err error) {
 		Data:   data,
 	})
 
-	slog.Error("error",
-		data,
-		slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))),
-	)
-}
+	Eris(err, "error", data)
 
-var InvalidData = "Error: Invalid form data"
+}
 
 func SendMessage(ws *websocket.Conn, sendText string) {
 	if err := ws.WriteMessage(websocket.TextMessage, []byte(sendText)); err != nil {
@@ -60,16 +55,15 @@ func SendMessage(ws *websocket.Conn, sendText string) {
 	}
 }
 
-func SendError(ws *websocket.Conn, sendText string, err error) {
-	slog.Error("error",
-		slog.String("stack", fmt.Sprintf("%+v", errors.Wrap(err, ""))),
-	)
-
+func SendError(ws *websocket.Conn, data any, err error) {
+	Eris(err, "error", data)
 	response := map[string]any{
-		"Error": sendText,
+		"Status": "error",
+		"Data":   data,
 	}
 	responseJSON, _ := json.Marshal(response)
 	if err := ws.WriteMessage(websocket.TextMessage, responseJSON); err != nil {
-		slog.Error(sendText, fmt.Sprintf("%+v", errors.Wrap(err, "")))
+		slog.Error("failed to send error")
+
 	}
 }

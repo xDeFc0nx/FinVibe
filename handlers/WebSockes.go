@@ -59,7 +59,10 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 		userID,
 	).Scan(&userExists)
 	if err != nil || !userExists {
-		SendError(ws, MsgUserNotFound, err)
+		data := map[string]any{
+			"message": MsgUserNotFound,
+		}
+		SendError(ws, data, err)
 		return
 
 	}
@@ -204,7 +207,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			}
 
 			if err := json.Unmarshal(msg, &message); err != nil {
-				SendError(ws, InvalidData, err)
+				SendError(ws, MsgInvalidData, err)
 				continue
 			}
 			slog.Info(

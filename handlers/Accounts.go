@@ -27,14 +27,7 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 		SendError(ws, MsgInvalidData, err)
 		return
 	}
-	account := &types.Accounts{
-		ID:      uuid.NewString(),
-		UserID:  userID,
-		Type:    req.Type,
-		Balance: req.Balance,
-		Income:  req.Income,
-		Expense: req.Expense,
-	}
+	account := &types.Accounts{}
 
 	var userExists bool
 	err := db.DB.QueryRow(
@@ -57,12 +50,12 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
         created_at,
         updated_at
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		account.ID,
-		account.UserID,
-		account.Type,
-		account.Balance,
-		account.Income,
-		account.Expense,
+		uuid.NewString(),
+		userID,
+		req.Type,
+		req.Balance,
+		req.Income,
+		req.Expense,
 		time.Now().UTC(),
 		time.Now().UTC(),
 	); err != nil {

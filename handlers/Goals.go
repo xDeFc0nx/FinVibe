@@ -25,7 +25,7 @@ func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	var req requestData
 	if err := json.Unmarshal(data, goal); err != nil {
-		SendError(ws, InvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 	}
 	if goal.ID == "" {
 		SendError(ws, MsgMissingID, nil)

@@ -29,7 +29,7 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	var req requestData
 
 	if err := json.Unmarshal(data, req); err != nil {
-		SendError(ws, InvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 	}
 
 	if budget.ID == "" {
@@ -136,7 +136,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	budget := new(types.Budget)
 
 	if err := json.Unmarshal(data, req); err != nil {
-		SendError(ws, InvalidData, err)
+		SendError(ws, MsgInvalidData, err)
 	}
 	if budget.ID == "" {
 		SendError(ws, "ID is required", nil)
