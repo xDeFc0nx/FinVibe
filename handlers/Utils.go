@@ -32,7 +32,6 @@ func JSendSuccess(c *fiber.Ctx, data any) {
 }
 
 func JSendFail(c *fiber.Ctx, data any, code int, err error) {
-	Eris(err, "fail", data)
 	c.Status(code).JSON(Response{
 		Status: "fail",
 		Data:   data,

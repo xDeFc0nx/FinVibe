@@ -144,7 +144,6 @@ func LoginHandler(c *fiber.Ctx) error {
 		JSendFail(c, data, fiber.StatusBadRequest, err)
 		return err
 	}
-	slog.Debug(req.Email)
 	if err := db.DB.QueryRow(context.Background(), `
 	  SELECT id, password
     FROM users

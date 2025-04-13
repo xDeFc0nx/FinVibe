@@ -71,7 +71,7 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 		SET
     last_ping = $1
 		WHERE user_id = $2
-		`, userID, time.Now().UTC()); err != nil {
+		`, time.Now().UTC(), userID); err != nil {
 		SendError(ws, MsgWebSocketUpdateFailed, err)
 		return
 
@@ -98,7 +98,7 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 
 		`, userID, time.Now().UTC()); err != nil {
 			JSendFail(c, MsgWebSocketUpdateFailed, fiber.StatusBadRequest, err)
-			return nil 
+			return nil
 		}
 
 		return c.Status(101).
@@ -141,10 +141,9 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		WHERE connection_id = $1
 		`,
 		connectionID,
-	).Scan(&socket.ID, &socket.IsActive, &socket.LastPing)
-	err != nil  {
+	).Scan(&socket.ID, &socket.IsActive, &socket.LastPing); err != nil {
 		data := map[string]any{
-			"message": fmt.Sprintf(MsgFetchFailedFmt,"websocket"),
+			"message": fmt.Sprintf(MsgFetchFailedFmt, "websocket"),
 		}
 		JSendError(c, data, fiber.StatusInternalServerError, err)
 		return err
@@ -165,6 +164,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 			"User Connected",
 			slog.String("UserID", userID),
 		)
+		done := make(chan struct{})
 		go func() {
 			ticker := time.NewTicker(15 * time.Second)
 			defer ticker.Stop()
@@ -196,6 +196,8 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 							return
 						}
 					}
+				case <-done:
+					return
 				}
 			}
 		}()
@@ -277,6 +279,7 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 				SendError(ws, data, err)
 				return
 			}
+			close(done)
 			ws.Close()
 
 		}()
