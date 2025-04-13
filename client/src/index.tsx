@@ -6,6 +6,7 @@ import Transactions from "@/pages/(secure)/transactions";
 import { Layout } from "@/pages/(secure)/layout";
 import Auth from "@/pages/auth";
 
+import { ThemeProvider } from "@/components/ui/theme";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
@@ -13,16 +14,18 @@ const root = document.getElementById("root");
 
 // @ts-ignore
 ReactDOM.createRoot(root).render(
-	<BrowserRouter>
-		<ToastContainer />
-		<Routes>
-			<Route path="/" element={<App />} />
-			<Route path="auth" element={<Auth />} />
-			<Route path="/app" element={<Layout />}>
-				<Route path="dashboard" element={<Index />} />
-				<Route path="settings" element={<Settings />} />
-				<Route path="transactions" element={<Transactions />} />
-			</Route>
-		</Routes>
-	</BrowserRouter>,
+  <BrowserRouter>
+    <ToastContainer />
+    <ThemeProvider>
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="auth" element={<Auth />} />
+        <Route path="/app" element={<Layout />}>
+          <Route path="dashboard" element={<Index />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="transactions" element={<Transactions />} />
+        </Route>
+      </Routes>
+    </ThemeProvider>
+  </BrowserRouter>,
 );

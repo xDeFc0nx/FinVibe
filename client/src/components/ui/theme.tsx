@@ -5,7 +5,7 @@ import React, {
 	useContext,
 	useEffect,
 	useState,
-	ReactNode,
+	type ReactNode,
 } from "react";
 import { Moon, Sun } from "lucide-react";
 
