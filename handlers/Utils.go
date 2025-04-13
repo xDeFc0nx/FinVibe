@@ -13,7 +13,7 @@ func Eris(err error, status string, data any) {
 	wrapError := eris.Wrap(err, "error occurred during operation")
 	errorJson := eris.ToJSON(wrapError, true)
 	slog.Error(status,
-		data,
+		slog.Any("message", data),
 		slog.Any(status, errorJson),
 	)
 }
@@ -32,6 +32,7 @@ func JSendSuccess(c *fiber.Ctx, data any) {
 }
 
 func JSendFail(c *fiber.Ctx, data any, code int, err error) {
+	Eris(err, "fail", data)
 	c.Status(code).JSON(Response{
 		Status: "fail",
 		Data:   data,

@@ -67,12 +67,13 @@ func HeartBeat(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	}
 	if _, err := db.DB.Exec(context.Background(), `
-		UPDATE web_sockets 
+		UPDATE web_sockets
+		SET
     last_ping = $1
 		WHERE user_id = $2
-
 		`, userID, time.Now().UTC()); err != nil {
-		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "WebSocket"), err)
+		SendError(ws, MsgWebSocketUpdateFailed, err)
+		return
 
 	}
 }
@@ -96,7 +97,8 @@ func HandleCheckAuth(c *fiber.Ctx, userID string) error {
 		WHERE user_id = $2
 
 		`, userID, time.Now().UTC()); err != nil {
-			JSendFail(c, fmt.Sprintf(MsgUpdateFailedFmt, "WebSocket"), fiber.StatusBadRequest, err)
+			JSendFail(c, MsgWebSocketUpdateFailed, fiber.StatusBadRequest, err)
+			return nil 
 		}
 
 		return c.Status(101).
@@ -132,15 +134,17 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 		JSendError(c, data, fiber.StatusUnauthorized, nil)
 		return nil
 	}
-	var userExists bool
-	err = db.DB.QueryRow(
-		context.Background(),
-		"SELECT EXISTS(SELECT 1 FROM web_sockets WHERE connection_id = $1)",
+	if err = db.DB.QueryRow(
+		context.Background(), `
+		SELECT id, is_active, last_ping
+		FROM web_sockets
+		WHERE connection_id = $1
+		`,
 		connectionID,
-	).Scan(&userExists)
-	if err != nil || !userExists {
+	).Scan(&socket.ID, &socket.IsActive, &socket.LastPing)
+	err != nil  {
 		data := map[string]any{
-			"message": fmt.Sprintf(MsgFetchFailedFmt, "WebSocket"),
+			"message": fmt.Sprintf(MsgFetchFailedFmt,"websocket"),
 		}
 		JSendError(c, data, fiber.StatusInternalServerError, err)
 		return err
@@ -148,12 +152,13 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 	}
 	if _, err := db.DB.Exec(context.Background(), `
 		UPDATE web_sockets 
+		SET
 		is_active = true,
-    last_ping = $1
+		last_ping = $1
 		WHERE user_id = $2
-
 		`, time.Now().UTC(), userID); err != nil {
 		JSendFail(c, MsgWebSocketUpdateFailed, fiber.StatusBadRequest, err)
+		return nil
 	}
 	return websocket.New(func(ws *websocket.Conn) {
 		slog.Info(
@@ -260,15 +265,20 @@ func HandleWebSocketConnection(c *fiber.Ctx) error {
 
 		defer func() {
 			slog.Info("Connection Closed", slog.String("user", userID))
-			ws.Close()
 			if _, err := db.DB.Exec(context.Background(), `
 		UPDATE web_sockets 
-		is_active = false,
+		SET
+		is_active = false
 		WHERE user_id = $1
-
 		`, userID); err != nil {
-				JSendFail(c, MsgWebSocketUpdateFailed, fiber.StatusBadRequest, err)
+				data := map[string]any{
+					"message": MsgWebSocketUpdateFailed,
+				}
+				SendError(ws, data, err)
+				return
 			}
+			ws.Close()
+
 		}()
 	})(c)
 }

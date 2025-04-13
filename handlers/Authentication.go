@@ -144,23 +144,19 @@ func LoginHandler(c *fiber.Ctx) error {
 		JSendFail(c, data, fiber.StatusBadRequest, err)
 		return err
 	}
-	var emailExists bool
+	slog.Debug(req.Email)
 	if err := db.DB.QueryRow(context.Background(), `
-		SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)
+	  SELECT id, password
+    FROM users
+    WHERE  email = $1
 		`, req.Email).Scan(
-		&emailExists,
 		&user.ID,
+		&user.Password,
 	); err != nil {
-		data := map[string]any{
-			"message": "Failed to check email existence",
-		}
-		JSendError(c, data, fiber.StatusBadRequest, err)
-	}
-	if !emailExists {
 		data := map[string]any{
 			"message": "Email does not Exist",
 		}
-		JSendError(c, data, fiber.StatusBadRequest, nil)
+		JSendError(c, data, fiber.StatusBadRequest, err)
 		return nil
 	}
 	if err := db.DB.QueryRow(context.Background(), `
@@ -181,7 +177,7 @@ func LoginHandler(c *fiber.Ctx) error {
 		slog.Error(
 			"Password Login Attempt",
 			"Email",
-			user.Email,
+			req.Email,
 			"error",
 			err,
 			"IP",
@@ -250,7 +246,7 @@ func LogoutHandler(c *fiber.Ctx) error {
 
 	}
 	if _, err := db.DB.Exec(context.Background(), `
- UPDATE websockets 
+ UPDATE web_sockets 
  SET is_active = false
  WHERE user_id = $1
 `, userID); err != nil {
