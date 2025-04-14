@@ -588,7 +588,7 @@ func GetAccountBalance(
 	}
 
 	if err := db.DB.QueryRow(context.Background(), `
-SELECT *
+		SELECT income, expense, balance, id, user_id, type, created_at, updated_at
 		FROM accounts
 		WHERE id = $1 AND user_id = $2
 				`, requestData.AccountID, userID).Scan(
