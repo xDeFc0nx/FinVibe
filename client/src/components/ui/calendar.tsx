@@ -1,73 +1,135 @@
+"use client"
+
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react"
+import { DayPicker, UI, useDayPicker } from "react-day-picker"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
 function Calendar({
+  captionLayout = "label",
   className,
   classNames,
   showOutsideDays = true,
   ...props
-}: React.ComponentProps<typeof DayPicker>) {
+}: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      captionLayout={captionLayout}
       className={cn("p-3", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row gap-2",
-        month: "flex flex-col gap-4",
-        caption: "flex justify-center pt-1 relative items-center w-full",
-        caption_label: "text-sm font-medium",
-        nav: "flex items-center gap-1",
-        nav_button: cn(
+        button_next: cn(
           buttonVariants({ variant: "outline" }),
           "size-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-x-1",
-        head_row: "flex",
-        head_cell:
-          "text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: cn(
-          "relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent [&:has([aria-selected].day-range-end)]:rounded-r-md",
-          props.mode === "range"
-            ? "[&:has(>.day-range-end)]:rounded-r-md [&:has(>.day-range-start)]:rounded-l-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md"
-            : "[&:has([aria-selected])]:rounded-md"
+        button_previous: cn(
+          buttonVariants({ variant: "outline" }),
+          "size-7 bg-transparent p-0 opacity-50 hover:opacity-100"
         ),
-        day: cn(
+        caption_label: "text-sm font-medium aria-hidden:hidden",
+        day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "size-8 p-0 font-normal aria-selected:opacity-100"
+          "size-8 font-normal"
         ),
-        day_range_start:
-          "day-range-start aria-selected:bg-primary aria-selected:text-primary-foreground",
-        day_range_end:
-          "day-range-end aria-selected:bg-primary aria-selected:text-primary-foreground",
-        day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-        day_today: "bg-accent text-accent-foreground",
-        day_outside:
-          "day-outside text-muted-foreground aria-selected:text-muted-foreground",
-        day_disabled: "text-muted-foreground opacity-50",
-        day_range_middle:
-          "aria-selected:bg-accent aria-selected:text-accent-foreground",
-        day_hidden: "invisible",
+        day: "rounded-md p-0 text-center text-sm aria-selected:bg-accent",
+        disabled: "*:text-muted-foreground *:opacity-50",
+        dropdown: "first:basis-3/5 last:basis-2/5",
+        dropdowns: "flex basis-full items-center gap-2 text-sm font-medium",
+        hidden: "invisible",
+        month_caption: "flex items-center justify-center pt-1",
+        month_grid: "w-full border-collapse space-y-1",
+        month: cn(
+          "space-y-4",
+          captionLayout !== "label" && !props.hideNavigation && "mt-9"
+        ),
+        months:
+          "relative flex flex-col gap-y-4 sm:flex-row sm:gap-x-4 sm:gap-y-0",
+        nav: "absolute flex w-full items-center justify-between space-x-1 px-1",
+        outside:
+          "*:text-muted-foreground *:opacity-50 *:aria-selected:bg-accent/50 *:aria-selected:text-muted-foreground *:aria-selected:opacity-30",
+        range_end: "rounded-l-none",
+        range_middle:
+          "rounded-none first:rounded-l-md last:rounded-r-md *:aria-selected:bg-accent *:aria-selected:text-accent-foreground",
+        range_start: "rounded-r-none",
+        selected:
+          "*:bg-primary *:text-primary-foreground *:hover:bg-primary *:hover:text-primary-foreground *:focus:bg-primary *:focus:text-primary-foreground",
+        today: "*:bg-accent *:text-accent-foreground",
+        week: "mt-2 flex w-full",
+        weekday: "w-8 text-[0.8rem] font-normal text-muted-foreground",
+        weekdays: "flex",
         ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("size-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("size-4", className)} {...props} />
-        ),
+        Chevron: ({ orientation }) => {
+          switch (orientation) {
+            case "up":
+              return <ChevronUp className="size-4" />
+            case "down":
+              return <ChevronDown className="size-4" />
+            case "left":
+              return <ChevronLeft className="size-4" />
+            case "right":
+            default:
+              return <ChevronRight className="size-4" />
+          }
+        },
+        Dropdown: ({
+          "aria-label": ariaLabel,
+          disabled,
+          value,
+          onChange,
+          options,
+          className,
+        }) => {
+          const { classNames } = useDayPicker()
+
+          return (
+            <Select
+              disabled={disabled}
+              value={`${value}`}
+              onValueChange={(value) =>
+                onChange?.({
+                  target: { value },
+                } as React.ChangeEvent<HTMLSelectElement>)
+              }
+            >
+              <SelectTrigger
+                aria-label={ariaLabel}
+                className={cn(classNames[UI.Dropdown], className)}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {options?.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={`${option.value}`}
+                    disabled={option.disabled}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )
+        },
       }}
       {...props}
     />
   )
 }
+Calendar.displayName = "Calendar"
 
 export { Calendar }
+
