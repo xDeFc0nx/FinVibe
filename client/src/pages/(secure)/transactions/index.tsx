@@ -1,4 +1,3 @@
-import { useUserData } from "@/components/context/userData";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -13,8 +12,14 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { columns } from "@/components/transaction/columns";
 import { DataTable } from "@/components/transaction/data-table";
 import { Link } from "react-router";
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState, AppDispatch } from '@/store/store.ts';
+// Import specific actions needed
+import { addAccount, setActiveAccount } from '@/store/slices/accountsSlice';
+import type { Account } from '@/types'; // Adjust path
+
 export default function Index() {
-	const { transactions } = useUserData();
+  	const transactions = useSelector((state: RootState) => state.transactions.list);
 	return (
 		<SidebarInset>
 			<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
