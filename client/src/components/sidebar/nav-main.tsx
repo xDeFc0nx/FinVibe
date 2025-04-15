@@ -1,7 +1,6 @@
 import { type LucideIcon } from "lucide-react";
 import {
 	Collapsible,
-	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
@@ -10,7 +9,6 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import { Link } from "react-router";
 
