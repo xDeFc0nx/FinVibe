@@ -40,7 +40,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { isRegExp } from "util/types";
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/store/store.ts';
 import { accountsReceived, setActiveAccount } from '@/store/slices/accountsSlice';
