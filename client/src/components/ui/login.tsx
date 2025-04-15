@@ -16,7 +16,6 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import * as z from "zod";
-
 const formSchema = z.object({
 	email: z.string().email("Invalid email format"),
 	password: z.string().min(8, "Password must be at least 8 characters long"),
@@ -32,6 +31,7 @@ export default function Login() {
 		const success = await handleLogin(data, setWrongCredentials);
 		if (success) navigate("/app/dashboard");
 	};
+
 	return (
 		<>
 			<div className="lg:p-8">
@@ -134,11 +134,14 @@ export const handleLogin = async (
 
 		if (response.ok) {
 			document.cookie = `jwt=${responseData.token}; path=/; secure;`;
+ 
 			return true;
 		} else {
 			setWrongCredentials(true);
 			return false;
 		}
+
+        
 	} catch (error) {
 		toast.error("Login Failed. Try again.");
 		return false;

@@ -5,20 +5,18 @@ import {
 	FormControl,
 	FormField,
 	FormItem,
-	FormLabel,
 	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router-dom";
+import {  useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as z from "zod";
 import { handleLogin } from "@/components/ui/login";
 import CreateAccount from "@/components/ui/createAccount";
 import { useState } from "react";
-import { UserDataProvider } from "@/components/context/userData";
 import { WebSocketProvider } from "@/components/WebSocketProvidor";
 const formSchema = z.object({
 	firstName: z.string(),
@@ -63,9 +61,7 @@ export default function Register() {
 	if (registered) {
 		return (
 			<WebSocketProvider>
-				<UserDataProvider>
 					<CreateAccount />;
-				</UserDataProvider>
 			</WebSocketProvider>
 		);
 	}
