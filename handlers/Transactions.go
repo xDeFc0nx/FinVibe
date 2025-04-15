@@ -170,6 +170,16 @@ SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 			return
 		}
 	}
+	if err := GetAccountBalance(ws, transaction.AccountID); err != nil {
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account Balance"), err)
+	}
+	if err := db.DB.QueryRow(context.Background(), `
+		SELECT income, expense, balance,
+		FROM accounts
+		WHERE id = $1
+		`, transaction.AccountID).Scan(&account.Income, &account.Expense, &account.Balance); err != nil {
+		SendError(ws, MsgAccountNotFound, err)
+	}
 
 	response := map[string]any{
 		"transaction": map[string]any{
@@ -182,6 +192,11 @@ SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 			"IsRecurring": transaction.IsRecurring,
 			"Frequency":   recurring.Frequency,
 			"CreatedAt":   recurring.CreatedAt.Format(time.RFC3339),
+		},
+		"Balance": map[string]any{
+			"Income":   account.Income,
+			"Expenses": account.Expense,
+			"Balance":  account.Balance,
 		},
 	}
 
@@ -441,213 +456,4 @@ SELECT EXISTS transactions WHERE id = $1 AND user_id = $2
 
 	responseData, _ := json.Marshal(response)
 	SendMessage(ws, string(responseData))
-}
-
-func GetAccountIncome(
-	ws *websocket.Conn,
-	data json.RawMessage,
-	userID string,
-) {
-	transactions := []types.Transaction{}
-	account := new(types.Accounts)
-
-	account.ID = requestData.AccountID
-	if err := json.Unmarshal(data, &requestData); err != nil {
-		SendError(ws, MsgInvalidData, err)
-		return
-	}
-
-	if err := db.DB.QueryRow(context.Background(), `
-SELECT 1 id, type, income, expense, balance
-	FROM accounts
-		WHERE id = $1 AND user_id = $2
-				`, account.ID, userID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
-		SendError(ws, MsgAccountNotFound, err)
-	}
-	incType := "Income"
-	start, end := GetDateRange(requestData.DateRange)
-	rows, err := db.DB.Query(context.Background(), `
-SELECT amount, id, user_id, account_id, type, description, is_recurring, created_at, updated_at
-		FROM transactions
-		WHERE account_id = $1 
-		AND created_at BETWEEN $2 AND $3
-		AND type = $4
-		ORDER BY created_at DESC`,
-		requestData.AccountID,
-		start,
-		end,
-		incType,
-	)
-	if err != nil {
-		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
-	}
-
-	defer rows.Close()
-	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
-	if err != nil {
-		SendError(ws, MsgCollectRowsFailed, err)
-	}
-
-	totalIncome := 0.0
-	for _, transaction := range transactions {
-		totalIncome += transaction.Amount
-	}
-	account.Income = totalIncome
-
-	if _, err := db.DB.Exec(context.Background(), `
-		UPDATE accounts SET
-		income = $1
-		WHERE id = $2 AND user_id = $3
-	
-		`, totalIncome, requestData.AccountID, userID); err != nil {
-		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account"), err)
-	}
-	response := map[string]any{
-		"totalIncome": account.Income,
-	}
-
-	responseData, _ := json.Marshal(response)
-	SendMessage(ws, string(responseData))
-}
-
-func GetAccountExpense(
-	ws *websocket.Conn,
-	data json.RawMessage,
-	userID string,
-) {
-	transactions := []types.Transaction{}
-	account := new(types.Accounts)
-
-	account.ID = requestData.AccountID
-	if err := json.Unmarshal(data, &requestData); err != nil {
-		SendError(ws, MsgInvalidData, err)
-		return
-	}
-	if err := db.DB.QueryRow(context.Background(), `
-SELECT 1 id, type, income, expense, balance
-	FROM accounts
-		WHERE id = $1 AND user_id = $2
-				`, account.ID, userID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
-		SendError(ws, MsgAccountNotFound, err)
-	}
-	expType := "Expense"
-	start, end := GetDateRange(requestData.DateRange)
-	rows, err := db.DB.Query(context.Background(), `
-SELECT amount, id, user_id, account_id, type, description, is_recurring, created_at, updated_at
-		FROM transactions
-		WHERE account_id = $1 
-		AND created_at BETWEEN $2 AND $3
-		AND type = $4
-		ORDER BY created_at DESC`,
-		requestData.AccountID,
-		start,
-		end,
-		expType,
-	)
-	if err != nil {
-		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
-	}
-
-	defer rows.Close()
-	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
-	if err != nil {
-		SendError(ws, MsgCollectRowsFailed, err)
-	}
-
-	totalExpense := 0.0
-	for _, transaction := range transactions {
-		totalExpense += transaction.Amount
-	}
-	if _, err := db.DB.Exec(context.Background(), `
-		UPDATE accounts SET
-		expense = $1
-		where id = $2 AND user_id = $3
-	
-		`, totalExpense, requestData.AccountID, userID); err != nil {
-		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Expense"), err)
-	}
-
-	response := map[string]any{
-		"totalExpense": account.Expense,
-	}
-
-	responseData, _ := json.Marshal(response)
-	SendMessage(ws, string(responseData))
-}
-
-func GetAccountBalance(
-	ws *websocket.Conn,
-	data json.RawMessage,
-	userID string,
-) {
-	account := new(types.Accounts)
-
-	if err := json.Unmarshal(data, &requestData); err != nil {
-		SendError(ws, MsgInvalidData, err)
-		return
-	}
-
-	if err := db.DB.QueryRow(context.Background(), `
-		SELECT income, expense, balance, id, user_id, type, created_at, updated_at
-		FROM accounts
-		WHERE id = $1 AND user_id = $2
-				`, requestData.AccountID, userID).Scan(
-		&account.Income,
-		&account.Expense,
-		&account.Balance,
-		&account.ID,
-		&account.UserID,
-		&account.Type,
-		&account.CreatedAt,
-		&account.UpdatedAt,
-	); err != nil {
-		SendError(ws, MsgAccountNotFound, err)
-	}
-	totalBalance := account.Income - account.Expense
-	if _, err := db.DB.Exec(context.Background(), `
-		UPDATE accounts SET
-		balance = $1
-		WHERE id = $2 AND user_id = $3
-	
-		`, totalBalance, requestData.AccountID, userID); err != nil {
-		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
-	}
-	response := map[string]any{
-		"accountBalance": account.Balance,
-	}
-
-	responseData, _ := json.Marshal(response)
-	SendMessage(ws, string(responseData))
-}
-
-func GetAccountsBalance(ws *websocket.Conn, AccountID string) error {
-	account := new(types.Accounts)
-
-	if err := db.DB.QueryRow(context.Background(), `
-	SELECT income, expense, balance, id, user_id, type, created_at, updated_at
-	FROM accounts
-		WHERE id = $1
-				`, AccountID).Scan(
-		&account.Income,
-		&account.Expense,
-		&account.Balance,
-		&account.ID,
-		&account.UserID,
-		&account.Type,
-		&account.CreatedAt,
-		&account.UpdatedAt,
-	); err != nil {
-		SendError(ws, MsgAccountNotFound, err)
-	}
-	totalBalance := account.Income - account.Expense
-	if _, err := db.DB.Exec(context.Background(), `
-		UPDATE accounts SET
-		balance = $1
-		WHERE id = $2
-	
-		`, totalBalance, AccountID); err != nil {
-		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
-	}
-
-	return nil
 }
