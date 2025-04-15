@@ -19,7 +19,6 @@ import type { RootState, AppDispatch } from '@/store/store.ts';
 import type { Transaction, Account } from "@/types";
 import { removeTransaction } from "@/store/slices/transactionsSlice"
 import { useSelector, useDispatch } from 'react-redux';
-const dispatch: AppDispatch = useDispatch();
 
 export const columns: ColumnDef<Transaction>[] = [
 
@@ -102,6 +101,7 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const { socket, isReady } = useWebSocket();
       const transaction = row.original;
+      const dispatch: AppDispatch = useDispatch();
       const { activeAccountId, list: currentAccounts } = useSelector((state: RootState) => state.accounts);
       const activeAccount: Account | null = React.useMemo(() => {
         if (!activeAccountId) return null;
