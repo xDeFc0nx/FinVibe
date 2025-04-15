@@ -191,18 +191,18 @@ func DeleteAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 }
 func GetAccountBalance(
 	ws *websocket.Conn,
-	userID string,
+	AccountID string,
 ) error {
 	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
-	account.ID = requestData.AccountID
+	account.ID = AccountID
 
 	if err := db.DB.QueryRow(context.Background(), `
 SELECT 1 id, type, income, expense, balance
 	FROM accounts
-		WHERE id = $1 AND user_id = $2
-				`, account.ID, userID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
+		WHERE id = $1 
+				`, AccountID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
 		SendError(ws, MsgAccountNotFound, err)
 	}
 	incType := "Income"
@@ -214,7 +214,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		AND created_at BETWEEN $2 AND $3
 		AND type = $4
 		ORDER BY created_at DESC`,
-		requestData.AccountID,
+		AccountID,
 		start,
 		end,
 		incType,
@@ -234,13 +234,6 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		totalIncome += transaction.Amount
 	}
 	account.Income = totalIncome
-	if err := db.DB.QueryRow(context.Background(), `
-SELECT 1 id, type, income, expense, balance
-	FROM accounts
-		WHERE id = $1 AND user_id = $2
-				`, account.ID, userID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
-		SendError(ws, MsgAccountNotFound, err)
-	}
 	expType := "Expense"
 	rows, err = db.DB.Query(context.Background(), `
 SELECT amount, id, user_id, account_id, type, description, is_recurring, created_at, updated_at
@@ -249,7 +242,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 		AND created_at BETWEEN $2 AND $3
 		AND type = $4
 		ORDER BY created_at DESC`,
-		requestData.AccountID,
+		AccountID,
 		start,
 		end,
 		expType,
@@ -272,19 +265,13 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	totalBalance := account.Income - account.Expense
 	if _, err := db.DB.Exec(context.Background(), `
 		UPDATE accounts SET
-		balance = $1
-		WHERE id = $2 AND user_id = $3
+		income = $1,
+		expense = $2,
+		balance = $3
+		WHERE id = $4
 	
-		`, totalBalance, requestData.AccountID, userID); err != nil {
+		`, totalIncome, totalExpense, totalBalance, AccountID); err != nil {
 		SendError(ws, fmt.Sprintf(MsgUpdateFailedFmt, "Account Balance"), err)
 	}
-	response := map[string]any{
-		"Balance": account.Balance,
-		"Income":  account.Income,
-		"Expense": account.Expense,
-	}
-
-	responseData, _ := json.Marshal(response)
-	SendMessage(ws, string(responseData))
 	return nil
 }
