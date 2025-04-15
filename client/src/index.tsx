@@ -5,9 +5,10 @@ import Settings from "@/pages/(secure)/settings";
 import Transactions from "@/pages/(secure)/transactions";
 import { Layout } from "@/pages/(secure)/layout";
 import Auth from "@/pages/auth";
-import { Provider } from 'react-redux'; // <-- Import Provider
-import { store } from './store/store'; // <-- Import your configured Redux store
+import { Provider } from 'react-redux';
+import { store } from '@/store/store';
 import { ThemeProvider } from "@/components/ui/theme";
+import { WebSocketProvider } from "@/components/WebSocketProvidor";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
@@ -19,16 +20,19 @@ ReactDOM.createRoot(root).render(
     <BrowserRouter>
       <ThemeProvider>
         <ToastContainer />
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="auth" element={<Auth />} />
-          <Route path="/app" element={<Layout />}>
-            <Route index element={<Index />} />
-            <Route path="dashboard" element={<Index />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="transactions" element={<Transactions />} />
-          </Route>
-        </Routes>
+        <WebSocketProvider>
+
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="auth" element={<Auth />} />
+            <Route path="/app" element={<Layout />}>
+              <Route index element={<Index />} />
+              <Route path="dashboard" element={<Index />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="transactions" element={<Transactions />} />
+            </Route>
+          </Routes>
+        </WebSocketProvider>
       </ThemeProvider>
     </BrowserRouter>
   </Provider>);

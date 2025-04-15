@@ -28,6 +28,14 @@ const transactionsSlice = createSlice({
       state.list = action.payload;
       state.status = 'succeeded';
     },
+    addTransaction(state, action: PayloadAction<Transaction>) {
+      state.list.push(action.payload);
+      state.status = 'succeeded';
+    },
+    removeTransaction(state, action: PayloadAction<string>) {
+      state.list = state.list.filter(tx => tx.ID !== action.payload);
+      state.status = 'succeeded';
+    },
     setDateRange(state, action: PayloadAction<string>) {
       state.dateRange = action.payload;
       state.status = 'idle';
@@ -47,6 +55,8 @@ const transactionsSlice = createSlice({
 export const {
   transactionsLoading,
   transactionsReceived,
+  addTransaction,
+  removeTransaction,
   setDateRange,
   transactionsError,
   clearTransactions
