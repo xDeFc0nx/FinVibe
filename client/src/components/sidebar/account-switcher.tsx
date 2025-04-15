@@ -42,10 +42,9 @@ import {
 } from "@/components/ui/dialog";
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/store/store.ts';
-import { accountsReceived, setActiveAccount } from '@/store/slices/accountsSlice';
+import { accountsReceived, setActiveAccount, updateAccountDetails } from '@/store/slices/accountsSlice';
 import { transactionsReceived } from '@/store/slices/transactionsSlice';
-import { overviewReceived } from '@/store/slices/chartsSlice';
-import type { Account, ChartOverview, PieOverview } from '@/types';
+import type { Account,} from '@/types';
 
 export function AccountSwitcher() {
 
@@ -111,17 +110,8 @@ export function AccountSwitcher() {
 
   React.useEffect(() => {
     if (socket && isReady && activeAccountId) {
-      const currentAccountId = activeAccountId;
 
       socket.send("getTransactions", {
-        AccountID: activeAccountId,
-        DateRange: dateRange,
-      });
-      socket.send("getAccountIncome", {
-        AccountID: activeAccountId,
-        DateRange: dateRange,
-      });
-      socket.send("getAccountExpense", {
         AccountID: activeAccountId,
         DateRange: dateRange,
       });
@@ -136,10 +126,6 @@ export function AccountSwitcher() {
 
       socket.onMessage((msg) => {
 
-        let accountUpdates: Partial<Account> = {};
-        let needsAccountDispatch = false;
-
-
         const response = JSON.parse(msg);
         if (response.transactions) {
           dispatch(transactionsReceived(response.transactions))
@@ -148,34 +134,11 @@ export function AccountSwitcher() {
         if (response.Error) {
           toast.error(response.Error);
         }
-        if (response.totalIncome !== undefined) {
-          accountUpdates.income = response.totalIncome;
-          needsAccountDispatch = true;
-        }
-        if (response.totalExpense !== undefined) {
-          accountUpdates.expense = response.totalExpense;
-          needsAccountDispatch = true;
-        }
-        if (response.accountBalance !== undefined) {
-          accountUpdates.balance = response.accountBalance;
-          needsAccountDispatch = true;
-        }
-        if (needsAccountDispatch) {
-          const updatedAccountsList = currentAccounts.map((acc) =>
-            acc.ID === currentAccountId
-              ? { ...acc, ...accountUpdates }
-              : acc
-          );
-          dispatch(accountsReceived(updatedAccountsList));
-        }
-        if (response.chartData) {
-          dispatch(overviewReceived(response.chartData))
-        }
-        if (response.IncomePie) {
-          dispatch(overviewReceived(response.IncomePie))
-        }
-        if (response.ExpensesPie) {
-          dispatch(overviewReceived(response.ExpensesPie))
+        if (response.AccountData) {
+          dispatch(updateAccountDetails({
+            id: activeAccountId,
+            details: response.AccountData,
+          }));
         }
       });
     }
