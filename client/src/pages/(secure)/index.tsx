@@ -1,4 +1,3 @@
-import { useUserData } from "@/components/context/userData";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -25,67 +24,70 @@ import {
   IncomePie,
 } from "@/components/charts/Charts";
 import { useWebSocket } from "@/components/WebSocketProvidor";
+import { useEffect } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/store/store.ts';
-import { accountsReceived } from '@/store/slices/accountsSlice';
+import { updateAccountDetails } from '@/store/slices/accountsSlice';
 import { setDateRange, transactionsReceived, } from '@/store/slices/transactionsSlice';
 import { overviewReceived, } from '@/store/slices/chartsSlice';
-
+import { userReceived } from "@/store/slices/userSlice";
 
 export default function Index() {
   const dispatch: AppDispatch = useDispatch();
   const { list: transactions, dateRange } = useSelector((state: RootState) => state.transactions);
-  const { list: accounts, activeAccountId } = useSelector((state: RootState) => state.accounts);
+  const { list: accounts, activeAccountId, } = useSelector((state: RootState) => state.accounts);
   const userData = useSelector((state: RootState) => state.user.data);
   const activeAccount = accounts.find((acc) => acc.ID === activeAccountId) || null;
+  const { socket, isReady } = useWebSocket();
+	useEffect(() => {
+		if (socket && isReady) {
+			socket.send("getUser");
+			socket.send("getAccounts");
+			socket.onMessage((msg) => {
+				const response = JSON.parse(msg);
+        if (response.AccountData) {
+          if (activeAccountId) {
 
-  const { socket } = useWebSocket();
-  const handleDateRangeChange = (value: string) => {
+            dispatch(updateAccountDetails({
+              id: activeAccountId,
+              details: response.AccountData,
+            }));
+          }
+        }
+        if(response.userData){
+          dispatch(userReceived(response.userData))
+        }
+														
+			});
+		}
+	}, [socket, isReady]);  const handleDateRangeChange = (value: string) => {
     setDateRange(value);
     const activeAccount = accounts.find(acc => acc.ID === activeAccountId) || null;
 
-
     if (socket && activeAccount) {
-      let accountDataNeedsUpdate = false;
+
       const messageHandler = (msg: string) => {
         const response = JSON.parse(msg);
 
         if (response.transactions) {
           dispatch(transactionsReceived(response.transactions));
         }
-        let currentAccounts = [...accounts];
-        if (response.totalIncome !== undefined && activeAccount) {
-          currentAccounts = currentAccounts.map((acc) =>
-            acc.ID === activeAccount.ID // Use Redux state activeAccount.ID
-              ? { ...acc, Income: response.totalIncome }
-              : acc
-          );
-        }
-        if (response.totalExpense !== undefined && activeAccount) {
-          currentAccounts = currentAccounts.map((acc) =>
-            acc.ID === activeAccount.ID
-              ? { ...acc, Expense: response.totalExpense }
-              : acc
-          );
-          if (response.accountBalance !== undefined) {
-            currentAccounts = currentAccounts.map((acc) =>
-              acc.ID === activeAccount.ID
-                ? { ...acc, AccountBalance: response.accountBalance }
-                : acc
-            );
-            accountDataNeedsUpdate = true;
-            if (accountDataNeedsUpdate) {
-              dispatch(accountsReceived(currentAccounts));
-            }
-            if (response.chartData) {
-              dispatch(overviewReceived(response.chartData));
-            }
-          };
+        if (response.AccountData) {
+          if (activeAccountId) {
 
-          socket.onMessage(messageHandler);
+            dispatch(updateAccountDetails({
+              id: activeAccountId,
+              details: response.AccountData,
+            }));
+          }
         }
-      };
-    }
+        if (response.chartData) {
+          dispatch(overviewReceived(response.chartData));
+        }
+
+        socket.onMessage(messageHandler);
+      }
+    };
   }
 
   return (
@@ -173,5 +175,5 @@ export default function Index() {
       </div>
     </SidebarInset>
   );
-}
- 
+
+} 
