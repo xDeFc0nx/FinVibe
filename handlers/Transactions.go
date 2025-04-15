@@ -193,7 +193,7 @@ SELECT EXISTS (SELECT 1 FROM accounts WHERE id = $1 AND user_id = $2)
 			"Frequency":   recurring.Frequency,
 			"CreatedAt":   recurring.CreatedAt.Format(time.RFC3339),
 		},
-		"Balance": map[string]any{
+		"AccountData": map[string]any{
 			"Income":   account.Income,
 			"Expenses": account.Expense,
 			"Balance":  account.Balance,
@@ -375,7 +375,7 @@ func UpdateTransaction(
 	userID string,
 ) {
 	transaction := new(types.Transaction)
-
+	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &transaction); err != nil {
 		SendError(ws, MsgInvalidData, err)
 	}
@@ -409,6 +409,18 @@ UPDATE transactions  SET
 	); err != nil {
 		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Transactions"), err)
 	}
+
+	if err := GetAccountBalance(ws, transaction.AccountID); err != nil {
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account Balance"), err)
+	}
+	if err := db.DB.QueryRow(context.Background(), `
+		SELECT income, expense, balance,
+		FROM accounts
+		WHERE id = $1
+		`, transaction.AccountID).Scan(&account.Income, &account.Expense, &account.Balance); err != nil {
+		SendError(ws, MsgAccountNotFound, err)
+	}
+
 	transactionData := map[string]any{
 		"ID":        transaction.ID,
 		"UserID":    transaction.UserID,
@@ -418,6 +430,11 @@ UPDATE transactions  SET
 	}
 	response := map[string]any{
 		"Success": transactionData,
+		"AccountData": map[string]any{
+			"Income":  account.Income,
+			"Expense": account.Expense,
+			"Balance": account.Balance,
+		},
 	}
 	responseData, _ := json.Marshal(response)
 	SendMessage(ws, string(responseData))
@@ -428,7 +445,7 @@ func DeleteTransaction(ws *websocket.Conn, data json.RawMessage,
 	userID string,
 ) {
 	transaction := new(types.Transaction)
-
+	account := new(types.Accounts)
 	transaction.UserID = userID
 
 	if err := json.Unmarshal(data, &transaction); err != nil {
@@ -450,8 +467,23 @@ SELECT EXISTS transactions WHERE id = $1 AND user_id = $2
 			`, transaction.ID, userID); err != nil {
 		SendError(ws, fmt.Sprintf(MsgDeleteFailedFmt, "Transaction"), err)
 	}
+	if err := GetAccountBalance(ws, transaction.AccountID); err != nil {
+		SendError(ws, fmt.Sprintf(MsgFetchFailedFmt, "Account Balance"), err)
+	}
+	if err := db.DB.QueryRow(context.Background(), `
+		SELECT income, expense, balance,
+		FROM accounts
+		WHERE id = $1
+		`, transaction.AccountID).Scan(&account.Income, &account.Expense, &account.Balance); err != nil {
+		SendError(ws, MsgAccountNotFound, err)
+	}
 	response := map[string]any{
 		"Success": "Transaction Deleted",
+		"AccountData": map[string]any{
+			"Income":  account.Income,
+			"Expense": account.Expense,
+			"Balance": account.Balance,
+		},
 	}
 
 	responseData, _ := json.Marshal(response)
