@@ -7,7 +7,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -41,6 +40,7 @@ import { format } from "date-fns";
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/store/store.ts';
 import { addTransaction } from '@/store/slices/transactionsSlice';
+import { updateAccountDetails} from "@/store/slices/accountsSlice"
 import type { Account } from '@/types';
 const formSchema = z.object({
   Type: z.enum(["Income", "Expense"]),
@@ -88,6 +88,20 @@ export const AddTransaction = () => {
             dispatch(addTransaction(response.Transaction))
             toast.success("Transaction added!", { toastId: "success" });
             form.reset();
+          }
+
+          if (response.AccountData) {
+            if (activeAccountId) {
+
+
+              dispatch(updateAccountDetails({
+                id: activeAccountId,
+                details: response.AccountData,
+              }));
+            }else{
+              console.log("account id not found")
+            }
+
           }
         });
       }
