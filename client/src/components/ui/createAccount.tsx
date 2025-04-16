@@ -26,7 +26,7 @@ const formSchema = z.object({
 });
 
 export default function CreateAccount() {
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
   const { activeAccountId, list: currentAccounts } = useSelector((state: RootState) => state.accounts);
   const { socket, isReady } = useWebSocket();
@@ -36,7 +36,7 @@ export default function CreateAccount() {
   });
   const activeAccount = React.useMemo(() => {
     if (!activeAccountId) return null;
-    return currentAccounts.find(acc => acc.ID === activeAccountId) || null;
+    return currentAccounts.find(acc => acc.id === activeAccountId) || null;
   }, [activeAccountId, currentAccounts]);
   function handleSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -49,13 +49,12 @@ export default function CreateAccount() {
 
         socket.onMessage((msg) => {
           const response = JSON.parse(msg);
-
           if (response.account) {
             console.log(response.account);
             const newAccount: Account = response.account;
             dispatch(addAccount(newAccount));
-            dispatch(setActiveAccount(newAccount.ID));
-            // navigate("/app/dashboard");
+            dispatch(setActiveAccount(newAccount.id));
+             navigate("/app/dashboard");
           }
 
           if (response.Error) {

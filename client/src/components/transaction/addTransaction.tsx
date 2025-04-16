@@ -66,7 +66,7 @@ export const AddTransaction = () => {
   });
   const activeAccount: Account | null = React.useMemo(() => {
     if (!activeAccountId) return null;
-    return currentAccounts.find(acc => acc.ID === activeAccountId) || null;
+    return currentAccounts.find(acc => acc.id === activeAccountId) || null;
   }, [activeAccountId, currentAccounts]);
 
 

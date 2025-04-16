@@ -44,7 +44,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/store/store.ts';
 import { accountsReceived, setActiveAccount, updateAccountDetails } from '@/store/slices/accountsSlice';
 import { transactionsReceived } from '@/store/slices/transactionsSlice';
-import type { Account,} from '@/types';
+import { overviewReceived } from '@/store/slices/chartsSlice'
+import type { Account, } from '@/types';
 
 export function AccountSwitcher() {
 
@@ -62,9 +63,9 @@ export function AccountSwitcher() {
   const { activeAccountId, list: currentAccounts } = useSelector((state: RootState) => state.accounts);
   const activeAccount: Account | null = React.useMemo(() => {
     if (!activeAccountId) return null;
-    return currentAccounts.find(acc => acc.ID === activeAccountId) || null;
+    return currentAccounts.find(acc => acc.id === activeAccountId) || null;
   }, [activeAccountId, currentAccounts]);
-
+  console.log(activeAccountId)
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -72,7 +73,7 @@ export function AccountSwitcher() {
     },
   });
   function saveAccount(account: any) {
-    dispatch(setActiveAccount(account.ID));
+    dispatch(setActiveAccount(account.id));
     localStorage.setItem("activeAccount", JSON.stringify(account));
     console.log("Saved Account to LocalStorage:", account);
   }
@@ -115,9 +116,9 @@ export function AccountSwitcher() {
         AccountID: activeAccountId,
         DateRange: dateRange,
       });
-      socket.send("getAccountBalance", {
+      socket.send("getAccount", {
         AccountID: activeAccountId,
-        DateRange: dateRange,
+        // DateRange: dateRange,
       });
       socket.send("getCharts", {
         AccountID: activeAccountId,
@@ -140,96 +141,108 @@ export function AccountSwitcher() {
             details: response.AccountData,
           }));
         }
-      });
-    }
-  }, [activeAccountId, dateRange, isReady,]);
-  return (
-    <SidebarMenu>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <SidebarMenuItem>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              >
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">
-                    {activeAccount?.type}
-                  </span>
-                </div>
-                <ChevronsUpDown className="ml-auto" />
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-              align="start"
-              side={isMobile ? "bottom" : "right"}
-              sideOffset={4}
-            >
-              <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Accounts
-              </DropdownMenuLabel>
-              {currentAccounts.map((account) => (
-                <DropdownMenuItem
-                  key={account.ID}
-                  onClick={() => saveAccount(account)}
-                  className="gap-2 p-2"
-                >
-                  {account.type}
-                  <DropdownMenuShortcut>
-                    ⌘{currentAccounts.indexOf(account) + 1}
-                  </DropdownMenuShortcut>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="gap-2 p-2">
-                <div className="flex size-6 items-center justify-center rounded-md border bg-background">
-                  <Plus className="size-4" />
-                </div>
-                <DialogTrigger>Add account</DialogTrigger>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarMenuItem>
+        if (response.chartData && response.IncomePie && response.ExpensesPie) {
+          const overviewPayload = {
+            chart: response.chartData,
+            incomePie: response.IncomePie,
+            expensePie: response.ExpensesPie
+          };
 
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Account</DialogTitle>
-            <DialogDescription>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={form.control}
-                    name="Type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Account Type</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Account Type"
-                            type="text"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button variant="default" className="mt-5" type="submit">
-                      Add!
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    </SidebarMenu>
-  );
+          dispatch(overviewReceived(overviewPayload));
+          console.log("Dispatched overviewReceived with structured payload");
+
+        }
+
+      });
+}
+  }, [activeAccountId, dateRange, isReady,]);
+return (
+  <SidebarMenu>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <SidebarMenuItem>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">
+                  {activeAccount?.type}
+                </span>
+              </div>
+              <ChevronsUpDown className="ml-auto" />
+            </SidebarMenuButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+            align="start"
+            side={isMobile ? "bottom" : "right"}
+            sideOffset={4}
+          >
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              Accounts
+            </DropdownMenuLabel>
+            {currentAccounts.map((account) => (
+              <DropdownMenuItem
+                key={activeAccountId}
+                onClick={() => saveAccount(account)}
+                className="gap-2 p-2"
+              >
+                {account.type}
+                <DropdownMenuShortcut>
+                  ⌘{currentAccounts.indexOf(account) + 1}
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="gap-2 p-2">
+              <div className="flex size-6 items-center justify-center rounded-md border bg-background">
+                <Plus className="size-4" />
+              </div>
+              <DialogTrigger>Add account</DialogTrigger>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </SidebarMenuItem>
+
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Add New Account</DialogTitle>
+          <DialogDescription>
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="Type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Account Type</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Account Type"
+                          type="text"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button variant="default" className="mt-5" type="submit">
+                    Add!
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  </SidebarMenu>
+);
 }
