@@ -8,7 +8,6 @@ import Auth from "@/pages/auth";
 import { Provider } from 'react-redux';
 import { store } from '@/store/store';
 import { ThemeProvider } from "@/components/ui/theme";
-import { WebSocketProvider } from "@/components/WebSocketProvidor";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
@@ -20,7 +19,6 @@ ReactDOM.createRoot(root).render(
     <BrowserRouter>
       <ThemeProvider>
         <ToastContainer />
-        <WebSocketProvider>
 
           <Routes>
             <Route path="/" element={<App />} />
@@ -32,7 +30,6 @@ ReactDOM.createRoot(root).render(
               <Route path="transactions" element={<Transactions />} />
             </Route>
           </Routes>
-        </WebSocketProvider>
       </ThemeProvider>
     </BrowserRouter>
   </Provider>);

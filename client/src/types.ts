@@ -8,7 +8,7 @@ export interface UserData {
   Country: string;
 }
 export interface Account {
-  ID: string;
+  id: string;
   userID: string;
   income: number;
   expense: number;

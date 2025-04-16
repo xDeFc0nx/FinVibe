@@ -27,7 +27,7 @@ const accountsSlice = createSlice({
   initialState,
   reducers: {
     addAccount(state, action: PayloadAction<Account>) {
-      const exists = state.list.some(acc => acc.ID === action.payload.ID);
+      const exists = state.list.some(acc => acc.id === action.payload.id);
       if (!exists) {
         state.list.push(action.payload);
       }
@@ -41,10 +41,10 @@ const accountsSlice = createSlice({
       state.list = action.payload;
       state.status = 'succeeded';
       if (!state.activeAccountId && action.payload.length > 0) {
-        state.activeAccountId = action.payload[0].ID;
+        state.activeAccountId = action.payload[0].id;
       }
-      if (state.activeAccountId && !action.payload.find(acc => acc.ID === state.activeAccountId)) {
-        state.activeAccountId = action.payload.length > 0 ? action.payload[0].ID : null;
+      if (state.activeAccountId && !action.payload.find(acc => acc.id === state.activeAccountId)) {
+        state.activeAccountId = action.payload.length > 0 ? action.payload[0].id : null;
       }
     },
 
@@ -53,7 +53,7 @@ const accountsSlice = createSlice({
     },
     updateAccountDetails(state, action: PayloadAction<AccountUpdatePayload>) {
       const { id, details } = action.payload;
-      const accountIndex = state.list.findIndex(acc => acc.ID === id);
+      const accountIndex = state.list.findIndex(acc => acc.id === id);
 
       if (accountIndex !== -1) {
         state.list[accountIndex] = {
