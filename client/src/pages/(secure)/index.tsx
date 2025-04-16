@@ -27,7 +27,7 @@ import { useWebSocket } from "@/components/WebSocketProvidor";
 import { useEffect } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '@/store/store.ts';
-import { updateAccountDetails } from '@/store/slices/accountsSlice';
+import { accountsReceived, updateAccountDetails, setActiveAccount } from '@/store/slices/accountsSlice';
 import { setDateRange, transactionsReceived, } from '@/store/slices/transactionsSlice';
 import { overviewReceived, } from '@/store/slices/chartsSlice';
 import { userReceived } from "@/store/slices/userSlice";
@@ -37,33 +37,52 @@ export default function Index() {
   const { list: transactions, dateRange } = useSelector((state: RootState) => state.transactions);
   const { list: accounts, activeAccountId, } = useSelector((state: RootState) => state.accounts);
   const userData = useSelector((state: RootState) => state.user.data);
-  const activeAccount = accounts.find((acc) => acc.ID === activeAccountId) || null;
+  const activeAccount = accounts.find((acc) => acc.id === activeAccountId) || null;
   const { socket, isReady } = useWebSocket();
-	useEffect(() => {
-		if (socket && isReady) {
-			socket.send("getUser");
-			socket.send("getAccounts");
-			socket.onMessage((msg) => {
-				const response = JSON.parse(msg);
-        if (response.AccountData) {
-          if (activeAccountId) {
+  useEffect(() => {
+    const storedAccountJSON = localStorage.getItem("activeAccount");
+    if (socket && isReady) {
 
-            dispatch(updateAccountDetails({
-              id: activeAccountId,
-              details: response.AccountData,
-            }));
-          }
+
+      socket.send("getUser");
+      socket.send("getAccounts");
+      socket.onMessage((msg) => {
+        const response = JSON.parse(msg);
+        if (response.accounts) {
+
+          dispatch(accountsReceived(response.accounts))
         }
-        if(response.userData){
+        if (response.userData) {
           dispatch(userReceived(response.userData))
         }
-														
-			});
-		}
-	}, [socket, isReady]);  const handleDateRangeChange = (value: string) => {
-    setDateRange(value);
-    const activeAccount = accounts.find(acc => acc.ID === activeAccountId) || null;
+        if (response.AccountData){
+          dispatch(updateAccountDetails(response.AccountData))
+        }
 
+      });
+    }
+
+    if (storedAccountJSON) {
+      try {
+        const storedAccount = JSON.parse(storedAccountJSON);
+        const accountIdFromStorage = storedAccount.ID ?? storedAccount.id;
+        if (typeof accountIdFromStorage === 'string' && accountIdFromStorage.length > 0) {
+          dispatch(setActiveAccount(accountIdFromStorage));
+        } else {
+          localStorage.removeItem("activeAccount");
+        }
+      } catch (error) {
+        console.error("   Error parsing stored activeAccount from localStorage:", error);
+        localStorage.removeItem("activeAccount");
+      }
+    }
+
+
+  }, [socket, isReady, dispatch]);
+
+  const handleDateRangeChange = (value: string) => {
+    setDateRange(value);
+    const activeAccount = accounts.find(acc => acc.id === activeAccountId) || null;
     if (socket && activeAccount) {
 
       const messageHandler = (msg: string) => {

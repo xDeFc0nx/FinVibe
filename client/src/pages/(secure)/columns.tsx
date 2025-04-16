@@ -20,7 +20,7 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const amount = row.original.Amount;
       const type = row.original.Type;
-      const userData = useSelector((state: RootState) => state.user.data)
+const userData = useSelector((state: RootState) => state.user.data)
 
       const formattedAmount =
         type === "Income"
