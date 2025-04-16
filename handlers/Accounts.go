@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/xDeFc0nx/FinVibe/db"
@@ -23,11 +24,17 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 	var req Request
 
+	account := &types.Accounts{}
+	account.ID = uuid.NewString()
+	account.Type = req.Type
+	account.Balance = req.Balance
+	account.Income = req.Income
+	account.Expense = req.Expense
+
 	if err := json.Unmarshal(data, &req); err != nil {
 		SendError(ws, MsgInvalidData, err)
 		return
 	}
-	account := &types.Accounts{}
 
 	var userExists bool
 	err := db.DB.QueryRow(
@@ -50,12 +57,12 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
         created_at,
         updated_at
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		uuid.NewString(),
+		account.ID,
 		userID,
-		req.Type,
-		req.Balance,
-		req.Income,
-		req.Expense,
+		account.Type,
+		account.Balance,
+		account.Income,
+		account.Expense,
 		time.Now().UTC(),
 		time.Now().UTC(),
 	); err != nil {
@@ -117,6 +124,37 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	SendMessage(ws, string(responseData))
 }
 
+func GetAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
+	type Request struct {
+		AccountID string `json:"AccountID"`
+	}
+	var req Request
+
+	if err := json.Unmarshal(data, &req); err != nil {
+		SendError(ws, MsgInvalidData, err)
+		return
+	}
+	account := new(types.Accounts)
+	if err := db.DB.QueryRow(context.Background(), `
+  SELECT 1 id, type, income, expense, balance
+	FROM accounts
+	WHERE id = $1
+				`, req.AccountID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
+		SendError(ws, MsgAccountNotFound, err)
+	}
+	accountData := map[string]any{
+		"id":      account.ID,
+		"type":    account.Type,
+		"balance": account.Balance,
+		"income":  account.Income,
+		"expense": account.Expense,
+	}
+
+	responseData, _ := json.Marshal(accountData)
+
+	SendMessage(ws, string(responseData))
+
+}
 func UpdateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	account := new(types.Accounts)
 	if err := json.Unmarshal(data, &account); err != nil {
@@ -233,6 +271,15 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	for _, transaction := range transactions {
 		totalIncome += transaction.Amount
 	}
+
+	if err := db.DB.QueryRow(context.Background(), `
+SELECT 1 id, type, income, expense, balance
+	FROM accounts
+		WHERE id = $1
+				`, AccountID).Scan(&account.ID, &account.Type, &account.Income, &account.Expense, &account.Balance); err != nil {
+		SendError(ws, MsgAccountNotFound, err)
+	}
+
 	account.Income = totalIncome
 	expType := "Expense"
 	rows, err = db.DB.Query(context.Background(), `
