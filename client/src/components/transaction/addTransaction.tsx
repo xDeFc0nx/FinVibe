@@ -100,7 +100,6 @@ export const AddTransaction = () => {
                 details: response.AccountData,
               }));
             } else {
-              console.log("account id not found")
             }
 
           }

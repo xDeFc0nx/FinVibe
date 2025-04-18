@@ -61,7 +61,6 @@ const dispatch: AppDispatch = useDispatch();
   });
   function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      console.log(values);
       if (socket && isReady) {
         socket.send("updateUser", {
           FirstName: values.FirstName,

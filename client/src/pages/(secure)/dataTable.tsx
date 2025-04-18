@@ -61,7 +61,6 @@ export function DataTable<TData, TValue>({
 			rowSelection,
 		},
 	});
-  console.log('Table rows:', table.getRowModel().rows);
 
 	return (
 		<div className="w-full">

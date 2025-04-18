@@ -35,7 +35,6 @@ export default function Register() {
 	});
 
 	const handleSubmit = async (data: z.infer<typeof formSchema>) => {
-		console.log(data);
 
 		try {
 			const response = await fetch("http://localhost:3001/Register", {
