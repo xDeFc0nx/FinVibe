@@ -49,6 +49,8 @@ information about my country
 i also was bored and wanted to do some web sockets 
 
 this app is a simple personal finanical app 
+## Demo
+https://youtu.be/riTypvGFPaI
 
 ## Built With
 
