@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 import {
@@ -60,6 +61,8 @@ export function DataTable<TData, TValue>({
 			rowSelection,
 		},
 	});
+  console.log('Table rows:', table.getRowModel().rows);
+
 	return (
 		<div className="w-full">
 			<div className="rounded-md border">
