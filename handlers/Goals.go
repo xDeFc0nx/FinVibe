@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
@@ -201,8 +202,10 @@ SELECT 1 FROM accounts WHERE id = $1
 	}
 
 	defer rows.Close()
-	transactions, err := pgx.CollectRows(rows,
-		pgx.RowTo[types.Transaction])
+	 transactions, err := pgx.CollectRows(rows, pgx.RowTo[types.Transaction])
+	if err != nil {
+		slog.Error(MsgCollectRowsFailed, slog.String("err", err.Error()))
+	}
 
 	totalBalance := float64(0)
 	for _, t := range transactions {
