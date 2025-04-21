@@ -48,7 +48,10 @@ func main() {
 		AllowHeaders:     "Origin, Content-Type, Accept",
 		AllowCredentials: true,
 	}))
-	db.Conn()
+
+	if err := db.Conn(); err != nil {
+		slog.Error("Failed to connect db", slog.String("err", err.Error()))
+	}
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)
