@@ -1,47 +1,72 @@
 import heroimg from "@/assets/heroimg.svg";
-import type { Component } from "react";
 import { Link } from "react-router";
 import { Button } from "./button";
 import { WavyBackground } from "./wavy-background";
+import { Github } from 'lucide-react';
+import CardsHero from "./heroCards";
 const hero = () => {
-	return (
-		<>
-			<WavyBackground>
-				<div className="container py-24 lg:py-32">
-					<div className="grid md:grid-cols-2 gap-4  md:gap-8 xl:gap-20 md:items-center">
-						<div>
-							<h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
-								<p className=" lg:text-5xl md:text-lg sm:text-xs text-white font-bold">
-									OpenFin<span className="text-primary-pink"> elevate </span>
-									your Finances
-								</p>
-							</h1>
-							<p className="mt-3 text-xl text-muted-foreground">
-								Empower your finances with OpenFin's smart tools and expert
-								guidance
-							</p>
+  return (
+    <>
+      <WavyBackground>
 
-							<div className="mt-7 grid gap-3 w-full sm:inline-flex ">
-								<Link to={"/auth"}>
-									<Button>Get started</Button>
-								</Link>
-							</div>
+        <div className="lg:flex md:grid-cols-1  ">
+          <div className=" pt-32 pl-32  ">
+            <p className=" lg:text-5xl md:text-lg sm:text-xs text-white font-bold">
+              OpenFin<span className="text-pink-500"> elevate </span>
+              your financial
+              <br /> journey with empowering tools
+              <br /> and insightful guidance
+            </p>
 
-							<div className="mt-6 lg:mt-10 grid grid-cols-2 gap-x-5" />
-						</div>
-
-						<div className="relative ms-4">
-							<img
-								className="w-full rounded-md"
-								src={heroimg}
-								alt="financial svg"
-							/>
-						</div>
-					</div>
-				</div>
-			</WavyBackground>
-		</>
-	);
+            <p className=" lg:text-lg md:text-sm sm:text-xs text-[#95959D]  pt-4 pb-4">
+              Empower your finances with OpenFin's smart tools and expert guidance
+            </p>
+            <div className="space-x-5 flex">
+              <Link to="/auth">
+                <Button
+                  variant="link"
+                >
+                  <span>Get Started</span>
+                  <svg
+                    className="inline"
+                    width="20"
+                    height="10"
+                    viewBox="0 0 20 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M15.0125 3.75H0V6.25H15.0125V10L20 5L15.0125 0V3.75Z"
+                      fill="white"
+                    />
+                  </svg>
+                </Button>
+              </Link>
+              <Link to="https://github.com/xDeFc0nx/OpenFin">
+                <Button
+                >
+                  <Github />
+                  Github
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <div className="pl-56 pt-20 flex items-center ">
+            <div
+              className={` flex text-white w-[30rem] h-[20rem] bg-white/10  backdrop-filter backdrop-blur-md rounded-lg 	   shadow-lg`}
+            >
+              <img
+                className="w-full rounded-md"
+                src={heroimg}
+                alt="financial svg"
+              />
+            </div>
+          </div>
+        </div>
+          <CardsHero/>
+      </WavyBackground>
+    </>
+  );
 };
 
 export default hero;
