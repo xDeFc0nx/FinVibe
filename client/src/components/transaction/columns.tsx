@@ -79,11 +79,11 @@ export const columns: ColumnDef<Transaction>[] = [
     cell: ({ row }) => {
       const amount = row.original.Amount;
       const type = row.original.Type;
-      const userData = useSelector((state: RootState) => state.user.data)
+      const UserData = useSelector((state: RootState) => state.user.data)
       const formattedAmount =
         type === "Income"
-          ? `+${userData?.Currency}${amount}`
-          : `-${userData?.Currency}${amount}`;
+          ? `+${UserData?.Currency}${amount}`
+          : `-${UserData?.Currency}${amount}`;
 
       const backgroundColor =
         type === "Income" ? "bg-green-400/50" : "bg-red-400/50";
