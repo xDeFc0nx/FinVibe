@@ -24,33 +24,38 @@ type Response struct {
 }
 
 func JSendSuccess(c *fiber.Ctx, data any) {
-	c.Status(fiber.StatusOK).JSON(Response{
+	if err := c.Status(fiber.StatusOK).JSON(Response{
 		Status: "success",
 		Data:   data,
-	})
+	}); err != nil {
+		slog.Error("failed to send message", slog.String("Error", err.Error()))
+	}
 
 }
 
 func JSendFail(c *fiber.Ctx, data any, code int, err error) {
-	c.Status(code).JSON(Response{
+	if err := c.Status(code).JSON(Response{
 		Status: "fail",
 		Data:   data,
-	})
+	}); err != nil {
+		slog.Error("failed to send message", slog.String("Error", err.Error()))
+	}
 	Eris(err, "fail", data)
 }
 
 func JSendError(c *fiber.Ctx, data any, code int, err error) {
-	c.Status(code).JSON(Response{
+	if err := c.Status(code).JSON(Response{
 		Status: "error",
 		Data:   data,
-	})
+	}); err != nil {
+		slog.Error("failed to send message", slog.String("Error", err.Error()))
+	}
 
 	Eris(err, "error", data)
 
 }
 
 func SendMessage(ws *websocket.Conn, sendText string) {
-	Eris(nil, "info", sendText)
 	if err := ws.WriteMessage(websocket.TextMessage, []byte(sendText)); err != nil {
 		slog.Error("failed to send message", slog.String("Error", err.Error()))
 	}
