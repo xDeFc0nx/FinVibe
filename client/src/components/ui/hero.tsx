@@ -12,12 +12,12 @@ const hero = () => {
 						<div>
 							<h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
 								<p className=" lg:text-5xl md:text-lg sm:text-xs text-white font-bold">
-									FinVibe <span className="text-primary-pink"> elevate </span>
+									OpenFin<span className="text-primary-pink"> elevate </span>
 									your Finances
 								</p>
 							</h1>
 							<p className="mt-3 text-xl text-muted-foreground">
-								Empower your finances with FinVibe's smart tools and expert
+								Empower your finances with OpenFin's smart tools and expert
 								guidance
 							</p>
 
