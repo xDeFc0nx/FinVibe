@@ -23,7 +23,8 @@
   </p>
 </p>
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/xDeFc0nx/OpenFin)](https://goreportcard.com/report/github.com/xDeFc0nx/FinVibe[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=xDeFc0nx_FinVibe&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=xDeFc0nx_FinVibe))
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=xDeFc0nx_FinVibe&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=xDeFc0nx_FinVibe)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xDeFc0nx/OpenFin)](https://goreportcard.com/report/github.com/xDeFc0nx/FinVibe)
 ![Issues](https://img.shields.io/github/issues/xDeFc0nx/OpenFin)
 ![License](https://img.shields.io/github/license/xDeFc0nx/OpenFin)
 
