@@ -28,7 +28,7 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	var req requestData
 
-	if err := json.Unmarshal(data, req); err != nil {
+	if err := json.Unmarshal(data, &req); err != nil {
 		SendError(ws, MsgInvalidData, err)
 	}
 
