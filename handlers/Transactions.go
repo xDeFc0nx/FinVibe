@@ -285,8 +285,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	}
 
 	defer rows.Close()
-	transactions := []types.Transaction{}
-	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
+	transactions, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
 		slog.Error("failed", slog.String("err", err.Error()))
 		SendError(ws, MsgCollectRowsFailed, err)
