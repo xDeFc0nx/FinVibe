@@ -135,7 +135,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	var req requestData
 	budget := new(types.Budget)
 
-	if err := json.Unmarshal(data, req); err != nil {
+	if err := json.Unmarshal(data, &req); err != nil {
 		SendError(ws, MsgInvalidData, err)
 	}
 	if budget.ID == "" {
