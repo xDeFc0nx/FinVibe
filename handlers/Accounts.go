@@ -94,8 +94,7 @@ func GetAccounts(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 
 	defer rows.Close()
-	accounts := []types.Accounts{}
-	accounts, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Accounts])
+	accounts, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Accounts])
 	if err != nil {
 		SendError(ws, MsgCollectRowsFailed, err)
 	}
@@ -231,7 +230,6 @@ func GetAccountBalance(
 	ws *websocket.Conn,
 	AccountID string,
 ) error {
-	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 
 	account.ID = AccountID
@@ -262,7 +260,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	}
 
 	defer rows.Close()
-	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
+	transactions, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
 		SendError(ws, MsgCollectRowsFailed, err)
 	}
