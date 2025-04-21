@@ -68,6 +68,7 @@ This project is built using the following technologies and frameworks:
 
 Feel free to explore each of these technologies for more information.
 
+## Roadmap
 See the [open issues](https://github.com/xDeFx0nz/OpenFin/issues) for a list of proposed features (and known issues).
 
 ## Contributing
