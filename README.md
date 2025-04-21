@@ -12,7 +12,7 @@
     Note: This Project Is Still W.I.P
     <br/>
     <br/>
-    <a href="https://readme.shaankhan.dev"><strong>View Demo »</strong></a>
+    <a href="#"><strong>View Demo »</strong></a>
     <br/>
     <br/>
     <a href="https://github.com/xDeFc0nx/OpenFin">Explore the docs</a>
@@ -53,16 +53,20 @@ this app is a simple personal finanical app
 https://youtu.be/riTypvGFPaI
 
 ## Built With
-
 This project is built using the following technologies and frameworks:
 
-goFiber
-React 
-
+*   **Languages:** Go, JavaScript, TypeScript
+*   **Backend (Go):** GoFiber (with WebSocket contrib), JWT, UUID, Dotenv, PostgreSQL (via `pgx` driver)
+*   **Frontend (React):**
+    *   **Core:** React (v19!), React DOM (v19!), React Router (v7), Redux Toolkit (with React Redux binding)
+    *   **UI/Components:** Radix UI (various components), Class Variance Authority, clsx, tailwind-merge, React Table, React Day Picker, React Toastify, Recharts, Framer Motion, Lucide React, React Icons
+    *   **Forms & Validation:** React Hook Form, Zod, Hookform Resolvers
+    *   **Styling:** Tailwind CSS (with animation plugins), PostCSS, Autoprefixer
+    *   **Utilities:** date-fns, simplex-noise
+*   **Build Tool:** RSBuild
+*   **Development Tools:** TypeScript, Biome (Linter/Formatter), Cross-env
 
 Feel free to explore each of these technologies for more information.
-
-## Roadmap
 
 See the [open issues](https://github.com/xDeFx0nz/OpenFin/issues) for a list of proposed features (and known issues).
 
