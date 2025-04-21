@@ -182,7 +182,6 @@ FROM goals WHERE id = $1 AND user_id = $2
 }
 
 func GetGoalCal(ws *websocket.Conn, accountID string) error {
-	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 	goal := new(types.Goal)
 
@@ -202,7 +201,7 @@ SELECT 1 FROM accounts WHERE id = $1
 	}
 
 	defer rows.Close()
-	transactions, err = pgx.CollectRows(rows,
+	transactions, err := pgx.CollectRows(rows,
 		pgx.RowTo[types.Transaction])
 
 	totalBalance := float64(0)
