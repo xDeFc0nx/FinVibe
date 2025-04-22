@@ -81,7 +81,7 @@ export default function Index() {
   }, [socket, isReady, dispatch]);
 
   const handleDateRangeChange = (value: string) => {
-    setDateRange(value);
+     dispatch(setDateRange(value));
     const activeAccount = accounts.find(acc => acc.id === activeAccountId) || null;
     if (socket && activeAccount) {
 
