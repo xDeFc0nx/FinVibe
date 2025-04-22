@@ -15,14 +15,14 @@ const Hero = () => {
 
             <div>
               <h1 className="text-3xl font-bold text-white sm:text-4xl md:text-5xl lg:text-5xl">
-                OpenFin<span className="text-pink-500"> elevate </span>
+                NovaoFin<span className="text-pink-500"> elevate </span>
                 your financial
                 journey with empowering tools
                 <br /> and insightful guidance
               </h1>
 
               <p className="mt-4 text-lg text-[#95959D] md:text-xl">
-                Empower your finances with OpenFin's smart tools and expert guidance
+                Empower your finances with NovaoFin's smart tools and expert guidance
               </p>
 
               <div className="mt-8 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 items-start sm:items-center">
@@ -47,7 +47,7 @@ const Hero = () => {
                     </svg>
                   </Button>
                 </Link>
-                <Link to="https://github.com/xDeFc0nx/OpenFin" target="_blank" rel="noopener noreferrer">
+                <Link to="https://github.com/xDeFc0nx/NovaoFin" target="_blank" rel="noopener noreferrer">
                   <Button
                     className="inline-flex items-center text-base font-medium"
                   >
