@@ -68,8 +68,30 @@ export const AddTransaction = () => {
     if (!activeAccountId) return null;
     return currentAccounts.find(acc => acc.id === activeAccountId) || null;
   }, [activeAccountId, currentAccounts]);
+  React.useEffect(() => {
+    if (socket && isReady) {
+      const handleMessage = (msg: any) => {
+        const response = JSON.parse(msg);
+        if (response.transaction) {
+          toast.success("Transaction added!", { toastId: "success" });
+          form.reset();
+          dispatch(addTransaction(response.transaction));
+        }
 
+        if (response.AccountData) {
+          if (activeAccountId) {
+            dispatch(updateAccountDetails({
+              id: activeAccountId,
+              details: response.AccountData,
+            }));
+          }
+        }
+      };
 
+      socket.onMessage(handleMessage);
+
+    }
+  }, [socket, isReady, activeAccountId, dispatch, form]);
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     try {
       if (socket && isReady && activeAccount) {
@@ -81,36 +103,12 @@ export const AddTransaction = () => {
           AccountID: activeAccountId,
           ...payload,
         });
-
-        socket.onMessage((msg) => {
-          const response = JSON.parse(msg);
-          if (response.transaction) {
-            toast.success("Transaction added!", { toastId: "success" });
-            form.reset();
-            dispatch(addTransaction(response.transaction))
-
-          }
-
-          if (response.AccountData) {
-            if (activeAccountId) {
-
-
-              dispatch(updateAccountDetails({
-                id: activeAccountId,
-                details: response.AccountData,
-              }));
-            } else {
-            }
-
-          }
-        });
       }
     } catch (error) {
       console.error("Submission error", error);
       toast.error("Failed to add transaction");
     }
   };
-
   return (
     <Dialog>
       <DialogTrigger>

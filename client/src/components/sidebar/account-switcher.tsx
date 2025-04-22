@@ -80,7 +80,7 @@ export function AccountSwitcher() {
 
       if (socket && isReady) {
         socket.send("createAccount", {
-          Type: values.Type,
+          type: values.Type,
         });
 
         socket.onMessage((msg) => {

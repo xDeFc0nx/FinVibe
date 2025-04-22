@@ -29,8 +29,10 @@ const transactionsSlice = createSlice({
       state.status = 'succeeded';
     },
     addTransaction(state, action: PayloadAction<Transaction>) {
-      state.list.push(action.payload);
-      state.status = 'succeeded';
+      const exists = state.list.some(tx => tx.ID === action.payload.ID);
+      if (!exists) {
+        state.list.unshift(action.payload);
+      }
     },
     removeTransaction(state, action: PayloadAction<string>) {
       state.list = state.list.filter(tx => tx.ID !== action.payload);
