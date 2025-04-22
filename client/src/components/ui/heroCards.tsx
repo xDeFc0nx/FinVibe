@@ -5,7 +5,7 @@ import SecureSvg from "@/assets/Secure.svg";
 import ExpenseSvg from "@/assets/Expense.svg";
 import Card from "./cards"
 const CardsHero = () => (
-  <div className=" pt-56 pl-32 flex space-x-14">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
     <Card
       icon={RealTimeSvg}
       header="Real-time Financial Insights"
