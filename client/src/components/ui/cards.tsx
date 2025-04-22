@@ -1,19 +1,30 @@
-
+import { Card, CardTitle, CardDescription, CardHeader } from './card'
 
 export default function Cards({ icon, header, value }: { icon: any; header: any; value: any; }) {
   return (
-    <div className="w-[20rem] h-[13rem]  text-white px-4 py-4 rounded-md bg-white/10  backdrop-filter backdrop-blur-lg	 shadow-lg">
-      <div className="w-full flex justify-start">
-        <img src={icon} />
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-6 h-6 flex-shrink-0">
+              <img
+                src={icon}
+                alt=""
+                className="w-full h-full object-contain"
+              />
+            </div>
 
-        <div className="flex flex-col justify-center">
-          <p className="text-lg  text-white pl-1">{header}</p>
-        </div>
-      </div>
+            <span className="text-lg text-white font-medium">
+              {header}
+            </span>
+          </CardTitle>
+          <CardDescription>
+            <div>
+              <p className="text-sm text-[#92929B]">{value}</p>
+            </div></CardDescription>
+        </CardHeader>
 
-      <div>
-        <p className="text-sm text-[#92929B]">{value}</p>
-      </div>
-    </div>
+      </Card>
+    </>
   );
 }
