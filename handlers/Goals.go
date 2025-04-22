@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/xDeFc0nx/FinVibe/db"
-	"github.com/xDeFc0nx/FinVibe/types"
+	"github.com/xDeFc0nx/NovaoFin/db"
+	"github.com/xDeFc0nx/NovaoFin/types"
 )
 
 func CreateGoal(ws *websocket.Conn, data json.RawMessage, userID string) {
@@ -182,7 +183,6 @@ FROM goals WHERE id = $1 AND user_id = $2
 }
 
 func GetGoalCal(ws *websocket.Conn, accountID string) error {
-	transactions := []types.Transaction{}
 	account := new(types.Accounts)
 	goal := new(types.Goal)
 
@@ -202,8 +202,10 @@ SELECT 1 FROM accounts WHERE id = $1
 	}
 
 	defer rows.Close()
-	transactions, err = pgx.CollectRows(rows,
-		pgx.RowTo[types.Transaction])
+	 transactions, err := pgx.CollectRows(rows, pgx.RowTo[types.Transaction])
+	if err != nil {
+		slog.Error(MsgCollectRowsFailed, slog.String("err", err.Error()))
+	}
 
 	totalBalance := float64(0)
 	for _, t := range transactions {

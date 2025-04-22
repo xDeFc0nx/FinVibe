@@ -40,7 +40,6 @@ export default function CreateAccount() {
   }, [activeAccountId, currentAccounts]);
   function handleSubmit(values: z.infer<typeof formSchema>) {
     try {
-      console.log(values);
 
       if (socket && isReady) {
         socket.send("createAccount", {
@@ -50,7 +49,6 @@ export default function CreateAccount() {
         socket.onMessage((msg) => {
           const response = JSON.parse(msg);
           if (response.account) {
-            console.log(response.account);
             const newAccount: Account = response.account;
             dispatch(addAccount(newAccount));
             dispatch(setActiveAccount(newAccount.id));

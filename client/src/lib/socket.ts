@@ -9,7 +9,6 @@ export class WebSocketClient {
 		this.socket.onmessage = (event) => {
 			this.messageHandlers.forEach((handler) => handler(event.data));
 			const response = JSON.parse(event.data);
-			console.log(response);
 			if (response.message === "pong") {
 				if (this.socket.readyState === WebSocket.OPEN) {
 					this.socket.send(JSON.stringify({ Action: "pong" }));
@@ -31,7 +30,6 @@ export class WebSocketClient {
 				message.Data = data;
 			}
 			this.socket.send(JSON.stringify(message));
-			console.log(message);
 		} else {
 			console.error("WebSocket is not open.");
 		}

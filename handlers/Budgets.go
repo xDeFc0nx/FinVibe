@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"sync"
 
-	"github.com/xDeFc0nx/FinVibe/db"
-	"github.com/xDeFc0nx/FinVibe/types"
+	"github.com/xDeFc0nx/NovaoFin/db"
+	"github.com/xDeFc0nx/NovaoFin/types"
 )
 
 func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
@@ -28,7 +28,7 @@ func CreateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 
 	var req requestData
 
-	if err := json.Unmarshal(data, req); err != nil {
+	if err := json.Unmarshal(data, &req); err != nil {
 		SendError(ws, MsgInvalidData, err)
 	}
 
@@ -135,7 +135,7 @@ func UpdateBudget(ws *websocket.Conn, data json.RawMessage, userID string) {
 	var req requestData
 	budget := new(types.Budget)
 
-	if err := json.Unmarshal(data, req); err != nil {
+	if err := json.Unmarshal(data, &req); err != nil {
 		SendError(ws, MsgInvalidData, err)
 	}
 	if budget.ID == "" {

@@ -1,4 +1,5 @@
 "use client";
+
 import * as React from "react";
 import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react";
 import {
@@ -42,7 +43,6 @@ export function DataTable<TData, TValue>({
 	const [columnVisibility, setColumnVisibility] =
 		React.useState<VisibilityState>({});
 	const [rowSelection, setRowSelection] = React.useState({});
-
 	const table = useReactTable({
 		data,
 		columns,
@@ -61,6 +61,7 @@ export function DataTable<TData, TValue>({
 			rowSelection,
 		},
 	});
+
 	return (
 		<div className="w-full">
 			<div className="rounded-md border">

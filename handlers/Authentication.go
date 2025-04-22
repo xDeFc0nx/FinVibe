@@ -14,8 +14,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/xDeFc0nx/FinVibe/db"
-	"github.com/xDeFc0nx/FinVibe/types"
+	"github.com/xDeFc0nx/NovaoFin/db"
+	"github.com/xDeFc0nx/NovaoFin/types"
 )
 
 var tokenName = "jwt-token"

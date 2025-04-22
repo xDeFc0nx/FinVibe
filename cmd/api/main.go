@@ -6,8 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
-	"github.com/xDeFc0nx/FinVibe/db"
-	"github.com/xDeFc0nx/FinVibe/handlers"
+	"github.com/xDeFc0nx/NovaoFin/db"
+	"github.com/xDeFc0nx/NovaoFin/handlers"
 	"io"
 	"log/slog"
 	"os"
@@ -48,7 +48,10 @@ func main() {
 		AllowHeaders:     "Origin, Content-Type, Accept",
 		AllowCredentials: true,
 	}))
-	db.Conn()
+
+	if err := db.Conn(); err != nil {
+		slog.Error("Failed to connect db", slog.String("err", err.Error()))
+	}
 
 	app.Post("/Register", handlers.CreateUser)
 	app.Post("/Login", handlers.LoginHandler)

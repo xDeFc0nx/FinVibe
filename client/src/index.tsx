@@ -20,16 +20,18 @@ ReactDOM.createRoot(root).render(
       <ThemeProvider>
         <ToastContainer />
 
-          <Routes>
-            <Route path="/" element={<App />} />
-            <Route path="auth" element={<Auth />} />
-            <Route path="/app" element={<Layout />}>
-              <Route index element={<Index />} />
-              <Route path="dashboard" element={<Index />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="transactions" element={<Transactions />} />
-            </Route>
-          </Routes>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="auth" element={<Auth />} />
+          <Route path="/app" element={<Layout />}>
+            <Route index element={<Index />} />
+            <Route path="dashboard" element={<Index />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="transactions" element={<Transactions />} />
+          </Route>
+        </Routes>
       </ThemeProvider>
     </BrowserRouter>
-  </Provider>);
+  </Provider>
+
+);

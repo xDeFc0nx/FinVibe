@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/xDeFc0nx/FinVibe/db"
-	"github.com/xDeFc0nx/FinVibe/types"
+	"github.com/xDeFc0nx/NovaoFin/db"
+	"github.com/xDeFc0nx/NovaoFin/types"
 )
 
 var requestData struct {
@@ -285,8 +285,7 @@ SELECT amount, id, user_id, account_id, type, description, is_recurring, created
 	}
 
 	defer rows.Close()
-	transactions := []types.Transaction{}
-	transactions, err = pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
+	transactions, err := pgx.CollectRows(rows, pgx.RowToStructByName[types.Transaction])
 	if err != nil {
 		slog.Error("failed", slog.String("err", err.Error()))
 		SendError(ws, MsgCollectRowsFailed, err)

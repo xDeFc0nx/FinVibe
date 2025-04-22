@@ -1,12 +1,13 @@
+"use client";
 import {
-	Breadcrumb,
-	BreadcrumbItem,
-	BreadcrumbLink,
-	BreadcrumbList,
-	BreadcrumbPage,
-	BreadcrumbSeparator,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
+import * as React from "react";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { columns } from "@/components/transaction/columns";
@@ -19,31 +20,39 @@ import { addAccount, setActiveAccount } from '@/store/slices/accountsSlice';
 import type { Account } from '@/types'; // Adjust path
 
 export default function Index() {
-  	const transactions = useSelector((state: RootState) => state.transactions.list);
-	return (
-		<SidebarInset>
-			<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-				<div className="flex items-center gap-2 px-4">
-					<SidebarTrigger className="-ml-1" />
-					<Separator orientation="vertical" className="mr-2 h-4" />
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem className="hidden md:block">
-								<Link to="/app/dashboard">
-									<BreadcrumbLink>Dashboard</BreadcrumbLink>
-								</Link>
-							</BreadcrumbItem>
-							<BreadcrumbSeparator className="hidden md:block" />
-							<BreadcrumbItem>
-								<BreadcrumbPage>Transactions</BreadcrumbPage>
-							</BreadcrumbItem>
-						</BreadcrumbList>
-					</Breadcrumb>
-				</div>
-			</header>
-			<div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-				<DataTable columns={columns} data={transactions} />
-			</div>
-		</SidebarInset>
-	);
+  const transactions = useSelector(
+  (state: RootState) => state.transactions.list
+);
+
+const [tableData, setTableData] = React.useState(transactions);
+React.useEffect(() => {
+
+  setTableData(transactions);
+}, [transactions]);
+  return (
+    <SidebarInset>
+      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+        <div className="flex items-center gap-2 px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem className="hidden md:block">
+                <Link to="/app/dashboard">
+                  <BreadcrumbLink>Dashboard</BreadcrumbLink>
+                </Link>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="hidden md:block" />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Transactions</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </header>
+      <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+        <DataTable columns={columns} data={tableData} key={transactions.length} />
+      </div>
+    </SidebarInset>
+  );
 }
