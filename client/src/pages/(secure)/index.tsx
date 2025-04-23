@@ -22,7 +22,7 @@ import {
   ExpensesPie,
   IncomeChart,
   IncomePie,
-} from "@/components/charts/Charts";
+} from "@/components/charts/DashboardCharts";
 import { useWebSocket } from "@/components/WebSocketProvidor";
 import { useEffect } from "react";
 import { useSelector, useDispatch } from 'react-redux';
@@ -55,7 +55,7 @@ export default function Index() {
         if (response.userData) {
           dispatch(userReceived(response.userData))
         }
-        if (response.AccountData){
+        if (response.AccountData) {
           dispatch(updateAccountDetails(response.AccountData))
         }
 
@@ -81,7 +81,7 @@ export default function Index() {
   }, [socket, isReady, dispatch]);
 
   const handleDateRangeChange = (value: string) => {
-     dispatch(setDateRange(value));
+    dispatch(setDateRange(value));
     const activeAccount = accounts.find(acc => acc.id === activeAccountId) || null;
     if (socket && activeAccount) {
 
