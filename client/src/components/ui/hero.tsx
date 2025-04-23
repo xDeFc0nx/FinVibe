@@ -17,8 +17,6 @@ const Hero = () => {
               <h1 className="text-3xl font-bold text-white sm:text-4xl md:text-5xl lg:text-5xl">
                 NovaoFin<span className="text-pink-500"> elevate </span>
                 your financial
-                journey with empowering tools
-                <br /> and insightful guidance
               </h1>
 
               <p className="mt-4 text-lg text-[#95959D] md:text-xl">
@@ -28,23 +26,23 @@ const Hero = () => {
               <div className="mt-8 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 items-start sm:items-center">
                 <Link to="/auth">
                   <Button
-                    variant="link"
-                    className="inline-flex items-center text-base font-medium"
+                    variant="secondary"
                   >
-                    <span>Get Started</span>
-                    <svg
-                      className="ml-2"
-                      width="20"
-                      height="10"
-                      viewBox="0 0 20 10"
-                      fill="currentColor"
-                      xmlns="http://www.w3.org/2000/svg"
-                      aria-hidden="true"
-                    >
-                      <path
-                        d="M15.0125 3.75H0V6.25H15.0125V10L20 5L15.0125 0V3.75Z"
-                      />
-                    </svg>
+                    Get Started
+                      <svg
+                        className="ml-2"
+                        width="20"
+                        height="10"
+                        viewBox="0 0 20 10"
+                        fill="currentColor"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M15.0125 3.75H0V6.25H15.0125V10L20 5L15.0125 0V3.75Z"
+                        />
+                      </svg>
+
                   </Button>
                 </Link>
                 <Link to="https://github.com/xDeFc0nx/NovaoFin" target="_blank" rel="noopener noreferrer">
@@ -59,13 +57,11 @@ const Hero = () => {
             </div>
 
             <div className="mt-8 md:mt-0 mx-auto md:mx-0 w-full max-w-md md:max-w-full">
-              <div className={`relative text-white bg-white/10 backdrop-filter backdrop-blur-md rounded-lg shadow-lg overflow-hidden`}>
                 <img
                   className="w-full h-auto object-cover rounded-md"
                   src={heroimg}
                   alt="Illustration of financial tools and charts"
                 />
-              </div>
             </div>
 
           </div>
