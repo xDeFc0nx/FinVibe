@@ -56,6 +56,7 @@ func JSendError(c *fiber.Ctx, data any, code int, err error) {
 }
 
 func SendMessage(ws *websocket.Conn, sendText string) {
+	Eris(nil, "info", sendText)
 	if err := ws.WriteMessage(websocket.TextMessage, []byte(sendText)); err != nil {
 		slog.Error("failed to send message", slog.String("Error", err.Error()))
 	}
