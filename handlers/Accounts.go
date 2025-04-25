@@ -23,18 +23,18 @@ func CreateAccount(ws *websocket.Conn, data json.RawMessage, userID string) {
 	}
 	var req Request
 
+
+
+	if err := json.Unmarshal(data, &req); err != nil {
+		SendError(ws, MsgInvalidData, err)
+		return
+	}
 	account := &types.Accounts{}
 	account.ID = uuid.NewString()
 	account.Type = req.Type
 	account.Balance = req.Balance
 	account.Income = req.Income
 	account.Expense = req.Expense
-
-	if err := json.Unmarshal(data, &req); err != nil {
-		SendError(ws, MsgInvalidData, err)
-		return
-	}
-
 	var userExists bool
 	err := db.DB.QueryRow(
 		context.Background(),
